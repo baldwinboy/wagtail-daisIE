@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.0 (2026-06-09)
+
+
+### Bug Fixes
+
+* add release please config ([1d9ae19](https://github.com/baldwinboy/wagtail-daisIE/commit/1d9ae1980c7bbaab967f81f81ac1f761a353edb3))
+* add release please manifest ([8b05998](https://github.com/baldwinboy/wagtail-daisIE/commit/8b05998b3da13420707015cdc899d93dd4d795a7))
+* add workflow call ([55ec604](https://github.com/baldwinboy/wagtail-daisIE/commit/55ec604d1ba5a6888fd8ab74f5c1cdc5e9523734))
+* exclude migrations from linting ([4552da1](https://github.com/baldwinboy/wagtail-daisIE/commit/4552da1f9c101538faed07e052abb7636db1e62d))
+* remove template check ([012d7a0](https://github.com/baldwinboy/wagtail-daisIE/commit/012d7a0d2bae565b74ab513461d90741be7d9a0b))
+
 ## [Unreleased]
 
 ## [0.1.0] - YYYY-MM-DD
