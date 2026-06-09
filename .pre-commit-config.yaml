@@ -28,9 +28,9 @@ repos:
     hooks:
       - id: ruff-check
         args: [--fix]
-        exclude: ^demo/
+        exclude: ^demo/|/migrations/
       - id: ruff-format
-        exclude: ^demo/
+        exclude: ^demo/|/migrations/
   - repo: local
     hooks:
       - id: lint:format

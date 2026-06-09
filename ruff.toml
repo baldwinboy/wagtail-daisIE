@@ -1,4 +1,4 @@
-extend-exclude = ["demo", "LC_MESSAGES", "locale"]
+extend-exclude = ["demo", "**/migrations", "LC_MESSAGES", "locale"]
 line-length = 88
 
 
