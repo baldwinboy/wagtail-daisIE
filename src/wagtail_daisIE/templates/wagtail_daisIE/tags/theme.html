@@ -1,0 +1,46 @@
+<style>
+:root:has(input.theme-controller[value={{ theme.name }}]:checked),
+[data-theme="{{ theme.name }}"] {
+  color-scheme: {{ theme.color_scheme }};
+
+  {% with colors=theme.colors.first %}
+  --color-primary: {{ colors.primary }};
+  --color-primary-content: {{ colors.primary_content }};
+  --color-secondary: {{ colors.secondary }};
+  --color-secondary-content: {{ colors.secondary_content }};
+  --color-accent: {{ colors.accent }};
+  --color-accent-content: {{ colors.accent_content }};
+  --color-neutral: {{ colors.neutral }};
+  --color-neutral-content: {{ colors.neutral_content }};
+  --color-base-100: {{ colors.base_100 }};
+  --color-base-200: {{ colors.base_200 }};
+  --color-base-300: {{ colors.base_300 }};
+  --color-base-content: {{ colors.base_content }};
+  --color-info: {{ colors.info }};
+  --color-info-content: {{ colors.info_content }};
+  --color-success: {{ colors.success }};
+  --color-success-content: {{ colors.success_content }};
+  --color-warning: {{ colors.warning }};
+  --color-warning-content: {{ colors.warning_content }};
+  --color-error: {{ colors.error }};
+  --color-error-content: {{ colors.error_content }};
+  {% endwith %}
+
+  {% with radii=theme.radii.first %}
+  --radius-selector: {{ radii.selector }};
+  --radius-field: {{ radii.field }};
+  --radius-box: {{ radii.box }};
+  {% endwith %}
+
+  {% with sizes=theme.sizes.first %}
+  --size-selector: {{ sizes.selector }};
+  --size-field: {{ sizes.field }};
+  --border: {{ sizes.border }};
+  {% endwith %}
+
+  {% with effects=theme.effects.first %}
+  --depth: {{ effects.depth|yesno:"1,0" }};
+  --noise: {{ effects.noise|yesno:"1,0" }};
+  {% endwith %}
+}
+</style>

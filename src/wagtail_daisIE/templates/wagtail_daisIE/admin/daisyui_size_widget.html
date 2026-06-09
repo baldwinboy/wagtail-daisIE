@@ -1,0 +1,8 @@
+{% load i18n wagtailadmin_tags %}
+<div class="w-field-row">
+    {% for widget in widget.subwidgets %}
+        <div class="col2">
+            {% include widget.template_name %}
+        </div>
+    {% endfor %}
+</div>
