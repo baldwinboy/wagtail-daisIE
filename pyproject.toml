@@ -1,6 +1,6 @@
 [project]
 name = "wagtail-daisIE"
-version = "0.1.0"
+version = "0.1.1"
 description = "Create reusable DaisyUI themes through Wagtail"
 readme = "README.md"
 license = "BSD-3-Clause"
