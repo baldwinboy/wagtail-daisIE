@@ -81,7 +81,7 @@ jobs:
         # See https://devguide.python.org/versions/#supported-versions.
         include:
           - python: '3.13'
-            wagtail: 'Wagtail>=7.2,<7.3'
+            wagtail: 'Wagtail>=7.3,<7.4'
             django: 'Django>=6.0,<6.1'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
