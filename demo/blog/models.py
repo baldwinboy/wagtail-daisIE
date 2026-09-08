@@ -15,7 +15,6 @@ from wagtail.admin.panels import (
 )
 from wagtail.api import APIField
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
-from wagtail.fields import StreamField
 from wagtail.models import (
     DraftStateMixin,
     Orderable,
@@ -26,7 +25,7 @@ from wagtail.models import (
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
-from blog.blocks import BaseStreamBlock
+from wagtail_daisIE.pages import StyledPageMixin
 
 
 @register_snippet
@@ -156,7 +155,7 @@ class BlogPageTag(TaggedItemBase):
     )
 
 
-class BlogPage(Page):
+class BlogPage(StyledPageMixin):
     introduction = models.TextField(help_text="Text to describe the page", blank=True)
     image = models.ForeignKey(
         "wagtailimages.Image",
@@ -166,18 +165,14 @@ class BlogPage(Page):
         related_name="+",
         help_text="Landscape mode only; horizontal width between 1000px and 3000px.",
     )
-    body = StreamField(
-        BaseStreamBlock(), verbose_name="Page body", blank=True, use_json_field=True
-    )
     subtitle = models.CharField(blank=True, max_length=255)
     tags = ClusterTaggableManager(through=BlogPageTag, blank=True)
     date_published = models.DateField("Date article published", blank=True, null=True)
 
-    content_panels = Page.content_panels + [
+    content_panels = StyledPageMixin.content_panels + [
         FieldPanel("subtitle"),
         FieldPanel("introduction"),
         FieldPanel("image"),
-        FieldPanel("body"),
         FieldPanel("date_published"),
         MultipleChooserPanel(
             "blog_person_relationship",
@@ -190,7 +185,7 @@ class BlogPage(Page):
         FieldPanel("tags"),
     ]
 
-    search_fields = Page.search_fields + [
+    search_fields = StyledPageMixin.search_fields + [
         index.SearchField("body"),
     ]
 

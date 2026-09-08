@@ -1,0 +1,15 @@
+{% load wagtail_daisIE_tags %}
+<!DOCTYPE html>
+<html lang="en"{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{ menu.name }}</title>
+        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_theme_full_css daisyui_theme %}
+        {% daisyui_icon_assets %}
+    </head>
+    <body>
+        {% include "wagtail_daisIE/blocks/menu_block.html" %}
+    </body>
+</html>

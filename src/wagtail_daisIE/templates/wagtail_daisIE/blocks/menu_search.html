@@ -1,0 +1,13 @@
+{% load i18n %}
+{% if audience_allowed %}
+  <form action="{{ value.search_url }}" method="{{ value.method }}" role="search" class="{% if block_css %}{{ block_css }}{% endif %}">
+    <label class="input input-bordered flex items-center gap-2">
+      <svg class="h-4 w-4 opacity-60" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <span class="sr-only">{{ value.search_placeholder }}</span>
+      <input type="search" name="{{ value.search_parameter }}" placeholder="{{ value.search_placeholder }}" autocomplete="off" class="grow" />
+    </label>
+  </form>
+{% endif %}

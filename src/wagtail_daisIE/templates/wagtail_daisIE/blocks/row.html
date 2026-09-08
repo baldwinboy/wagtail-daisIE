@@ -1,0 +1,10 @@
+{% load wagtailcore_tags wagtail_daisIE_tags %}
+{% if audience_allowed %}
+  <div class="flex {{ value.horizontal_alignment|default:"" }} {{ value.vertical_alignment|default:"" }} gap-4 flex-wrap {{ block_css|default:"" }}">
+    {% for child in value.content %}
+      <div class="flex-1 min-w-0">
+        {% include_block child %}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

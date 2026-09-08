@@ -1,0 +1,25 @@
+{% load i18n %}
+<div class="daisyui-icon-widget" data-icon-picker
+     data-icon-search-url="{{ widget.icon_search_url }}">
+  <div class="daisyui-icon-widget__row">
+    <span class="daisyui-icon-widget__preview" data-icon-preview>{{ widget.current_preview }}</span>
+    <input type="{{ widget.type }}"
+           name="{{ widget.name }}"
+           value="{{ widget.value|stringformat:'s' }}"
+           class="daisyui-icon-widget__input"
+           {% include "django/forms/widgets/attrs.html" %}>
+    <button type="button" class="button button-small daisyui-icon-widget__clear" data-icon-clear
+            title="{% trans 'Clear icon' %}">&times;</button>
+  </div>
+  <div class="daisyui-icon-widget__controls">
+    <select class="daisyui-icon-widget__source" data-icon-source>
+      <option value="">{% trans "All sources" %}</option>
+      {% for source in widget.sources %}
+        <option value="{{ source.prefix }}">{{ source.label }}</option>
+      {% endfor %}
+    </select>
+    <input type="search" class="daisyui-icon-widget__search" data-icon-search
+           placeholder="{% trans 'Search icons' %}" autocomplete="off">
+  </div>
+  <div class="daisyui-icon-widget__results" data-icon-results></div>
+</div>

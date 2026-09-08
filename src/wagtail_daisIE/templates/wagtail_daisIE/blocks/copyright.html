@@ -1,0 +1,5 @@
+{% if audience_allowed %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+    &copy; {% now "Y" %} {{ value.text|default:"" }}
+  </div>
+{% endif %}

@@ -1,0 +1,5 @@
+{% if audience_allowed %}
+  <span class="{% if block_css %}{{ block_css }}{% endif %}">
+    {{ value.text }}
+  </span>
+{% endif %}

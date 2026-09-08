@@ -1,0 +1,8 @@
+{% load i18n %}
+<div class="daisyui-number-slider-widget" id="{{ widget.attrs.id }}">
+    <div class="daisyui-slider-row">
+        <input type="range" class="daisyui-slider-range" min="{{ widget.min }}" max="{{ widget.max }}" step="{{ widget.step }}" value="{{ widget.current }}">
+        <input type="number" name="{{ widget.name }}" class="daisyui-number-input" min="{{ widget.min }}" max="{{ widget.max }}" step="{{ widget.step }}" value="{{ widget.value }}">
+        <span class="daisyui-slider-value" data-suffix="{{ widget.suffix }}">{{ widget.label }}</span>
+    </div>
+</div>

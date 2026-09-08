@@ -1,0 +1,38 @@
+{% load i18n wagtailadmin_tags %}
+<div class="daisyui-align-widget" id="{{ widget.attrs.id }}">
+{% for tile in widget.tiles %}
+    <label class="daisyui-align-tile{% if tile.selected %} daisyui-align-tile--active{% endif %}" title="{{ tile.label }}">
+        <input type="radio" name="{{ widget.name }}" value="{{ tile.value }}"
+               {% if tile.selected %}checked{% endif %}>
+        <svg viewBox="0 0 20 20" class="daisyui-align-icon" aria-hidden="true">
+            {% if tile.value == "text-left" %}
+                <line x1="2" y1="4" x2="18" y2="4"/>
+                <line x1="2" y1="8" x2="16" y2="8"/>
+                <line x1="2" y1="12" x2="18" y2="12"/>
+                <line x1="2" y1="16" x2="12" y2="16"/>
+            {% elif tile.value == "text-center" %}
+                <line x1="4" y1="4" x2="16" y2="4"/>
+                <line x1="6" y1="8" x2="14" y2="8"/>
+                <line x1="4" y1="12" x2="16" y2="12"/>
+                <line x1="7" y1="16" x2="13" y2="16"/>
+            {% elif tile.value == "text-right" %}
+                <line x1="2" y1="4" x2="18" y2="4"/>
+                <line x1="4" y1="8" x2="18" y2="8"/>
+                <line x1="2" y1="12" x2="18" y2="12"/>
+                <line x1="8" y1="16" x2="18" y2="16"/>
+            {% elif tile.value == "text-justify" %}
+                <line x1="2" y1="4" x2="18" y2="4"/>
+                <line x1="2" y1="8" x2="18" y2="8"/>
+                <line x1="2" y1="12" x2="18" y2="12"/>
+                <line x1="2" y1="16" x2="18" y2="16"/>
+            {% else %}
+                <line x1="4" y1="4" x2="4" y2="16"/>
+                <line x1="4" y1="4" x2="12" y2="4"/>
+                <line x1="4" y1="8" x2="14" y2="8"/>
+                <line x1="4" y1="12" x2="10" y2="12"/>
+                <line x1="4" y1="16" x2="12" y2="16"/>
+            {% endif %}
+        </svg>
+    </label>
+{% endfor %}
+</div>

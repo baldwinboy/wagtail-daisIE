@@ -1,0 +1,16 @@
+{% load i18n wagtailadmin_tags %}
+<div class="daisyui-slider-widget" id="{{ widget.attrs.id }}">
+    <select name="{{ widget.name }}" class="daisyui-slider-select w-sr-only" aria-label="{{ widget.attrs.aria_label|default:'' }}">
+        {% for group in widget.opt_groups %}
+            <optgroup label="{{ group.label }}">
+            {% for option in group.options %}
+                <option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+            </optgroup>
+        {% endfor %}
+    </select>
+    <div class="daisyui-slider-row">
+        <input type="range" class="daisyui-slider-range" min="0" max="{{ widget.slider_max }}" step="1" value="{{ widget.slider_index }}">
+        <span class="daisyui-slider-value">{{ widget.selected_label }}</span>
+    </div>
+</div>

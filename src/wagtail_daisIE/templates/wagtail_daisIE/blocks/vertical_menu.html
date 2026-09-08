@@ -1,0 +1,7 @@
+{% load wagtailcore_tags %}
+<ul class="menu menu-vertical {{ block_css }} {{ menu_css }}"
+    {% if menu_theme %}data-theme="{{ menu_theme.name }}"{% endif %}>
+  {% for item in menu_items %}
+    <li>{% include_block item %}</li>
+  {% endfor %}
+</ul>

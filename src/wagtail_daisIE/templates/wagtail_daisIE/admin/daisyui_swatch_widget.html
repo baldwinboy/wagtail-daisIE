@@ -1,0 +1,25 @@
+{% load i18n wagtailadmin_tags %}
+<div class="daisyui-swatch-widget" id="{{ widget.attrs.id }}"
+     data-daisyui-coloris-options="{{ widget.coloris_options_json }}"
+     data-daisyui-coloris-parent="{{ widget.attrs.id }}">
+{% for tile in widget.tiles %}
+    <label class="daisyui-swatch-tile{% if tile.selected %} daisyui-swatch-tile--active{% endif %}">
+        <input type="radio" name="{{ widget.name }}" value="{{ tile.value }}"
+               class="daisyui-swatch-radio{% if tile.is_custom %} daisyui-swatch-radio--custom{% endif %}"
+               {% if tile.is_custom %}data-prefix="{{ widget.prefix }}"{% endif %}
+               {% if tile.is_raw %}data-raw="true"{% endif %}
+               {% if tile.selected %}checked{% endif %}>
+{% if tile.is_custom %}
+        <span class="daisyui-swatch-chip daisyui-swatch-chip--custom"
+              style="background-color: {{ tile.color }};"></span>
+        <input type="text"
+               class="daisyui-coloris-input"
+               value="{{ widget.custom_color }}"
+               placeholder="{% trans 'hex' %}">
+{% else %}
+        <span class="daisyui-swatch-chip" style="background-color: {{ tile.color }};"></span>
+{% endif %}
+        <span class="daisyui-swatch-label">{{ tile.label }}</span>
+    </label>
+{% endfor %}
+</div>

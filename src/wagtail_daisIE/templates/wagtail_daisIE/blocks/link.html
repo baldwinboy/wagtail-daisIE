@@ -1,0 +1,7 @@
+{% load wagtail_daisIE_tags %}
+{% if audience_allowed %}
+  <a href="{{ link_url }}"
+     class="link{% if block_css %} {{ block_css }}{% endif %}"{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
+    {% if value.icon %}{% daisyui_icon value.icon %}{% endif %}{{ value.text|default:"Link" }}
+  </a>
+{% endif %}

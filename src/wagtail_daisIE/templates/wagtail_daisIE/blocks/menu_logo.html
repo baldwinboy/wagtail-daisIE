@@ -1,0 +1,7 @@
+{% load wagtailimages_tags %}
+{% image value.image width-200 as img %}
+<img
+    src="{{ img.url }}"
+    alt="{% firstof value.alt fallback_alt "" %}"
+    class="{% if block_css %}{{ block_css }}{% endif %}"
+/>

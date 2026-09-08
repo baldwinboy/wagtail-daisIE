@@ -1,20 +1,22 @@
 {% load wagtailimages_tags %}
 
-<div class="picture-card">
-    <a class="picture-card__link" href="{{ page.url }}">
-        <figure class="picture-card__image">
-            {% if portrait %}
-                {% picture page.image format-{avif,webp,jpeg} fill-{250x320-c100,433x487-c100} preserve-svg sizes="(max-width: 768px)125px,400px" loading="lazy" %}
-            {% else %}
-                {% picture page.image format-{avif,webp,jpeg} fill-{300x200-c75,645x480-c75} preserve-svg sizes="(max-width: 768px)150px,30vw" loading="lazy" %}
-            {% endif %}
-            <div class="picture-card__contents">
+<div class="card overflow-hidden bg-base-100 shadow">
+    <a class="block h-full" href="{{ page.url }}">
+        {% if page.image %}
+            <figure>
                 {% if portrait %}
-                    <h3 class="picture-card__title">{{ page.title }}</h3>
+                    {% picture page.image format-{avif,webp,jpeg} fill-{250x320-c100,433x487-c100} preserve-svg sizes="(max-width: 768px)125px,400px" loading="lazy" class="h-full w-full object-cover" %}
                 {% else %}
-                    <h2 class="picture-card__title">{{ page.title }}</h2>
+                    {% picture page.image format-{avif,webp,jpeg} fill-{300x200-c75,645x480-c75} preserve-svg sizes="(max-width: 768px)150px,30vw" loading="lazy" class="h-full w-full object-cover" %}
                 {% endif %}
-            </div>
-        </figure>
+            </figure>
+        {% endif %}
+        <div class="card-body">
+            {% if portrait %}
+                <h3 class="card-title text-base">{{ page.title }}</h3>
+            {% else %}
+                <h2 class="card-title text-base">{{ page.title }}</h2>
+            {% endif %}
+        </div>
     </a>
 </div>

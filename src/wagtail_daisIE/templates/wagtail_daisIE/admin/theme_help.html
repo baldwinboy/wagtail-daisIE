@@ -1,0 +1,61 @@
+{% load i18n wagtailadmin_tags %}
+<fieldset>
+    <div class="help-block help-info">
+        {% icon name="help" %}
+        <h3>{% trans "What is a DaisyUI theme?" %}</h3>
+        <p>
+            {% blocktrans trimmed %}
+                A theme is the shared look and feel of your site: its colours,
+                rounded corners, sizing, effects, and background. When a page
+                uses this theme, everything on that page picks up these settings
+                automatically.
+            {% endblocktrans %}
+        </p>
+        <ul>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Colors</strong> — the palette used by buttons,
+                    alerts, links, and other components.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Border radii</strong> — how rounded boxes, fields,
+                    and selectors are.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Sizes</strong> — base sizing for fields, selectors,
+                    and border widths.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Effects</strong> — optional depth (3D) and noise
+                    texture.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Background</strong> — an optional page background
+                    made from colours, gradients, or images.
+                {% endblocktrans %}
+            </li>
+        </ul>
+        <p>
+            {% blocktrans trimmed %}
+                <strong>Set as default</strong> makes this theme the one used by
+                any page that does not choose its own.
+                <strong>Set as default dark theme</strong> does the same for
+                visitors whose device is in dark mode.
+            {% endblocktrans %}
+        </p>
+        <p>
+            {% blocktrans trimmed %}
+                Use the Preview button to check how the theme looks before
+                saving. Changes affect every page that uses this theme.
+            {% endblocktrans %}
+        </p>
+    </div>
+</fieldset>

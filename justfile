@@ -6,14 +6,19 @@
 help:
     just --list --list-prefix 'just '
 
-# Remove all the Python and Node.js cache files.
+# Remove all the Python and Node.js cache files
 clean-pyc:
     find . -name '*.pyc' -exec rm -f {} +
     find . -name '*.pyo' -exec rm -f {} +
     find . -name '*~' -exec rm -f {} +
 
+# Remove all the database files.
+clean-db:
+    find . -type f \( -name '*.db' -o -name '*.sqlite3' -o -name '*.sqlite' -o -name '*.sqlite3-journal' \) -not -path './.venv/*' -not -path './node_modules/*' -delete
+    rm -f demo/db.sqlite3 test_wagtail_daisIE.db
+
 # Install the dependencies.
-install: clean-pyc
+install: clean-db clean-pyc
     uv sync --dev
     npm ci
 
@@ -67,6 +72,10 @@ migrate:
     uv run ./demo/manage.py makemigrations
     uv run ./demo/manage.py migrate
 
+# Compile the global CSS for the demo site.
+compile-global-css:
+    npm run compile-global-css
+
 # Collect static assets for development server
 collectstatic:
     yes yes | uv run ./demo/manage.py collectstatic
@@ -84,4 +93,4 @@ shell:
     uv run ./demo/manage.py shell
 
 # Run the demo application.
-demo: migrate load_initial_data collectstatic runserver
+demo: clean-db migrate load_initial_data collectstatic runserver

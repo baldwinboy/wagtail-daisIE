@@ -1,6 +1,10 @@
 from django import forms
 
-from .widgets import DaisyUISize, DaisyUISizeUnitChoices, DaisyUISizeWidget
+from wagtail_daisIE.widgets import (
+    DaisyUISize,
+    DaisyUISizeUnitChoices,
+    DaisyUISizeWidget,
+)
 
 
 class DaisyUISizeFormField(forms.MultiValueField):

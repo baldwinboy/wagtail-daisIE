@@ -1,0 +1,11 @@
+{% load i18n %}
+{% if audience_allowed %}
+  <form action="{{ value.action }}" method="{{ value.method }}" class="join w-full {% if block_css %}{{ block_css }}{% endif %}" role="form">
+    <label for="newsletter-{{ block.id }}" class="sr-only">{{ value.placeholder }}</label>
+    <input id="newsletter-{{ block.id }}" type="email" name="{{ value.email_field }}" placeholder="{{ value.placeholder }}" required class="input input-bordered join-item w-full" />
+    <button type="submit" class="btn btn-primary join-item">{{ value.button_label }}</button>
+  </form>
+  {% if value.success_message %}
+    <p class="mt-2 text-sm" role="status">{{ value.success_message }}</p>
+  {% endif %}
+{% endif %}

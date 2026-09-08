@@ -1,30 +1,32 @@
 # Wagtail DaisyUI Interface Editor
 
-Create reusable [DaisyUI](https://daisyui.com/) themes through Wagtail and apply them to pages.
+<p>
+  <a href="https://github.com/baldwinboy/wagtail-daisIE/actions/workflows/test.yml?branch=main">
+    <img src="https://github.com/baldwinboy/wagtail-daisIE/actions/workflows/test.yml/badge.svg?branch=main" alt="CI — lint &amp; tests" />
+  </a>
+</p>
+
+Create reusable [DaisyUI](https://daisyui.com/) themes through Wagtail, apply
+them to pages, and build navigation menus from the same block components.
 
 ## Links
 
 - [Documentation](https://github.com/baldwinboy/wagtail-daisIE/blob/main/README.md)
+- [Developer docs](docs/architecture.md)
 - [Changelog](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CHANGELOG.md)
 - [Contributing](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CONTRIBUTING.md)
-- [Discussions](https://github.com/baldwinboy/wagtail-daisIE/discussions)
-- [Security](https://github.com/baldwinboy/wagtail-daisIE/security)
 
 ## Supported versions
 
-This package supports Wagtail 7.0 and up, and all [compatible versions of Python and Django](https://docs.wagtail.org/en/stable/releases/upgrading.html#compatible-django-python-versions).
+This package supports Wagtail 7.3 and up, and all [compatible versions of Python and Django](https://docs.wagtail.org/en/stable/releases/upgrading.html#compatible-django-python-versions).
 
 ## Installation
-
-Pick the command for your preferred package installer:
 
 ```bash
 uv add wagtail-daisIE
 poetry add wagtail-daisIE
 pip install wagtail-daisIE
 ```
-
-## Quick start
 
 ### 1. Add to `INSTALLED_APPS`
 
@@ -44,151 +46,218 @@ INSTALLED_APPS = [
 python manage.py migrate
 ```
 
-### 3. Create a theme
+### 3. Build the global stylesheet
 
-In the Wagtail admin, navigate to Snippets > DaisyUI Themes and create a new theme. Configure:
+The package ships a compiled Tailwind v4 + DaisyUI stylesheet. If you change
+`source.css`, rebuild it:
 
-- **Name**: A unique identifier (e.g. `my-theme`)
-- **Set as default**: Check this to make it the fallback theme
-- **Color scheme**: `light`, `dark`, or `normal`
-- **Colors**: Primary, secondary, accent, neutral, base surfaces, semantic colors
-- **Border radii**: Box, field, selector
-- **Sizes**: Field, selector, border width
-- **Effects**: Depth (3D) and noise toggle
+```bash
+npm run compile-global-css
+```
 
-### 4. Use the page mixin
+## Quick start
 
-Add `DaisyUIThemePageMixin` to any Wagtail Page model:
+### Create a theme
+
+In the Wagtail admin, open **Design → Themes** and create a theme. Configure:
+
+- **Name** — a unique identifier (used as the `data-theme` value).
+- **Set as default** / **Set as default dark theme** — fallbacks.
+- **Color scheme** — `light`, `dark`, or `normal`.
+- **Colors** — primary, secondary, accent, neutral, base surfaces, semantic colors.
+- **Border radii**, **Sizes**, **Effects** — DaisyUI design tokens.
+- **Background** — solid, gradient, or image layers.
+- **Fonts** — font families by role (`heading`, `body`, `subheading`, `code`, or
+  custom) with fallbacks, base font size and line height.
+- **Font CDNs** — stylesheet links for webfonts (e.g. Google Fonts).
+
+### Use the page mixin
+
+`StyledPageMixin` adds a theme, per-page background layers, and a content body
+`StreamField` to any Wagtail page:
 
 ```python
-from wagtail.models import Page
-from wagtail.admin.panels import FieldPanel
-from wagtail_daisIE.models import DaisyUIThemePageMixin
+from wagtail_daisIE.pages import StyledPageMixin
 
 
-class MyPage(DaisyUIThemePageMixin, Page):
-    body = RichTextField()
-
-    content_panels = Page.content_panels + [
-        FieldPanel("body"),
-        FieldPanel("daisyui_theme"),  # Add the theme selector
+class MyPage(StyledPageMixin):
+    content_panels = StyledPageMixin.content_panels + [
+        # Add any custom panels here
     ]
 ```
 
 This mixin adds:
 
-- A `daisyui_theme` ForeignKey field to `DaisyUITheme`
-- Automatic injection of `daisyui_theme` into the page template context
-- A `get_daisyui_theme()` method that returns the selected theme (or the default theme if none is selected)
+- `page_theme` — a `ForeignKey(DaisyUITheme)` (defaults to the default theme).
+- `page_background` — background layers that override the theme for this page.
+- `body` — a `StreamField` of content blocks.
+- `get_daisyui_theme()` — returns `page_theme` or the default theme.
+- Context variables `daisyui_theme` and `daisyui_page_background_css`.
 
-### 5. Render the theme in your templates
-
-Load the template tags and render the theme CSS in `<head>`:
+### Render the theme in your templates
 
 ```html
 {% load wagtailcore_tags wagtail_daisIE_tags %}
 <!DOCTYPE html>
 <html{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
     <head>
-        ...
-        {% daisyui_theme_css daisyui_theme %}
+        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_theme_full_css daisyui_theme %}
+        {% daisyui_icon_assets %}
     </head>
-    <body>
+    <body{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
         {% block content %}{% endblock %}
     </body>
 </html>
 ```
 
-The `{% daisyui_theme_css %}` tag outputs an inline `<style>` block with all DaisyUI CSS custom properties for the theme.
+`{% daisyui_global_css %}` returns the URL of the bundled Tailwind/DaisyUI
+stylesheet; remove conflicting stylesheets (Bootstrap, other Tailwind builds).
 
-Alternatively, use `{% daisyui_theme_inline_css %}` to get the raw CSS string for custom placement:
+`{% daisyui_theme_full_css theme %}` emits the theme's color, radius, size,
+effect, background, font, and font-CDN CSS. Finer-grained tags are listed below.
 
-```html
-<style>
-{% daisyui_theme_inline_css daisyui_theme %}
-</style>
+## Menus
+
+`DaisyUIMenu` is a reusable snippet rendered with the `{% daisyui_menu %}` tag.
+Menus reuse the same blocks as page bodies, so content components behave
+identically in both contexts.
+
+```django
+{% load wagtail_daisIE_tags %}
+{% daisyui_menu "Main navigation" %}
+{% daisyui_menu "Footer" css_class="bg-base-200" %}
 ```
 
-### 6. Load DaisyUI and Tailwind CSS
+Each menu has:
 
-Add DaisyUI and Tailwind CSS to your base template. For a quick setup, use the CDN:
+- **Layout** — `navbar`, `footer`, `sidebar`, `horizontal`, or `vertical`.
+- **Branding** — a logo and/or wordmark, optionally wrapped in one destination
+  link (page, URL, document, email, or phone).
+- **Search** — an optional search box with configurable URL, parameter, and
+  placeholder.
+- **Theme** — a `menu_theme` (falls back to the default theme) plus an optional
+  light/dark toggle.
+- **Item defaults** (`item_design`) — default typography, background, spacing,
+  size, border and box styles applied to every item. Each item's own settings
+  are appended on top, so per-block design still wins.
+- **Menu items** — links, buttons, search boxes, inline cards, accordions, link
+  lists, headers, text, and newsletters.
 
-```html
-<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-```
+## Blocks and design
 
-Or use [Django Tailwind CLI](https://django-tailwind-cli.readthedocs.io/latest/):
+Design primitives live in `wagtail_daisIE.base_blocks` and are composed into the
+public blocks in `wagtail_daisIE.blocks`. Every themed block resolves a
+`block_css` class string from its design settings, merging any inherited
+`block_css` from its parent context. This is what lets menu-level `item_design`
+defaults cascade into items without any menu-specific block code.
+
+Any block with a `typography` group (a `TypographyBlock`) exposes a **Font
+family** picker populated from the current theme's font-family roles. The stored
+value is the role (or custom name) and renders as `font-<role>`.
+
+## Audience restrictions
+
+Content blocks expose an `audience` field so editors can restrict content.
+Audiences are declared in settings and evaluated at render time.
 
 ```python
-# settings.py
-STATICFILES_DIRS = [BASE_DIR / "assets"]
-# Custom CSS paths
-TAILWIND_CLI_SRC_CSS = "src/styles/main.css"
-TAILWIND_CLI_DIST_CSS = "css/app.css"
-
-# Enable DaisyUI
-TAILWIND_CLI_USE_DAISY_UI = True
-
-# Use an already-installed Tailwind binary (e.g. `brew install tailwindcss`)
-TAILWIND_CLI_USE_SYSTEM_BINARY = True
-
-# Auto-inject @source directives for editable-installed external apps (opt-in)
-TAILWIND_CLI_AUTO_SOURCE_EXTERNAL_APPS = True
+# mysite/settings/base.py
+WAGTAIL_DAISIE_AUDIENCE_RULES = {
+    "adults": {"label": "Adults", "rule": "home.audience.is_adult"},
+    "verified": {"label": "Verified users", "rule": "home.audience.is_verified"},
+}
 ```
 
-Or install via npm and build with your own pipeline:
-
-```bash
-npm install daisyui @tailwindcss/cli tailwindcss
+```python
+# mysite/home/audience.py
+def is_adult(request):
+    user = getattr(request, "user", None)
+    return bool(user and user.is_authenticated and getattr(user, "age", 0) >= 18)
 ```
 
-## API reference
+Each rule is a dotted path to a callable invoked as `rule(request)` returning a
+boolean. Selecting multiple audiences is a logical **OR**. If
+`WAGTAIL_DAISIE_AUDIENCE_RULES` is empty, the audience field is hidden.
 
-### `DaisyUIThemePageMixin`
+## Icons
 
-An abstract Django model mixin for Wagtail Pages.
+Icons are stored as `"<prefix>:<name>"` (e.g. `mdi:home`) or as raw CSS classes
+(e.g. `fa-solid fa-home`). Four providers ship with the package:
 
-**Fields:**
+| Provider | Prefix example | Notes |
+|----------|----------------|-------|
+| `wagtail` | `wagtail:home` | Built-in Wagtail admin icons, rendered inline. |
+| `iconify` | `mdi:home` | On-demand icons from Iconify (cached server-side). |
+| `font` | `fa6-solid:house` | Any webfont rendered via CSS classes. |
+| `custom` | `brand:mark` | A project-supplied IconifyJSON or name-to-SVG manifest. |
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `daisyui_theme` | `ForeignKey(DaisyUITheme)` | The selected theme, or `None` |
+Icon sources are managed under **Design → Icon Sources**. Render an icon with
+`{% daisyui_icon value %}` and include provider assets with
+`{% daisyui_icon_assets %}` (or the `icon_assets` context processor).
 
-**Methods:**
+```python
+from wagtail import hooks
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `get_daisyui_theme()` | `DaisyUITheme \| None` | Returns the selected theme, or the default theme if none was selected |
 
-**Context:**
+@hooks.register("register_icon_providers")
+def register_icon_providers(providers):
+    return providers + [MyIconProvider()]
+```
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `daisyui_theme` | `DaisyUITheme \| None` | Available in all page templates |
-
-### Template tags
+## Template tags
 
 | Tag | Type | Output |
 |-----|------|--------|
-| `{% daisyui_theme_css theme %}` | Inclusion tag | Inline `<style>` block with DaisyUI CSS custom properties |
-| `{% daisyui_theme_inline_css theme %}` | Simple tag | Raw CSS string for custom placement |
-
-### `DaisyUITheme`
-
-A snippet model representing a DaisyUI theme. Accessible via Snippets in the Wagtail admin.
-
-**Properties:** name, default, prefers_dark, color_scheme, colors, radii, sizes, effects.
+| `{% daisyui_global_css %}` | Simple | URL of the bundled Tailwind/DaisyUI stylesheet |
+| `{% daisyui_theme_css theme %}` | Inclusion | Inline `<style>` with color/radius/size/effect variables |
+| `{% daisyui_theme_inline_css theme %}` | Simple | Raw theme CSS string |
+| `{% daisyui_theme_background_css theme %}` | Inclusion | Inline `<style>` for background layers |
+| `{% daisyui_theme_background_inline_css theme %}` | Simple | Raw background CSS string |
+| `{% daisyui_theme_font_css theme %}` | Inclusion | Inline `<style>` with `--font-*` variables |
+| `{% daisyui_theme_font_cdns theme %}` | Inclusion | `<link>` tags for font CDNs |
+| `{% daisyui_theme_full_css theme %}` | Inclusion | Font CDNs + colors + background + fonts |
+| `{% daisyui_theme_full_inline_css theme %}` | Simple | Raw combined CSS string |
+| `{% daisyui_menu "Name" %}` | Inclusion | Renders a `DaisyUIMenu` snippet |
+| `{% daisyui_icon value %}` | Simple | Renders a stored icon value |
+| `{% daisyui_icon_assets %}` | Inclusion | Provider scripts/styles for `<head>` |
+| `{{ item\|is_active:request }}` | Filter | Whether a menu item points at the current path |
 
 ## Settings
 
-No Django settings are required. The package works out of the box once added to `INSTALLED_APPS`.
+No Django settings are required. The following are optional:
+
+```python
+# settings.py
+WAGTAIL_DAISIE_ICONS = {
+    "iconify": {
+        "api": "https://api.iconify.design",  # or a self-hosted API
+        "mode": "cached-svg",  # or "component"
+        "collections": ["mdi", "fa6-solid", "lucide"],
+        "timeout": 3,
+    },
+    "cache_timeout": 604800,
+}
+
+WAGTAIL_DAISIE_AUDIENCE_RULES = {
+    "adults": {"label": "Adults", "rule": "home.audience.is_adult"},
+}
+```
+
+## Demo
+
+The `demo/` project is a DaisyUI-styled Wagtail site. Run it with `just demo`
+(migrate, load data, collect static, runserver) or load only the data with
+`just load_initial_data`.
+
+The loader reads `demo/fixtures/content.json` and
+`demo/fixtures/media/original_images/`, then seeds themes and menus
+programmatically. It is idempotent (use `--force` to recreate content). See
+[`demo/fixtures/README.md`](demo/fixtures/README.md) for the fixture schema.
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and contribution workflow.
-
-Key commands (via `just`):
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/](docs/architecture.md).
 
 ```bash
 just install     # Install Python and Node.js dependencies

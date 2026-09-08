@@ -1,0 +1,6 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+    {{ value.text|richtext }}
+  </div>
+{% endif %}

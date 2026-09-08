@@ -23,3 +23,5 @@ __pycache__/
 /test-media
 
 demo/media
+demo/static
+demo/**/migrations/*.py

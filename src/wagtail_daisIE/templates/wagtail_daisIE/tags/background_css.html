@@ -1,0 +1,14 @@
+{% with bg=theme.background.first %}
+    {% if bg %}
+        {% with css=bg.get_effective_background %}
+            {% if css %}
+                <style>
+                :root:has(input.theme-controller[value="{{ theme.name }}"]:checked),
+                [data-theme="{{ theme.name }}"] {
+                    background: {{ css|safe }};
+                }
+                </style>
+            {% endif %}
+        {% endwith %}
+    {% endif %}
+{% endwith %}

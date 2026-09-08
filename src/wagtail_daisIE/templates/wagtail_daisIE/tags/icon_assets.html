@@ -1,0 +1,1 @@
+{% for asset in assets %}{% if asset.type == "css" %}<link rel="stylesheet" href="{{ asset.url }}">{% elif asset.type == "script" %}<script src="{{ asset.url }}"></script>{% endif %}{% endfor %}

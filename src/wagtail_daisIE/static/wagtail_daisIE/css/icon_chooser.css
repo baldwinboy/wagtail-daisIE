@@ -1,0 +1,105 @@
+.daisyui-icon-widget {
+  --daisyui-icon-gap: 0.5rem;
+  --daisyui-icon-preview-size: 2.25rem;
+  --daisyui-icon-font-size: 1.25rem;
+  --daisyui-icon-tile-gap: 0.25rem;
+  --daisyui-icon-glyph-size: 1.5em;
+  --daisyui-icon-results-max-height: 16rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--daisyui-icon-gap);
+  max-width: 40rem;
+}
+
+.daisyui-icon-widget__row {
+  display: flex;
+  align-items: center;
+  gap: var(--daisyui-icon-gap);
+}
+
+.daisyui-icon-widget__preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--daisyui-icon-preview-size);
+  height: var(--daisyui-icon-preview-size);
+  border: 1px solid var(--w-color-border-field-default);
+  border-radius: 0.25rem;
+  background: var(--w-color-surface-field);
+  font-size: var(--daisyui-icon-font-size);
+}
+
+.daisyui-icon-widget__preview svg,
+.daisyui-icon-widget__preview .daisyui-icon {
+  width: 1em;
+  height: 1em;
+}
+
+.daisyui-icon-widget__input {
+  flex: 1 1 auto;
+}
+
+.daisyui-icon-widget__controls {
+  display: flex;
+  gap: var(--daisyui-icon-gap);
+}
+
+.daisyui-icon-widget__source {
+  flex: 0 0 auto;
+  max-width: 12rem;
+}
+
+.daisyui-icon-widget__search {
+  flex: 1 1 auto;
+}
+
+.daisyui-icon-widget__results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
+  gap: var(--daisyui-icon-tile-gap);
+  max-height: var(--daisyui-icon-results-max-height);
+  overflow-y: auto;
+  padding: var(--daisyui-icon-tile-gap);
+  border: 1px solid var(--w-color-border-field-default);
+  border-radius: 0.25rem;
+  background: var(--w-color-surface-field);
+}
+
+.daisyui-icon-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: var(--daisyui-icon-tile-gap);
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--daisyui-icon-font-size);
+}
+
+.daisyui-icon-tile:hover {
+  background: var(--w-color-surface-menu-item-active);
+}
+
+.daisyui-icon-tile.is-selected {
+  border-color: var(--w-color-primary);
+  background: var(--w-color-surface-menu-item-active);
+}
+
+.daisyui-icon-tile__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--daisyui-icon-glyph-size);
+  height: var(--daisyui-icon-glyph-size);
+  overflow: hidden;
+}
+
+.daisyui-icon-tile__glyph svg,
+.daisyui-icon-tile__glyph .daisyui-icon {
+  width: var(--daisyui-icon-glyph-size);
+  height: var(--daisyui-icon-glyph-size);
+}

@@ -35,6 +35,7 @@ just format-client     # Format the client code with Prettier.
 just format-server     # Format the server code with uv.
 just help              # List all the justfile recipes.
 just install           # Install the dependencies.
+just compile-global-css # Compile the global CSS.
 just lint              # Run all linters.
 just lint-client       # Lint the client code with Prettier.
 just lint-server       # Lint the server code with uv.
@@ -67,9 +68,9 @@ Create a pull request with your changes so that it can be code reviewed by a mai
 
 ## Releases
 
-On the `main` branch:
-
-1. Update the version number in `pyproject.toml`.
-2. Update the [CHANGELOG](CHANGELOG.md) and [ROADMAP](ROADMAP.md).
-3. Commit and tag the release. (`git commit -m "Release v0.1.1" & git tag -a v0.1.1 -m "Release v0.1.1" && git push --tags`)
-4. Create a GitHub release from the tag. The CI will automatically build and publish the package to PyPI.
+Releases are automated with [release-please](https://github.com/googleapis/release-please)
+(`.github/workflows/publish.yml`). Merge release-please pull requests on `main`
+to update the version in `pyproject.toml` and `CHANGELOG.md`; publishing to PyPI
+is then handled by the workflow. Commit messages should follow
+[Conventional Commits](https://www.conventionalcommits.org/) so release-please
+can classify changes.

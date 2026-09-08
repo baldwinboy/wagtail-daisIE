@@ -1,0 +1,8 @@
+{% load i18n wagtailcore_tags %}
+<footer class="footer mx-auto w-full max-w-6xl px-4 sm:footer-horizontal {{ block_css }} {{ menu_css }} p-10"
+        {% if menu_theme %}data-theme="{{ menu_theme.name }}"{% endif %}>
+  {% if menu.branding %}{% include_block menu.branding %}{% endif %}
+  {% for item in menu_items %}
+    {% include_block item %}
+  {% endfor %}
+</footer>

@@ -1,0 +1,58 @@
+{% load i18n wagtailadmin_tags %}
+<fieldset>
+    <div class="help-block help-info">
+        {% icon name="help" %}
+        <h3>{% trans "What is a DaisyUI menu?" %}</h3>
+        <p>
+            {% blocktrans trimmed %}
+                A menu is a reusable set of navigation components that can be
+                dropped into any page. Build the items here once, then render
+                the menu with the <code>daisyui_menu</code> template tag or the
+                "Menu" block.
+            {% endblocktrans %}
+        </p>
+        <ul>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Layout</strong> — whether the menu renders as a
+                    top navbar, footer, sidebar drawer, or a standalone
+                    horizontal/vertical list.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Brand</strong> — an optional logo and site name
+                    shown at the start of a navbar.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Search</strong> — optionally show a search box
+                    pointing at your site's search URL.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Theme toggle</strong> — optionally show a
+                    light/dark switch that applies another DaisyUI theme.
+                {% endblocktrans %}
+            </li>
+            <li>
+                {% blocktrans trimmed %}
+                    <strong>Menu items</strong> — add <em>Link</em>,
+                    <em>Button</em>, <em>Search box</em>, <em>Inline card</em>
+                    and <em>Newsletter</em> components, or an
+                    <em>Accordion</em> that nests sections, links and featured
+                    cards. <em>Section</em> and <em>Text</em> blocks are handy
+                    for footer columns and legal text.
+                {% endblocktrans %}
+            </li>
+        </ul>
+        <p>
+            {% blocktrans trimmed %}
+                Use the <strong>Settings</strong> tab to control the container
+                colours and sizing.
+            {% endblocktrans %}
+        </p>
+    </div>
+</fieldset>

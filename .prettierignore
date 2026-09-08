@@ -1,4 +1,6 @@
 demo
 **/migrations
+**/global.css
+htmlcov
 .release-please-manifest.json
 release-please-config.json

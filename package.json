@@ -3,15 +3,21 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "devDependencies": {
-    "@wagtail/stylelint-config-wagtail": "^1.0.1",
-    "prettier": "^3.8.1",
-    "stylelint": "^16.26.1"
-  },
   "scripts": {
     "lint": "npm run lint:format && npm run lint:css",
     "lint:format": "prettier --check \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\"",
     "lint:css": "stylelint --allow-empty-input \"**/?(.)*.{css,scss}\"",
-    "format": "prettier --write \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\""
+    "format": "prettier --write \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\"",
+    "compile-global-css": "npx @tailwindcss/cli -i src/wagtail_daisIE/static/wagtail_daisIE/css/source.css -o src/wagtail_daisIE/static/wagtail_daisIE/css/global.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@wagtail/stylelint-config-wagtail": "^1.0.1",
+    "daisyui": "^5.7.34",
+    "postcss": "^8.5.28",
+    "prettier": "^3.8.1",
+    "stylelint": "^16.26.1",
+    "tailwindcss": "^4.3.3"
   }
 }

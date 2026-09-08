@@ -2,35 +2,30 @@
 {% load wagtailimages_tags %}
 
 {% block content %}
-
     {% include "base/include/header-blog.html" %}
 
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8">
-                <div class="blog__meta">
-                    {% if page.authors %}
-                        <div class="blog__avatars">
-                            {% for author in page.authors %}
-                                <div class="blog__author">{% picture author.image format-{avif,webp,jpeg} fill-50x50-c100 class="blog__avatar" %}
-                                    {{ author.first_name }} {{ author.last_name }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-
-                {{ page.body }}
-
-                {% if page.get_tags %}
-                    <p class="blog__tag-introduction">Find more blog posts with similar tags</p>
-                    <div class="blog-tags blog-tags--condensed">
-                        <span class="u-sr-only">Filter blog posts by tag</span>
-                        {% for tag in page.get_tags %}
-                            <a href="{{ tag.url }}" class="blog-tags__pill">{{ tag }}</a>
-                        {% endfor %}
+    <article class="prose mx-auto max-w-3xl">
+        {% if page.authors %}
+            <div class="not-prose mb-6 flex flex-wrap items-center gap-3">
+                {% for author in page.authors %}
+                    <div class="flex items-center gap-2">
+                        {% picture author.image format-{avif,webp,jpeg} fill-40x40-c100 class="h-10 w-10 rounded-full" %}
+                        <span class="text-sm">{{ author.first_name }} {{ author.last_name }}</span>
                     </div>
-                {% endif %}
+                {% endfor %}
             </div>
-        </div>
-    </div>
+        {% endif %}
+
+        {{ page.body }}
+
+        {% if page.get_tags %}
+            <p class="not-prose mt-8 text-sm text-base-content/70">Find more blog posts with similar tags</p>
+            <div class="not-prose mt-2 flex flex-wrap gap-2">
+                <span class="sr-only">Filter blog posts by tag</span>
+                {% for tag in page.get_tags %}
+                    <a href="{{ tag.url }}" class="badge badge-outline">{{ tag }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </article>
 {% endblock content %}

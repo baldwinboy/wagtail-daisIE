@@ -1,27 +1,19 @@
 {% load wagtailcore_tags wagtailimages_tags %}
 
-{% if page.image %}
-    <div class="container-fluid hero hero--blog">
-        {% picture page.image format-{avif,webp,jpeg} fill-{800x650,1920x600} preserve-svg sizes="100vw" class="hero-image" alt="" %}
-    </div>
-{% endif %}
-<div class="container">
-    <div class="row">
-        <div class="col-sm-12 col-md-9">
-            <h1 class="index-header__title index-header__title--blog">{{ page.title }}</h1>
-            {% if page.subtitle %}
-                <p>{{ page.subtitle }}</p>
-            {% endif %}
-        </div>
-        <div class="col-sm-12 col-md-7">
-            {% if page.introduction %}
-                <p class="index-header__introduction index-header__introduction--blog">{{ page.introduction }}</p>
-            {% endif %}
-            {% if page.date_published %}
-                <div class="blog__published">
-                    {{ page.date_published }}
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+<header class="mb-8">
+    {% if page.image %}
+        <figure class="mb-6 overflow-hidden rounded-box">
+            {% picture page.image format-{avif,webp,jpeg} fill-{800x500,1600x600} preserve-svg sizes="100vw" class="h-full w-full object-cover" alt="" %}
+        </figure>
+    {% endif %}
+    <h1 class="text-4xl font-bold">{{ page.title }}</h1>
+    {% if page.subtitle %}
+        <p class="mt-2 text-lg text-base-content/80">{{ page.subtitle }}</p>
+    {% endif %}
+    {% if page.introduction %}
+        <p class="mt-2">{{ page.introduction }}</p>
+    {% endif %}
+    {% if page.date_published %}
+        <p class="mt-2 text-sm text-base-content/60">{{ page.date_published }}</p>
+    {% endif %}
+</header>

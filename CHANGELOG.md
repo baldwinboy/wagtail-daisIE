@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-16
+
+### Added
+
+- `base_blocks/` package of reusable design primitives (size, box, background,
+  typography, link, audience, background layers) and a `block_css` pipeline that
+  every themed block shares.
+- `MenuItemDesignBlock` and `DaisyUIMenu.item_design`, letting editors set
+  menu-wide font, colour, background, spacing and size defaults that cascade
+  into every item while per-item settings still apply.
+- `DaisyUIMenu.menu_theme` (falls back to the default theme) and a single
+  `branding` field built from the `MenuBranding` block (logo and/or wordmark,
+  optionally wrapped in a link).
+- `font_family` selection on every `TypographyBlock`, populated from the current
+  theme's font-family roles and rendered as `font-<role>`.
+- Universal icon provider registry (Wagtail, Iconify, webfont, custom), an admin
+  `DaisyUIIconSource` snippet, a `register_icon_providers` hook, and
+  `{% daisyui_icon %}` / `{% daisyui_icon_assets %}` tags.
+- Author docs (`docs/`) and a repo-local `wagtail-daisie` agent skill.
+- Fixture-driven demo loader reading `demo/fixtures/content.json` and media,
+  then seeding themes and menus programmatically.
+
+### Changed
+
+- Menus now reuse the same blocks as page bodies (`MENU_ITEM_BLOCKS` is a curated
+  subset of the public blocks), with semantic DaisyUI navbar/footer/sidebar
+  markup.
+- `LinkDestinationBlock` is a custom `StreamBlock` nested directly inside
+  `AbstractLinkBlock` (required on `LabelLinkBlock`/`InlineLinkBlock`).
+- The demo project renders page `body` StreamFields and the bundled
+  `{% daisyui_global_css %}` stylesheet instead of the Bootstrap UI.
+
+### Removed
+
+- Per-menu `bg_color`/`text_color`/`menu_size` and the branding model fields, in
+  favour of `item_design` and the `branding` block.
+- The legacy menu block classes (`MenuLinkBlock`, `MenuButtonBlock`, ...) and
+  their templates, plus the unused `MenuBlock`.
+
+### Fixed
+
+- The package now imports and migrates cleanly on Django 6 (`CheckConstraint`
+  `condition=`), with corrected block exports and a single squashed migration.
+- Link destinations resolve through `link_url`/`link_is_active` for both
+  `StreamValue` and legacy values.
+- Background-layer blocks build CSS from the bound value rather than the block
+  instance.
+
 ## [0.2.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v0.1.3...v0.2.0) (2026-07-21)
 
 
@@ -49,22 +97,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * add workflow call ([55ec604](https://github.com/baldwinboy/wagtail-daisIE/commit/55ec604d1ba5a6888fd8ab74f5c1cdc5e9523734))
 * exclude migrations from linting ([4552da1](https://github.com/baldwinboy/wagtail-daisIE/commit/4552da1f9c101538faed07e052abb7636db1e62d))
 * remove template check ([012d7a0](https://github.com/baldwinboy/wagtail-daisIE/commit/012d7a0d2bae565b74ab513461d90741be7d9a0b))
-
-## [Unreleased]
-
-## [0.1.0] - YYYY-MM-DD
-
-### Added
-
-- ...
-
-### Changed
-
-- ...
-
-### Removed
-
-- ...
 
 <!-- TEMPLATE - keep below to copy for new releases -->
 <!--

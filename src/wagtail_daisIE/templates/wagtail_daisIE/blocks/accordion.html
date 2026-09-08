@@ -1,0 +1,8 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+    {% for item in value.items %}
+      {% include_block item %}
+    {% endfor %}
+  </div>
+{% endif %}

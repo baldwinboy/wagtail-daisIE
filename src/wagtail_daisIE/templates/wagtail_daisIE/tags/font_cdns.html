@@ -1,0 +1,7 @@
+{% with font_cdns=theme.font_cdns.all %}
+  {% if font_cdns %}
+    {% for cdn in font_cdns %}
+      <link rel="stylesheet" href="{{ cdn.url }}">
+    {% endfor %}
+  {% endif %}
+{% endwith %}

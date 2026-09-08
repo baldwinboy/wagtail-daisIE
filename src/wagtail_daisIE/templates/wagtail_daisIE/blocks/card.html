@@ -1,0 +1,10 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="card {{ block_css|default:"bg-base-100 shadow" }}">
+    <div class="card-body">
+      {% for child in value.content %}
+        {% include_block child %}
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

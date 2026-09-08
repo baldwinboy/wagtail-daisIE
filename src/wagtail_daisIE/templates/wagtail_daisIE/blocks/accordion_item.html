@@ -1,0 +1,12 @@
+{% load wagtailcore_tags %}
+<div class="collapse collapse-arrow {% if not value.collapsed %}collapse-open{% endif %}">
+  <input type="radio" name="accordion-item" {% if not value.collapsed %}checked{% endif %} />
+  <div class="collapse-title text-xl font-medium">
+    {% include_block value.heading %}
+  </div>
+  <div class="collapse-content">
+    {% for child in value.content %}
+      {% include_block child %}
+    {% endfor %}
+  </div>
+</div>

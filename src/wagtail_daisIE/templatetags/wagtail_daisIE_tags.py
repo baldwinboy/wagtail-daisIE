@@ -1,8 +1,14 @@
 from django import template
+from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 
 
 register = template.Library()
+
+
+@register.simple_tag
+def daisyui_global_css():
+    return static("wagtail_daisIE/css/global.css")
 
 
 @register.inclusion_tag("wagtail_daisIE/tags/theme.html")
@@ -66,3 +72,195 @@ def daisyui_theme_inline_css(theme):
     lines.append("}")
 
     return mark_safe("\n".join(lines))  # noqa: S308
+
+
+# ---------------------------------------------------------------------------
+# Blocks extra template tags
+# ---------------------------------------------------------------------------
+
+
+@register.inclusion_tag("wagtail_daisIE/blocks/menu_block.html", takes_context=True)
+def daisyui_menu(context, menu_name, css_class=""):
+    """Render a DaisyUIMenu snippet by name.
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_menu "Main Navigation" css_class="bg-base-200" %}
+    """
+    from ..models import DaisyUIMenu
+
+    request = context.get("request")
+    try:
+        menu = DaisyUIMenu.objects.get(name=menu_name)
+    except DaisyUIMenu.DoesNotExist:
+        return {
+            "menu": None,
+            "menu_items": [],
+            "menu_css": css_class,
+            "request": request,
+            "menu_theme": None,
+            "menu_item_css": "",
+        }
+
+    return {
+        "menu": menu,
+        "menu_items": menu.body,
+        "menu_css": css_class,
+        "request": request,
+        "daisyui_theme": context.get("daisyui_theme"),
+        "menu_theme": menu.get_theme(),
+        "menu_item_css": menu.get_item_css(),
+    }
+
+
+@register.inclusion_tag("wagtail_daisIE/tags/background_css.html")
+def daisyui_theme_background_css(theme):
+    """Render background CSS for a theme.
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_theme_background_css daisyui_theme %}
+    """
+    return {"theme": theme}
+
+
+@register.simple_tag
+def daisyui_theme_background_inline_css(theme):
+    """Return background CSS string for a theme.
+
+    Supports multiple layers: solid colours, gradients with stops, and
+    images with positioning, size, and repeat.
+    """
+    bg = theme.background.first()
+    if not bg:
+        return ""
+
+    css_value = bg.get_effective_background()
+    if not css_value:
+        return ""
+
+    lines = [
+        f'[data-theme="{theme.name}"], :root:has(.theme-controller[value="{theme.name}"]:checked) {{',
+        f"  background: {css_value};",
+        "}",
+    ]
+    return mark_safe("\n".join(lines))  # noqa: S308
+
+
+@register.inclusion_tag("wagtail_daisIE/tags/font_cdns.html")
+def daisyui_theme_font_cdns(theme):
+    """Render font CDNs for a theme.
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_theme_font_cdns daisyui_theme %}
+    """
+    return {"theme": theme}
+
+
+@register.simple_tag
+def daisyui_theme_font_inline_cdns(theme):
+    """Return font CDNs string for a theme."""
+    font_cdns = theme.font_cdns.all()
+    if not font_cdns:
+        return ""
+
+    lines = [f'<link rel="stylesheet" href="{cdn.url}">' for cdn in font_cdns]
+
+    return mark_safe("\n".join(lines))  # noqa: S308
+
+
+@register.inclusion_tag("wagtail_daisIE/tags/font_css.html")
+def daisyui_theme_font_css(theme):
+    """Render font CSS for a theme.
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_theme_font_css daisyui_theme %}
+    """
+    return {"theme": theme}
+
+
+@register.simple_tag
+def daisyui_theme_font_inline_css(theme):
+    """Return font CSS string for a theme."""
+    fonts = theme.fonts.first()
+    if not fonts:
+        return ""
+
+    font_families = fonts.font_families.all()
+    if not font_families:
+        return ""
+
+    lines = [
+        f'[data-theme="{theme.name}"], :root:has(.theme-controller[value="{theme.name}"]:checked) {{',
+        *[f"  --font-{family.__str__}: {family.css_value}" for family in font_families],
+        f"  --font-size-base: {fonts.base_font_size};",
+        f"  --line-height: {fonts.line_height};",
+        "}",
+    ]
+
+    return mark_safe("\n".join(lines))  # noqa: S308
+
+
+@register.inclusion_tag("wagtail_daisIE/tags/full_css.html")
+def daisyui_theme_full_css(theme):
+    """Render complete theme CSS (colors + radii + sizes + effects + background + fonts).
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_theme_full_css daisyui_theme %}
+    """
+    return {"theme": theme}
+
+
+@register.simple_tag
+def daisyui_theme_full_inline_css(theme):
+    """Return complete theme CSS string."""
+    base_css = daisyui_theme_inline_css(theme)
+    bg_css = daisyui_theme_background_inline_css(theme)
+    font_css = daisyui_theme_font_inline_css(theme)
+
+    parts = [css for css in [base_css, bg_css, font_css] if css]
+    return mark_safe("\n\n".join(parts))  # noqa: S308
+
+
+# ---------------------------------------------------------------------------
+# Icons
+# ---------------------------------------------------------------------------
+
+
+@register.simple_tag
+def daisyui_icon(value, size=None, color=None, label=None):
+    """Render a stored universal icon value.
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_icon item.icon size="1.25em" label="Home" %}
+    """
+    from ..icons import render_icon
+
+    return render_icon(value, size=size, color=color, label=label)
+
+
+@register.inclusion_tag("wagtail_daisIE/tags/icon_assets.html")
+def daisyui_icon_assets():
+    """Render the head assets required by the enabled icon providers."""
+    from ..icons import icon_assets
+
+    return {"assets": icon_assets()}
+
+
+@register.filter
+def is_active(item, request):
+    """Return whether a menu item points at the current request path."""
+    checker = getattr(item, "is_active", None)
+    if callable(checker):
+        return checker(request)
+    return False
