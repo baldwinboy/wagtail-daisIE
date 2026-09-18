@@ -19,5 +19,8 @@
     "prettier": "^3.9.7",
     "stylelint": "^17.15.0",
     "tailwindcss": "^4.3.3"
+  },
+  "overrides": {
+    "stylelint": "^17.15.0"
   }
 }

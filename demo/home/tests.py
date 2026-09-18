@@ -45,6 +45,19 @@ class HomeTests(WagtailPageTestCase):
         response = self.client.get(self.homepage.url)
         self.assertTemplateUsed(response, "home/home_page.html")
 
+    def test_page_default_design_applies_to_body_blocks(self):
+        self.homepage.page_design = [
+            ("defaults", {"text": {"typography": {"text_color": "text-primary"}}})
+        ]
+        self.homepage.body = [
+            {"type": "text", "value": {"text": "Hello", "design": {}}}
+        ]
+        self.homepage.save_revision().publish()
+
+        response = self.client.get(self.homepage.url)
+        content = response.content.decode()
+        assert "text-primary" in content
+
 
 @override_settings(MEDIA_ROOT="/tmp/wagtail-daisie-demo-test-media")
 class LoadInitialDataTests(WagtailPageTestCase):

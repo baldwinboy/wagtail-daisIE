@@ -1,7 +1,8 @@
 {% load wagtailcore_tags %}
 {% if audience_allowed and value.logo or audience_allowed and value.wordmark.text %}
     {% if link_url %}<a href="{{ link_url }}"{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %} class="{% if block_css %}{{ block_css }}{% endif %}">{% else %}<span class="{% if block_css %}{{ block_css }}{% endif %}">{% endif %}
-        {% if value.logo %}{% include_block value.logo %}{% endif %}
+        {% if value.logo and not value.logo_after %}{% include_block value.logo %}{% endif %}
         {% if value.wordmark.text %}{% include_block value.wordmark %}{% endif %}
+        {% if value.logo and value.logo_after %}{% include_block value.logo %}{% endif %}
     {% if link_url %}</a>{% else %}</span>{% endif %}
 {% endif %}

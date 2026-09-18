@@ -14,7 +14,7 @@ both contexts.
 | `branding` | One-item stream of `MenuBranding` (logo and/or wordmark, optional link). |
 | `show_search`, `search_url`, `search_parameter`, `search_placeholder` | Optional search box. |
 | `menu_theme` | Theme applied to the menu; falls back to the default theme. |
-| `show_theme_toggle`, `theme_toggle_theme` | Optional light/dark toggle. |
+| `show_theme_toggle`, `alt_menu_theme` | Optional light/dark toggle. |
 | `item_design` | One-item stream of `MenuItemDesignBlock`: defaults for every item. |
 | `sticky` | Sticky navbar. |
 | `body` | `MenuItemStreamBlock` — the menu items. |

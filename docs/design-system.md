@@ -13,6 +13,7 @@ All primitives live in `wagtail_daisIE.base_blocks`.
 | `TypographyDesignBlock` | typography, size, background, border, padding, margin, box | text blocks |
 | `ButtonDesignBlock` | as `InlineSpacedDesignBlock`, plus button appearance | buttons |
 | `MenuItemDesignBlock` | `TypographyDesignBlock` + spacing | `DaisyUIMenu.item_design` |
+| `PageDesignBlock` | container, text, button and media defaults | `StyledPageMixin.page_design` |
 
 `ThemedBlock` subclasses pair a composite with a `form_layout`. Concrete blocks
 add their own content fields and a `template`.
@@ -28,17 +29,36 @@ Font families store the theme role (or custom name) and render as
 `font-<role>`, matching the `--font-<role>` custom properties emitted by
 `{% daisyui_theme_font_css %}`.
 
-## Inheritance (`merge_block_css`)
+## Inheritance (category channels)
+
+Inheritance is per element category and strictly isolated. Each `ThemedBlock`
+declares a `default_css_key` (`container`, `text`, `button` or `media`) and
+reads/writes the matching `<category>_css` context channel:
 
 ```python
-def merge_block_css(parent_context, own):
-    inherited = (parent_context or {}).get("block_css", "")
-    return build_class(inherited, own)
+key = f"{self.default_css_key}_css"
+channel = parent_context.get(key, "")
+own = build_design_css(value.get("design"))
+context["block_css"] = build_class(
+    channel, parent_context.get("menu_default_css", ""), own
+)
+context[key] = build_class(channel, own)
 ```
 
-Any block that sets `block_css` prepends the inherited value. This lets a menu
-apply `item_design` to every descendant while each block still contributes its
-own settings. Pages simply have no inherited `block_css`.
+- `block_css` is render-only; templates write it into `class`.
+- A category's classes only ever reach descendants of the same category, so a
+  container's styles cannot bleed into text, buttons or media.
+- `MenuItemDesignBlock` is the exception: menu templates set the
+  `menu_default_css` channel, which every category inherits, so
+  `DaisyUIMenu.item_design` still applies to every menu item.
+
+`StyledPageMixin.get_context` seeds the four channels from
+`PageDesignBlock` (see [architecture.md](architecture.md#page-rendering)), so
+page-wide defaults are applied per category without cross-category leakage.
+
+`merge_block_css` remains available for the standalone design primitives
+(`base_blocks/box.py`, `size.py`, `background.py`, `typography.py`); the
+composite `ThemedBlock` pipeline no longer uses it.
 
 ## Adding a design primitive
 

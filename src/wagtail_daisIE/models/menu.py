@@ -106,7 +106,7 @@ class DaisyUIMenu(
         verbose_name=_("Show theme toggle"),
         help_text=_("Display a light/dark theme toggle in the navbar."),
     )
-    theme_toggle_theme = models.ForeignKey(
+    alt_menu_theme = models.ForeignKey(
         DaisyUITheme,
         null=True,
         blank=True,
@@ -168,7 +168,7 @@ class DaisyUIMenu(
         MultiFieldPanel(
             [
                 FieldPanel("show_theme_toggle"),
-                FieldPanel("theme_toggle_theme"),
+                FieldPanel("alt_menu_theme"),
             ],
             heading=_("Theme toggle"),
             classname="collapsed",

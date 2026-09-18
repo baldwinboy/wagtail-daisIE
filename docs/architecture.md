@@ -60,10 +60,15 @@ where stylesheet order allows.
 
 ## Page rendering
 
-`StyledPageMixin` adds `page_theme`, `page_background`, and `body`. Its
-`get_context` injects `daisyui_theme` and `daisyui_page_background_css`. Page
+`StyledPageMixin` adds `page_theme`, `page_background`, `page_design`, and
+`body`. Its `get_context` injects `daisyui_theme`, `daisyui_page_background_css`
+and the per-category default channels (`container_css`, `text_css`,
+`button_css`, `media_css`) built from `PageDesignBlock`. Each `ThemedBlock`
+inherits only its own category channel, keeping defaults isolated. Page
 templates render `{% daisyui_theme_full_css daisyui_theme %}` in `<head>` and
-apply `daisyui_page_background_css` to the body.
+apply `daisyui_page_background_css` to the body; body blocks must be rendered
+with `{% include_block %}` (as `home_page.html` does) so they receive the page
+context.
 
 ## Menus
 

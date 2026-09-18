@@ -1,0 +1,4 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+{% include_block value.bound_blocks.content %}
+{% endif %}

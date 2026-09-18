@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "colorfield",
     "wagtail.contrib.search_promotions",
     "wagtail.contrib.forms",
+    "wagtail.contrib.table_block",
     "wagtail.contrib.redirects",
     "wagtail.embeds",
     "wagtail.users",

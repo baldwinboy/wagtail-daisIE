@@ -37,6 +37,11 @@ class LabelLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
         label=_("Text"),
     )
     icon = IconChooserBlock(required=False)
+    icon_after = blocks.BooleanBlock(
+        default=True,
+        label=_("Icon after"),
+        help_text=_("Place the icon after the text"),
+    )
 
     class Meta:
         icon = "link"
@@ -44,7 +49,7 @@ class LabelLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/link.html"
         form_layout = blocks.BlockGroup(
-            children=["text", "icon", "destination", "open_in_new_tab"],
+            children=["text", "icon", "icon_after", "destination", "open_in_new_tab"],
             settings=["design", "audience"],
         )
 
@@ -56,6 +61,11 @@ class ButtonBlock(AbstractLinkBlock, ThemedButtonBlock):
         label=_("Text"),
     )
     icon = IconChooserBlock(required=False)
+    icon_after = blocks.BooleanBlock(
+        default=True,
+        label=_("Icon after"),
+        help_text=_("Place the icon after the text"),
+    )
 
     class Meta:
         icon = "link"
@@ -63,6 +73,6 @@ class ButtonBlock(AbstractLinkBlock, ThemedButtonBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/button.html"
         form_layout = blocks.BlockGroup(
-            children=["text", "icon", "destination", "open_in_new_tab"],
+            children=["text", "icon", "icon_after", "destination", "open_in_new_tab"],
             settings=["design", "audience"],
         )

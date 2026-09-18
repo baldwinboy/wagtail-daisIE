@@ -4,7 +4,7 @@ from wagtail.admin.panels import FieldPanel
 from wagtail.fields import StreamField
 from wagtail.models import Page
 
-from wagtail_daisIE.base_blocks import BackgroundStreamBlock
+from wagtail_daisIE.base_blocks import BackgroundStreamBlock, PageDesignBlock
 from wagtail_daisIE.blocks.content import ContentBlock
 from wagtail_daisIE.models import DaisyUITheme
 
@@ -53,6 +53,18 @@ class StyledPageMixin(Page):
         ),
     )
 
+    page_design = StreamField(
+        [("defaults", PageDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Page default design"),
+        help_text=_(
+            "Default container, text, button and media styles applied to every "
+            "block on this page. Per-block settings are applied on top."
+        ),
+    )
+
     body = StreamField(
         ContentBlock(),
         blank=True,
@@ -67,6 +79,7 @@ class StyledPageMixin(Page):
         *Page.content_panels,
         FieldPanel("page_theme"),
         FieldPanel("page_background"),
+        FieldPanel("page_design"),
         FieldPanel("body"),
     ]
 
@@ -79,8 +92,17 @@ class StyledPageMixin(Page):
             return ""
         return BackgroundStreamBlock().get_css(self.page_background)
 
+    def get_page_design_css(self):
+        """Return a ``{category: css}`` mapping for this page's default design."""
+        first = self.page_design[0].value if self.page_design else None
+        if not first:
+            return {}
+        return PageDesignBlock().get_default_css(first)
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         context["daisyui_theme"] = self.get_daisyui_theme()
         context["daisyui_page_background_css"] = self.get_page_background_css()
+        for category, css in self.get_page_design_css().items():
+            context[f"{category}_css"] = css
         return context

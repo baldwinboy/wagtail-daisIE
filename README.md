@@ -33,10 +33,13 @@ pip install wagtail-daisIE
 ```python
 # myproject/settings.py
 INSTALLED_APPS = [
-    ...
     "wagtail_daisIE",
+    # ...
+    "wagtail",
+    # ...
+    "wagtail.contrib.table_block",
+    # ...
     "colorfield",
-    ...
 ]
 ```
 
@@ -81,9 +84,12 @@ from wagtail_daisIE.pages import StyledPageMixin
 
 
 class MyPage(StyledPageMixin):
-    content_panels = StyledPageMixin.content_panels + [
-        # Add any custom panels here
-    ]
+    content_panels = (
+        StyledPageMixin.content_panels
+        + [
+            # Add any custom panels here
+        ]
+    )
 ```
 
 This mixin adds:

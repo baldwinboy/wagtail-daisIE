@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load wagtailimages_tags %}
+{% load wagtailcore_tags wagtailimages_tags %}
 
 {% block content %}
     {% include "base/include/header-blog.html" %}
@@ -16,7 +16,9 @@
             </div>
         {% endif %}
 
-        {{ page.body }}
+        {% for block in page.body %}
+            {% include_block block %}
+        {% endfor %}
 
         {% if page.get_tags %}
             <p class="not-prose mt-8 text-sm text-base-content/70">Find more blog posts with similar tags</p>

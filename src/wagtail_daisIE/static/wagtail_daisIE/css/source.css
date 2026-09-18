@@ -70,3 +70,5 @@
 }
 
 @plugin "daisyui";
+
+@source inline("border-spacing-{0..96} border-spacing-x-{0..96} border-spacing-y-{0..96}");

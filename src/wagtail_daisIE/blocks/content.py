@@ -9,6 +9,7 @@ from .layout import ColumnBlock, GridBlock, RowBlock
 from .marquee import MarqueeBlock
 from .section import SectionBlock
 from .spaced import LIST_CONTENT_BLOCKS
+from .table import TableBlock
 
 
 ALL_CONTENT_BLOCKS = [
@@ -17,6 +18,7 @@ ALL_CONTENT_BLOCKS = [
     ("row", RowBlock()),
     ("column", ColumnBlock()),
     ("grid", GridBlock()),
+    ("table", TableBlock()),
     ("marquee", MarqueeBlock()),
     ("copyright", CopyrightBlock()),
     ("blockquote", BlockQuote()),
@@ -53,4 +55,5 @@ __all__ = [
     "MarqueeBlock",
     "RowBlock",
     "SectionBlock",
+    "TableBlock",
 ]

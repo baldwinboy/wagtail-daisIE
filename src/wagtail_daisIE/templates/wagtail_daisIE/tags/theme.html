@@ -42,5 +42,19 @@
   --depth: {{ effects.depth|yesno:"1,0" }};
   --noise: {{ effects.noise|yesno:"1,0" }};
   {% endwith %}
+
+  {% with fonts=theme.fonts.first %}
+  {% if fonts %}
+  {% with font_families=fonts.font_families.all %}
+    {% if font_families %}
+      {% for family in font_families %}
+        --font-{{ family }}: {{ family.css_value }};
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  --font-size-base: {{ fonts.base_font_size }};
+  --line-height: {{ fonts.line_height }};
+  {% endif %}
+  {% endwith %}
 }
 </style>

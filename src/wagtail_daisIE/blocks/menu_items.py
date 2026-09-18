@@ -45,6 +45,11 @@ class MenuBranding(AbstractLinkBlock, PublicThemedBlock):
     """Logo and/or wordmark, optionally wrapped in a single destination link."""
 
     logo = MenuLogo(required=False)
+    logo_after = blocks.BooleanBlock(
+        default=False,
+        label=_("Logo after"),
+        help_text=_("Place the logo after the wordmark"),
+    )
     wordmark = InlineTextBlock(required=False)
 
     class Meta:
@@ -53,8 +58,14 @@ class MenuBranding(AbstractLinkBlock, PublicThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/menu_branding.html"
         form_layout = blocks.BlockGroup(
-            children=["logo", "wordmark", "destination", "open_in_new_tab"],
-            settings=["design", "audience"],
+            children=[
+                "logo",
+                "logo_after",
+                "wordmark",
+                "destination",
+                "open_in_new_tab",
+            ],
+            settings=["design"],
         )
 
     def get_context(self, value, parent_context=None):

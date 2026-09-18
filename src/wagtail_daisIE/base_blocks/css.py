@@ -171,6 +171,41 @@ def build_button_css(value):
     )
 
 
+def build_table_border_spacing_css(value):
+    """CSS classes for the nested table border spacing block.
+
+    ``all_spacing`` applies to both axes; ``horizontal``/``vertical`` override
+    one axis each. Values are Tailwind spacing steps (``n * 0.25rem``), emitted
+    as the numeric ``border-spacing-*`` utilities.
+    """
+    if not value:
+        return ""
+    return build_class(
+        *(
+            f"{prefix}-{value.get(key)}" if value.get(key) else ""
+            for prefix, key in (
+                ("border-spacing", "all_spacing"),
+                ("border-spacing-x", "horizontal"),
+                ("border-spacing-y", "vertical"),
+            )
+        )
+    )
+
+
+def build_table_css(value):
+    if not value:
+        return ""
+    return build_class(
+        "table",
+        value.get("table_size"),
+        value.get("table_border_style"),
+        build_table_border_spacing_css(value.get("table_border_spacing")),
+        "table-zebra" if value.get("table_zebra_rows") else "",
+        "table-pin-rows" if value.get("table_pin_rows") else "",
+        "table-pin-cols" if value.get("table_pin_columns") else "",
+    )
+
+
 _DESIGN_BUILDERS = {
     "size": build_size_css,
     "spacing": build_spacing_css,
@@ -181,6 +216,7 @@ _DESIGN_BUILDERS = {
     "box": build_box_css,
     "typography": build_typography_css,
     "button_appearance": build_button_css,
+    "table_appearance": build_table_css,
 }
 
 

@@ -2,9 +2,8 @@
 {% if menu %}
     {% if menu_theme and menu_theme != daisyui_theme %}
         {% daisyui_theme_css menu_theme %}
-        {% daisyui_theme_font_css menu_theme %}
     {% endif %}
-    {% with block_css=menu_item_css %}
+    {% with block_css=menu_item_css menu_default_css=menu_item_css %}
         {% if menu.layout == "navbar" %}
             {% include "wagtail_daisIE/blocks/navbar.html" %}
         {% elif menu.layout == "footer" %}
