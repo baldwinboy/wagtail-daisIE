@@ -1,0 +1,10 @@
+<mjml>
+  <mj-head>
+    {% if subject %}<mj-title>{{ subject }}</mj-title>{% endif %}
+    {% if preheader %}<mj-preview>{{ preheader }}</mj-preview>{% endif %}
+    {% for font in font_urls %}<mj-font name="{{ font.name }}" href="{{ font.href }}" />{% endfor %}
+    {% if theme_attributes or mj_classes %}<mj-attributes>{% for tag, attrs in theme_attributes %}<{{ tag }}{% for key, value in attrs.items %} {{ key }}="{{ value }}"{% endfor %} />{% endfor %}{% for name, attrs in mj_classes %}<mj-class name="{{ name }}"{% for key, value in attrs.items %} {{ key }}="{{ value }}"{% endfor %} />{% endfor %}</mj-attributes>{% endif %}
+    {% if mjml_styles %}<mj-style inline="inline">{% for css_class, rule in mjml_styles.items %}.{{ css_class }} { {{ rule }} }{% endfor %}</mj-style>{% endif %}
+  </mj-head>
+  <mj-body{% if body_background_color %} background-color="{{ body_background_color }}"{% endif %}>{{ mjml_body|safe }}</mj-body>
+</mjml>

@@ -10,6 +10,7 @@ from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 
 from .context import set_current_theme, theme_from_instance
+from .emails.view_sets import EmailViewSetGroup
 from .icons.providers.iconify import ICONIFY_ICON_SCRIPT
 from .icons.views import icon_search
 from .view_sets import DaisyUIViewSetGroup
@@ -26,6 +27,9 @@ def register_icons(icons):
 
 
 register_snippet(DaisyUIViewSetGroup)
+
+# Register the email snippet view set group.
+register_snippet(EmailViewSetGroup)
 
 # Set the current theme for the page/menu being created/edited.
 

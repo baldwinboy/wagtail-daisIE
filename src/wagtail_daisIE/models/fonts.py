@@ -112,11 +112,23 @@ class DaisyUIThemeFontFamily(ClusterableModel, Orderable):
         default="sans-serif",
         choices=GENERIC_FONT_FAMILY_CHOICES,
     )
+    url = models.URLField(
+        blank=True,
+        verbose_name=_("Font CDN URL"),
+        help_text=_(
+            "Full URL to this font's stylesheet (e.g. Google Fonts link tag href)."
+            "For use in email templates."
+            "Leave blank if this is a web-safe font"
+            " or not used in an email template."
+        ),
+    )
 
     panels = [
         FieldPanel("name"),
+        FieldPanel("role"),
         FieldPanel("font_family"),
         FieldPanel("generic_font_family"),
+        FieldPanel("url"),
         InlinePanel(
             "fallbacks", label=_("Fallback font families"), classname="collapsed"
         ),
@@ -150,17 +162,20 @@ class DaisyUIThemeFontFamily(ClusterableModel, Orderable):
         super().clean()
         # Custom fonts must have a name
         if self.role == "custom":
-            if self.name is None:
+            if not self.name:
                 raise ValidationError(
                     _("Custom font families must have a name."),
                     code="wagtail_daisIE.custom_font_family_missing_name",
                 )
             return
 
+        if self.fonts_id is None:
+            return
+
         # Headings, body, subheading, and code fonts must have a unique role
         duplicate_role_exists = (
             type(self)
-            .objects.filter(role=self.role, fonts=self.fonts)
+            .objects.filter(role=self.role, fonts_id=self.fonts_id)
             .exclude(pk=self.pk)
             .exists()
         )
@@ -199,8 +214,8 @@ class DaisyUIThemeFontFallback(Orderable):
     ]
 
     def __str__(self):
-        return self.font_family
+        return self.name
 
     @property
     def css_value(self) -> str:
-        return f"'{self.font_family}'"
+        return f"'{self.name}'"

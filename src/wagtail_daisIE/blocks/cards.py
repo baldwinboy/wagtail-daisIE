@@ -37,7 +37,7 @@ class InlineCardBlock(ThemedBlock):
 
     class Meta:
         icon = "minus"
-        group = _("Inline Card")
+        group = _("Cards")
         collapsed = True
         template = "wagtail_daisIE/blocks/card.html"
         form_layout = blocks.BlockGroup(
@@ -64,7 +64,7 @@ class CardBlock(SectionBlock):
 
     class Meta:
         icon = "bars"
-        group = _("Card")
+        group = _("Cards")
         collapsed = True
         template = "wagtail_daisIE/blocks/card.html"
         form_layout = blocks.BlockGroup(

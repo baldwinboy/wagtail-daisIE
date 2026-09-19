@@ -7,6 +7,7 @@ from .audience import AudienceBlock, evaluate_audience
 from .background import BackgroundBlock, TextBackgroundBlock
 from .box import BorderBlock, BoxBlock, MarginBlock, PaddingBlock, SpacingBlock
 from .css import build_design_css
+from .mjml import build_design_style
 from .size import BlockSizeBlock, InlineSizeBlock, MediaSizeBlock
 from .table import TableAppearanceBlock
 from .typography import TypographyBlock
@@ -171,6 +172,17 @@ class PageDesignBlock(blocks.StructBlock):
         """Return a ``{category: css}`` mapping for the block's design fields."""
         return {
             name: build_design_css((value or {}).get(name))
+            for name in self.child_blocks
+        }
+
+    def get_default_style(self, value, theme=None):
+        """Return a ``{category: declarations}`` mapping for email rendering.
+
+        Mirrors :meth:`get_default_css` but emits literal CSS declarations
+        (resolved against ``theme``) for MJML output.
+        """
+        return {
+            name: build_design_style((value or {}).get(name), theme)
             for name in self.child_blocks
         }
 

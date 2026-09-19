@@ -75,7 +75,7 @@ class DaisyUITheme(
             heading=_("Background"),
             classname="collapsed",
         ),
-        InlinePanel("fonts", heading=_("Fonts"), classname="collapsed"),
+        InlinePanel("fonts", heading=_("Fonts"), max_num=1, classname="collapsed"),
         InlinePanel("font_cdns", heading=_("Font CDNs"), classname="collapsed"),
     ]
 

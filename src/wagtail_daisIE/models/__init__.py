@@ -1,3 +1,7 @@
+# Imported so Django's model discovery (and ``makemigrations``) sees it.
+# ``emails.models`` deliberately does not import this package at module level,
+# so this does not create a cycle.
+from ..emails.models import EmailTemplate
 from .background import (
     DaisyUIThemeBackground,
     DaisyUIThemeBackgroundLayer,
@@ -24,6 +28,7 @@ GradientStop = DaisyUIThemeBackgroundLayerGradientStop
 
 __all__ = [
     "BackgroundLayer",
+    "EmailTemplate",
     "DaisyUIColorField",
     "DaisyUIColorSchemeChoices",
     "DaisyUISizeField",

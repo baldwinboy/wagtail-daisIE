@@ -22,7 +22,7 @@ class ImageBlock(ThemedMediaBlock):
 
     class Meta:
         icon = "image"
-        group = _("Image")
+        group = _("Media")
         collapsed = True
         template = "wagtail_daisIE/blocks/image.html"
         form_layout = blocks.BlockGroup(
@@ -67,7 +67,7 @@ class EmbedBlock(ThemedMediaBlock):
 
     class Meta:
         icon = "media"
-        group = _("Embed")
+        group = _("Media")
         collapsed = True
         template = "wagtail_daisIE/blocks/embed.html"
         form_layout = blocks.BlockGroup(

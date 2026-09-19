@@ -34,7 +34,7 @@ class MarqueeBlock(SectionBlock):
 
     class Meta:
         icon = "horizontalrule"
-        group = _("Marquee")
+        group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/marquee.html"
         form_layout = blocks.BlockGroup(

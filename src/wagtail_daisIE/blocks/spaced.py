@@ -50,7 +50,7 @@ class LinkListBlock(SpacedBlock):
 
     class Meta:
         icon = "link"
-        group = _("Link List")
+        group = _("List")
         collapsed = True
         template = "wagtail_daisIE/blocks/list.html"
         form_layout = blocks.BlockGroup(

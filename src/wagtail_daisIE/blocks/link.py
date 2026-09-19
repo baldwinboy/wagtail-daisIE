@@ -20,7 +20,7 @@ class InlineLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
 
     class Meta:
         icon = "link"
-        group = _("Inline Link")
+        group = _("Link")
         collapsed = True
         template = "wagtail_daisIE/blocks/link.html"
         form_layout = blocks.BlockGroup(
@@ -45,7 +45,7 @@ class LabelLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
 
     class Meta:
         icon = "link"
-        group = _("Link with label")
+        group = _("Link")
         collapsed = True
         template = "wagtail_daisIE/blocks/link.html"
         form_layout = blocks.BlockGroup(
@@ -69,7 +69,7 @@ class ButtonBlock(AbstractLinkBlock, ThemedButtonBlock):
 
     class Meta:
         icon = "link"
-        group = _("Button")
+        group = _("Link")
         collapsed = True
         template = "wagtail_daisIE/blocks/button.html"
         form_layout = blocks.BlockGroup(

@@ -1,6 +1,7 @@
 import re
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..context import get_current_theme
@@ -80,7 +81,10 @@ class FontFamilyChoiceBlock(blocks.ChoiceBlock):
 
     def _resolved_choices(self):
         theme = self.theme_getter() if self.theme_getter else None
-        return build_font_family_choices(theme, raw=self.raw)
+        return [
+            ("", _("Default")),
+            *build_font_family_choices(theme, raw=self.raw),
+        ]
 
     def get_form_state(self, value):
         # Assigning ``field.choices`` also updates ``field.widget.choices``

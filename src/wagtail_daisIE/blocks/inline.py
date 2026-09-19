@@ -21,7 +21,7 @@ class InlineTextBlock(ThemedTypographyBlock):
 
     class Meta:
         icon = "tag"
-        group = _("Inline Text")
+        group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/inline_text.html"
         form_layout = blocks.BlockGroup(
@@ -38,7 +38,7 @@ class InlineRichTextBlock(ThemedTypographyBlock):
 
     class Meta:
         icon = "doc-full"
-        group = _("Inline Rich Text")
+        group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/inline_rich_text.html"
         form_layout = blocks.BlockGroup(
@@ -50,7 +50,7 @@ class InlineRichTextBlock(ThemedTypographyBlock):
 class HeaderBlock(InlineTextBlock):
     class Meta:
         icon = "title"
-        group = _("Header")
+        group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/header.html"
 
@@ -67,6 +67,6 @@ class CopyrightBlock(InlineTextBlock):
 
     class Meta:
         icon = "date"
-        group = _("Copyright")
+        group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/copyright.html"

@@ -17,7 +17,7 @@ class BlockQuote(ThemedBlock):
 
     class Meta:
         icon = "openquote"
-        group = _("Blockquote")
+        group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/blockquote.html"
         form_layout = blocks.BlockGroup(

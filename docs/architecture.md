@@ -10,6 +10,7 @@ base_blocks/    Reusable design primitives and the block CSS pipeline
 blocks/         Public block composition built on base_blocks
 models/         Snippets: DaisyUITheme, DaisyUIMenu, DaisyUIIconSource
 icons/          Icon provider registry, chooser field/block/widget
+emails/         MJML email templates (see docs/emails.md)
 templates/      Block, tag, admin and preview templates
 ```
 
@@ -35,6 +36,8 @@ Design primitives that can be composed into any block:
   `block_css` and `audience_allowed`.
 - `css.py` — pure functions that turn design values into class strings, plus
   `merge_block_css`.
+- `mjml.py` — email counterpart of `css.py`: turns design values into literal
+  CSS declarations for MJML output (see [emails.md](emails.md)).
 - `fields.py` — `ColorChoiceBlock`, `FontFamilyChoiceBlock`.
 - `widgets.py`, `utils.py` — helpers.
 

@@ -1,5 +1,6 @@
 import pytest
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from wagtail_daisIE.models import (
@@ -9,6 +10,7 @@ from wagtail_daisIE.models import (
     DaisyUIThemeBackground,
     DaisyUIThemeColors,
     DaisyUIThemeFontCDN,
+    DaisyUIThemeFontFallback,
     DaisyUIThemeFontFamily,
     DaisyUIThemeFonts,
     GradientStop,
@@ -182,6 +184,36 @@ class TestDaisyUIThemeFonts:
         assert family.generic_font_family == "sans-serif"
         assert fonts.base_font_size == "1rem"
         assert fonts.line_height == 1.5
+
+    def test_clean_unsaved_family_does_not_raise(self):
+        family = DaisyUIThemeFontFamily(role="body", font_family="Inter")
+        assert family.fonts_id is None
+        family.clean()
+
+    def test_clean_rejects_duplicate_role(self, theme):
+        fonts = DaisyUIThemeFonts.objects.create(theme=theme)
+        DaisyUIThemeFontFamily.objects.create(fonts=fonts, role="body")
+        duplicate = DaisyUIThemeFontFamily(fonts=fonts, role="body")
+        with pytest.raises(ValidationError):
+            duplicate.clean()
+
+    def test_clean_requires_name_for_custom(self, theme):
+        fonts = DaisyUIThemeFonts.objects.create(theme=theme)
+        custom = DaisyUIThemeFontFamily(fonts=fonts, role="custom", name="")
+        with pytest.raises(ValidationError):
+            custom.clean()
+
+    def test_css_value_includes_fallbacks(self, theme):
+        fonts = DaisyUIThemeFonts.objects.create(theme=theme)
+        family = DaisyUIThemeFontFamily.objects.create(
+            fonts=fonts, role="body", font_family="Inter"
+        )
+        fallback = DaisyUIThemeFontFallback.objects.create(
+            font_family=family, name="Roboto"
+        )
+        assert str(fallback) == "Roboto"
+        assert fallback.css_value == "'Roboto'"
+        assert family.css_value == "'Inter', 'Roboto', sans-serif"
 
 
 class TestDaisyUIThemeFontCDN:

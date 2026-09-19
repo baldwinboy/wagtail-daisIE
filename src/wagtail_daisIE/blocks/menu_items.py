@@ -32,7 +32,7 @@ class MenuLogo(PublicThemedMediaBlock):
 
     class Meta:
         icon = "image"
-        group = _("Branding logo")
+        group = _("Branding")
         collapsed = True
         template = "wagtail_daisIE/blocks/menu_logo.html"
         form_layout = blocks.BlockGroup(

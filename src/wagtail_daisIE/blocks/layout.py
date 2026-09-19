@@ -30,7 +30,7 @@ class RowBlock(SpacedBlockWithList):
 
     class Meta:
         icon = "expand-right"
-        group = _("Row")
+        group = _("Layout")
         collapsed = True
         template = "wagtail_daisIE/blocks/row.html"
         form_layout = _layout_form_layout(
@@ -55,7 +55,7 @@ class ColumnBlock(SpacedBlockWithList):
 
     class Meta:
         icon = "collapse-down"
-        group = _("Column")
+        group = _("Layout")
         collapsed = True
         template = "wagtail_daisIE/blocks/column.html"
         form_layout = _layout_form_layout(
@@ -100,7 +100,7 @@ class GridBlock(SpacedBlockWithList):
 
     class Meta:
         icon = "table"
-        group = _("Grid")
+        group = _("Layout")
         collapsed = True
         template = "wagtail_daisIE/blocks/grid.html"
         form_layout = _layout_form_layout(
