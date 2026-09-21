@@ -1,0 +1,10 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
+    <legend class="fieldset-legend">{{ value.legend }}</legend>
+    {% if value.description %}<p class="label">{{ value.description }}</p>{% endif %}
+    {% for child in value.content %}
+      {% include_block child %}
+    {% endfor %}
+  </fieldset>
+{% endif %}

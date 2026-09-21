@@ -1,0 +1,13 @@
+{% if audience_allowed %}
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
+    <label class="fieldset-legend" for="daisie-{{ block.id }}">{{ value.label }}</label>
+    <input
+      id="daisie-{{ block.id }}"
+      type="file"
+      {% if value.name %}name="{{ value.name }}"{% endif %}
+      {% if value.accept %}accept="{{ value.accept }}"{% endif %}
+      class="file-input {{ value.color }} {{ value.size }}"
+    />
+    {% if value.helper_text %}<p class="label">{{ value.helper_text }}</p>{% endif %}
+  </fieldset>
+{% endif %}

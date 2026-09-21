@@ -1,0 +1,31 @@
+{% if audience_allowed %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+    {% if value.heading %}<h3 class="text-xl font-semibold">{{ value.heading }}</h3>{% endif %}
+    {% if value.description %}<p class="mt-1 text-base-content/80">{{ value.description }}</p>{% endif %}
+
+    <form
+      method="post"
+      action="{{ subscribe_url }}"
+      class="join mt-3 w-full"
+      data-daisie-newsletter
+    >
+      {% csrf_token %}
+      {% if audience_id %}<input type="hidden" name="audience" value="{{ audience_id }}" />{% endif %}
+      <label for="daisie-newsletter-{{ block.id }}" class="sr-only">{{ value.placeholder }}</label>
+      <input
+        id="daisie-newsletter-{{ block.id }}"
+        type="email"
+        name="email"
+        placeholder="{{ value.placeholder }}"
+        autocomplete="email"
+        required
+        class="input join-item w-full"
+      />
+      <button type="submit" class="btn btn-primary join-item">{{ value.button_label }}</button>
+    </form>
+
+    {% if request.GET.subscribed and value.success_message %}
+      <p class="mt-2 text-sm" role="status">{{ value.success_message }}</p>
+    {% endif %}
+  </div>
+{% endif %}

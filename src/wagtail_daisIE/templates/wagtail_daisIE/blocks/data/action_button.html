@@ -1,0 +1,15 @@
+{% load notifications %}
+{% if audience_allowed and action_url %}
+  <form
+    method="post"
+    action="{{ action_url }}"
+    class="inline-block{% if block_css %} {{ block_css }}{% endif %}"
+    {% if value.confirm %}onsubmit="return confirm('{{ value.confirm|escapejs }}');"{% endif %}
+  >
+    {% csrf_token %}
+    {% if value.target_expression %}
+      <input type="hidden" name="target" value="{% daisie_expr value.target_expression %}" />
+    {% endif %}
+    <button type="submit" class="{{ value.button_class|default:'btn btn-primary' }}">{{ value.label }}</button>
+  </form>
+{% endif %}

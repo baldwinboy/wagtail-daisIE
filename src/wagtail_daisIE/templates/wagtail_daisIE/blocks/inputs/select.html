@@ -1,0 +1,16 @@
+{% if audience_allowed %}
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
+    <label class="fieldset-legend" for="daisie-{{ block.id }}">{{ value.label }}</label>
+    <select
+      id="daisie-{{ block.id }}"
+      {% if value.name %}name="{{ value.name }}"{% endif %}
+      class="select {{ value.color }} {{ value.size }}{% if value.error_text %} validator select-error{% endif %}"
+      {% if value.error_text %}aria-invalid="true" aria-describedby="daisie-{{ block.id }}-error"{% elif value.helper_text %}aria-describedby="daisie-{{ block.id }}-help"{% endif %}
+    >
+      {% if value.placeholder %}<option value="">{{ value.placeholder }}</option>{% endif %}
+      {% for option in select_options %}<option value="{{ option }}">{{ option }}</option>{% endfor %}
+    </select>
+    {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{{ value.helper_text }}</p>{% endif %}
+    {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{{ value.error_text }}</p>{% endif %}
+  </fieldset>
+{% endif %}

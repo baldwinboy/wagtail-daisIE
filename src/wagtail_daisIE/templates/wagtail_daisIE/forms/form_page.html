@@ -1,0 +1,45 @@
+{% load wagtailcore_tags wagtail_daisIE_tags %}
+<!DOCTYPE html>
+<html lang="en"{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{ page.seo_title|default:page.title }}</title>
+        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_theme_full_css daisyui_theme %}
+        {{ form.media }}
+    </head>
+    <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
+        <main id="main-content" class="mx-auto w-full max-w-2xl grow px-4 py-12">
+            {% if page.title %}<h1 class="mb-6 text-4xl font-bold">{{ page.title }}</h1>{% endif %}
+
+            {% for block in page.body %}
+                {% include_block block %}
+            {% endfor %}
+
+            {% if form_has_errors and page.error_body %}
+                <div class="mb-6">
+                    {% for block in page.error_body %}
+                        {% include_block block %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="" enctype="multipart/form-data" class="mt-8 space-y-4">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-error" role="alert">
+                        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+
+                {% for field in form %}
+                    {% include "wagtail_daisIE/forms/form_field.html" with field=field %}
+                {% endfor %}
+
+                <button type="submit" class="{{ page.get_submit_css }} mt-2">{{ page.submit_label|default:"Submit" }}</button>
+            </form>
+        </main>
+    </body>
+</html>

@@ -1,0 +1,43 @@
+{% load i18n %}
+<div
+    class="daisie-chooser"
+    data-daisie-chooser
+    data-endpoint="{{ daisie_widget.endpoint }}"
+>
+    <input
+        type="hidden"
+        name="{{ daisie_widget.name }}"
+        value="{{ daisie_widget.object_id|default:'' }}"
+        data-daisie-chooser-value
+    />
+    <div class="daisie-chooser__row">
+        <input
+            id="{{ daisie_widget.id }}"
+            type="text"
+            class="w-field__input"
+            role="combobox"
+            aria-expanded="false"
+            aria-autocomplete="list"
+            aria-controls="{{ daisie_widget.id }}-listbox"
+            autocomplete="off"
+            placeholder="{% trans 'Search…' %}"
+            data-daisie-chooser-input
+        />
+        <button type="button" class="button button-small" data-daisie-chooser-all>
+            {% trans "Show all" %}
+        </button>
+    </div>
+    <ul
+        id="{{ daisie_widget.id }}-listbox"
+        class="daisie-chooser__list"
+        role="listbox"
+        data-daisie-chooser-list
+        hidden
+    ></ul>
+    <p
+        class="daisie-chooser__status"
+        role="status"
+        aria-live="polite"
+        data-daisie-chooser-status
+    ></p>
+</div>

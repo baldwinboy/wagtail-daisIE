@@ -1,0 +1,6 @@
+{% if audience_allowed %}
+  <span class="inline-flex items-center gap-2{% if block_css %} {{ block_css }}{% endif %}">
+    <span class="status {{ value.color }} {{ value.size }}" aria-hidden="true"></span>
+    {% if value.label %}<span>{{ value.label }}</span>{% endif %}
+  </span>
+{% endif %}

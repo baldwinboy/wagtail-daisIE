@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+
+{% block content %}
+    <h1 class="mb-6 text-4xl font-bold">{{ page.title }}</h1>
+
+    {% if page.search_description %}
+        <p class="mb-6 text-lg text-base-content/80">{{ page.search_description }}</p>
+    {% endif %}
+
+    {% for block in page.body %}
+        {% include_block block %}
+    {% endfor %}
+
+    <section class="mt-10 rounded-box bg-base-200 p-6">
+        <h2 class="text-lg font-semibold">Context models</h2>
+        <p class="mt-1 text-sm text-base-content/80">
+            Any block on this page can use these values.
+        </p>
+        <ul class="mt-2 list-disc pl-5 text-sm">
+            <li>Signed in as <code>{{ user.username|default:"anonymous" }}</code></li>
+            <li>Site name <code>{{ site.site_name|default:"—" }}</code></li>
+            {% if blog_post %}<li>Blog post <code>{{ blog_post.title }}</code></li>{% endif %}
+        </ul>
+    </section>
+{% endblock %}

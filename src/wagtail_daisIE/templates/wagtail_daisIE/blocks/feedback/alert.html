@@ -1,0 +1,10 @@
+{% load notifications wagtail_daisIE_tags %}
+{% if audience_allowed %}
+  <div
+    class="alert {{ value.color }} {{ value.style }} {{ value.direction }}{% if block_css %} {{ block_css }}{% endif %}"
+    role="alert"
+  >
+    {% if value.icon %}<span aria-hidden="true">{% daisyui_icon value.icon %}</span>{% endif %}
+    <div>{% daisie_richtext value.content %}</div>
+  </div>
+{% endif %}

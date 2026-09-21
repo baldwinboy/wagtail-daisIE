@@ -1,0 +1,18 @@
+{% if field.field.widget.input_type == "checkbox" %}
+    <label class="label cursor-pointer justify-start gap-3{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
+        {{ field }}
+        <span class="label-text">{{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}</span>
+    </label>
+{% else %}
+    <fieldset class="fieldset w-full">
+        <legend class="fieldset-legend{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
+            {{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}
+        </legend>
+        {{ field }}
+        {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
+    </fieldset>
+{% endif %}
+
+{% for error in field.errors %}
+    <p class="label text-error" role="alert">{{ error }}</p>
+{% endfor %}

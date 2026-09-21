@@ -1,0 +1,14 @@
+{% if audience_allowed %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+    <label class="label cursor-pointer justify-start gap-3">
+      <input
+        type="checkbox"
+        {% if value.name %}name="{{ value.name }}"{% endif %}
+        class="checkbox {{ value.color }} {{ value.size }}"
+        {% if value.checked %}checked{% endif %}
+      />
+      <span class="label-text">{{ value.label }}</span>
+    </label>
+    {% if value.helper_text %}<p class="label">{{ value.helper_text }}</p>{% endif %}
+  </div>
+{% endif %}

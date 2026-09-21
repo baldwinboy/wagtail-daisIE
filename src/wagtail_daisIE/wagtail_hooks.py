@@ -166,6 +166,14 @@ def register_context_binding_js():
     )
 
 
+@hooks.register("insert_global_admin_js")
+def register_forms_admin_js():
+    return format_html(
+        '<script src="{}"></script>',
+        static("wagtail_daisIE/js/forms_admin.js"),
+    )
+
+
 @hooks.register("insert_global_admin_css")
 def register_block_settings_css():
     return format_html(

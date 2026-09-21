@@ -1,0 +1,12 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <div
+    class="toast {{ value.position }}{% if block_css %} {{ block_css }}{% endif %}"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="alert {{ value.color }}">
+      <div>{% daisie_richtext value.content %}</div>
+    </div>
+  </div>
+{% endif %}

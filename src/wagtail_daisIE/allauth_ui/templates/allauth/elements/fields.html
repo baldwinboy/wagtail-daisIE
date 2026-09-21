@@ -1,0 +1,7 @@
+{% load allauth_ui %}
+{% for field in attrs.form.hidden_fields %}{{ field }}{% endfor %}
+<div class="space-y-4">
+    {% for field in attrs.form.visible_fields %}
+        {% daisie_form_field field unlabeled=attrs.unlabeled %}
+    {% endfor %}
+</div>

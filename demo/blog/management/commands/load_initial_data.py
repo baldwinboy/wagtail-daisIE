@@ -426,16 +426,40 @@ def _ensure_form_page(home, *, force=False):
     page.require_approval = True
     page.approval_field = "is_approved"
     page.submit_label = "Suggest a bread"
-    page.field_map = [
-        ("mapping", {"form_field": "title", "model_field": "title"}),
-        ("mapping", {"form_field": "description", "model_field": "description"}),
+    page.submit_appearance = [("appearance", {"normal": {"color": "btn-primary"}})]
+    page.success_body = [
+        {
+            "type": "rich_text",
+            "value": {
+                "text": (
+                    "<p>Thanks! Your suggestion is awaiting review by an "
+                    "editor.</p>"
+                )
+            },
+        }
+    ]
+    page.error_body = [
+        {
+            "type": "rich_text",
+            "value": {
+                "text": "<p>Please fix the errors below and submit again.</p>"
+            },
+        }
     ]
     page.save()
     page.form_fields.create(
-        label="Title", field_type="singleline", required=True, sort_order=1
+        label="Title",
+        field_type="singleline",
+        required=True,
+        sort_order=1,
+        model_field="title",
     )
     page.form_fields.create(
-        label="Description", field_type="multiline", required=False, sort_order=2
+        label="Description",
+        field_type="multiline",
+        required=False,
+        sort_order=2,
+        model_field="description",
     )
     page.save_revision().publish()
     return page
@@ -579,6 +603,7 @@ def _ensure_feed(
     empty_message="Nothing to show yet.",
     item=None,
     filters=None,
+    submit_appearance=None,
 ):
     feed, _ = Feed.objects.update_or_create(
         name=name,
@@ -590,7 +615,8 @@ def _ensure_feed(
             "empty_message": empty_message,
         },
     )
-    feed.filters = [("filter", {"key": key}) for key in (filters or [])]
+    feed.filters = [("filter", value) for value in (filters or [])]
+    feed.submit_appearance = submit_appearance or []
     feed.item = item or []
     feed.save()
     return feed
@@ -911,7 +937,28 @@ class Command(BaseCommand):
                 order_by="-date_published",
                 page_size=6,
                 empty_message="No posts yet.",
-                filters=["blog_post:tag", "blog_post:author"],
+                filters=[
+                    {
+                        "key": "blog_post:tag",
+                        "button_appearance": {
+                            "normal": {"color": "btn-primary", "size": "btn-sm"}
+                        },
+                    },
+                    {
+                        "key": "blog_post:author",
+                        "button_appearance": {
+                            "normal": {"color": "btn-secondary", "size": "btn-sm"}
+                        },
+                    },
+                    {
+                        "key": "blog_post:published",
+                        "input_design": {"typography": {"font_size": "text-sm"}},
+                        "label_design": {"typography": {"font_weight": "font-semibold"}},
+                    },
+                ],
+                submit_appearance=[
+                    ("appearance", {"normal": {"color": "btn-primary"}})
+                ],
                 item=[
                     {
                         "type": "image",

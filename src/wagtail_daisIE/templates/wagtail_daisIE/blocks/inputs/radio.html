@@ -1,0 +1,16 @@
+{% if audience_allowed %}
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
+    <legend class="fieldset-legend">{{ value.label }}</legend>
+    {% for option in radio_options %}
+      <label class="label cursor-pointer justify-start gap-3">
+        <input
+          type="radio"
+          name="{% if value.name %}{{ value.name }}{% else %}daisie-radio-{{ block.id }}{% endif %}"
+          value="{{ option }}"
+          class="radio {{ value.color }} {{ value.size }}"
+        />
+        <span class="label-text">{{ option }}</span>
+      </label>
+    {% endfor %}
+  </fieldset>
+{% endif %}

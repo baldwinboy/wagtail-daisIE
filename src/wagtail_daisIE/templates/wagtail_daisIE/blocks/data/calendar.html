@@ -1,0 +1,32 @@
+{% load static %}
+{% if audience_allowed %}
+  <div
+    class="{% if block_css %}{{ block_css }}{% endif %}"
+    data-daisie-calendar
+    data-initial-date="{{ initial_iso }}"
+  >
+    <script type="module" src="{{ cally_url }}"></script>
+    <script src="{% static 'wagtail_daisIE/js/dynamic_data.js' %}"></script>
+    <calendar-date class="cally" value="{{ initial_iso }}">
+      <button slot="previous" class="btn btn-sm btn-ghost" aria-label="Previous month">&#8249;</button>
+      <calendar-month></calendar-month>
+      <button slot="next" class="btn btn-sm btn-ghost" aria-label="Next month">&#8250;</button>
+    </calendar-date>
+
+    <div class="mt-4 space-y-4">
+      {% for day in days %}
+        <div
+          data-daisie-calendar-day="{{ day.iso }}"
+          {% if day.iso != initial_iso %}hidden{% endif %}
+        >
+          <h3 class="mb-2 text-lg font-semibold">{{ day.iso }}</h3>
+          <div class="grid gap-4 sm:grid-cols-2">
+            {% for html in day.events %}{{ html|safe }}{% endfor %}
+          </div>
+        </div>
+      {% empty %}
+        <p class="text-base-content/70">{{ value.empty_message }}</p>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

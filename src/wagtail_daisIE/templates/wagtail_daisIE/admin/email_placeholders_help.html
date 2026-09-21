@@ -1,0 +1,48 @@
+{% load i18n wagtailadmin_tags %}
+<fieldset>
+    <div class="help-block help-info">
+        {% icon name="help" %}
+        <h3>{% trans "Placeholders" %}</h3>
+        <p>
+            {% trans "Write variable expressions in any content field. They are replaced with real values when the email is sent or previewed, for example:" %}
+            <code>{% templatetag openvariable %} recipient.first_name {% templatetag closevariable %}</code>
+        </p>
+        <p>
+            {% trans "Only variable expressions are supported. Django template tags such as" %}
+            <code>{% templatetag openblock %}</code>
+            {% trans "are shown literally." %}
+        </p>
+
+        {% for group in placeholder_groups %}
+            <h4>{{ group.title }}</h4>
+            {% if group.description %}<p>{{ group.description }}</p>{% endif %}
+            <table class="listing">
+                <thead>
+                    <tr>
+                        <th>{% trans "Placeholder" %}</th>
+                        <th>{% trans "Description" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in group.items %}
+                        <tr>
+                            <td><code>{{ item.token }}</code></td>
+                            <td>{{ item.description }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+
+        <h4>{% trans "Formatting dates and times" %}</h4>
+        <p>
+            {% trans "Use Django's date and time filters to format now (or any date value), for example" %}
+            <code>{% templatetag openvariable %} now|date:"j F Y" {% templatetag closevariable %}</code>.
+            <a
+                href="https://docs.djangoproject.com/en/stable/ref/templates/builtins/#date"
+                target="_blank"
+                rel="noopener noreferrer"
+            >{% trans "Date filter reference" %}</a>
+        </p>
+    </div>
+</fieldset>

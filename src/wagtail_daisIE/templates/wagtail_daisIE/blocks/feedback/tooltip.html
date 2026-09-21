@@ -1,0 +1,8 @@
+{% if audience_allowed %}
+  <span
+    class="tooltip {{ value.position }} {{ value.color }}{% if block_css %} {{ block_css }}{% endif %}"
+    data-tip="{{ value.text }}"
+  >
+    <button type="button" class="btn">{{ value.content }}</button>
+  </span>
+{% endif %}

@@ -113,12 +113,20 @@ class LoadInitialDataTests(WagtailPageTestCase):
         assert self.client.get(gated_page.url).status_code == 403
 
         form_page = BreadSuggestionFormPage.objects.get(slug="suggest-a-bread")
+
+        invalid = self.client.post(
+            form_page.url, {"title": "", "description": "Dark rye please"}
+        )
+        assert invalid.status_code == 200
+        assert "fix the errors" in invalid.content.decode()
+
         response = self.client.post(
             form_page.url,
             {"title": "Rye loaf", "description": "Dark rye please"},
             follow=True,
         )
         assert response.status_code == 200
+        assert "awaiting review" in response.content.decode()
         assert BreadSuggestion.objects.filter(
             title="Rye loaf", is_approved=False
         ).exists()

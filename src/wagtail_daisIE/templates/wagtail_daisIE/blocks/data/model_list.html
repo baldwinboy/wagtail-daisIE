@@ -1,0 +1,11 @@
+{% if audience_allowed %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+    {% if items %}
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for item in items %}{{ item.html|safe }}{% endfor %}
+      </div>
+    {% else %}
+      <p class="text-base-content/70">{{ value.empty_message }}</p>
+    {% endif %}
+  </div>
+{% endif %}

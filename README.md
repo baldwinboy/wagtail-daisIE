@@ -267,9 +267,10 @@ WAGTAIL_DAISIE_NOTIFICATION_BRIDGES = {
 
 ## Form pages
 
-`DaisieFormPage` renders DaisyUI forms and can create a configured model
-instance from a submission, with an optional approval flag so new records start
-unapproved. See [docs/forms.md](docs/forms.md).
+`DaisieFormPage` renders DaisyUI forms, links each input to a model field,
+styles inputs and labels individually, and can create a configured model
+instance from a submission (with an optional approval flag, success/error
+bodies and a success redirect). See [docs/forms.md](docs/forms.md).
 
 ## Icons
 

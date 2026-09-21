@@ -1,0 +1,17 @@
+{% if audience_allowed %}
+  <fieldset class="fieldset{% if block_css %} {{ block_css }}{% endif %}">
+    {% if value.label %}<legend class="fieldset-legend">{{ value.label }}</legend>{% endif %}
+    <div class="rating {{ value.size }}">
+      {% for star in stars %}
+        <input
+          type="radio"
+          name="{% if value.name %}{{ value.name }}{% else %}daisie-rating-{{ block.id }}{% endif %}"
+          value="{{ star }}"
+          class="mask mask-star"
+          aria-label="{{ star }} / {{ value.maximum }}"
+          {% if star == selected %}checked{% endif %}
+        />
+      {% endfor %}
+    </div>
+  </fieldset>
+{% endif %}

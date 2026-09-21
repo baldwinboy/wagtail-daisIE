@@ -1,0 +1,7 @@
+{% if audience_allowed %}
+  <span
+    class="loading {{ value.style }} {{ value.size }}{% if block_css %} {{ block_css }}{% endif %}"
+    role="status"
+    aria-label="{{ value.label|default:'Loading' }}"
+  ></span>
+{% endif %}

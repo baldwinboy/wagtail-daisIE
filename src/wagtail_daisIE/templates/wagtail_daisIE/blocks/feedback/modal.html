@@ -1,0 +1,23 @@
+{% load i18n notifications %}
+{% if audience_allowed %}
+  <div{% if block_css %} class="{{ block_css }}"{% endif %}>
+    <a href="#daisie-modal-{{ block.id }}" class="btn">{{ value.trigger_label }}</a>
+    <div
+      class="modal {{ value.placement }}"
+      id="daisie-modal-{{ block.id }}"
+      tabindex="0"
+      aria-label="{{ value.title|default:value.trigger_label }}"
+    >
+      <div class="modal-box">
+        {% if value.title %}<h3 class="text-lg font-bold">{{ value.title }}</h3>{% endif %}
+        {% if value.content %}<div class="py-4">{% daisie_richtext value.content %}</div>{% endif %}
+        <div class="modal-action">
+          <a href="#" class="btn">
+            {% if value.close_label %}{{ value.close_label }}{% else %}{% trans "Close" %}{% endif %}
+          </a>
+        </div>
+      </div>
+      <a href="#" class="modal-backdrop" aria-label="{% trans 'Close' %}">{% trans "Close" %}</a>
+    </div>
+  </div>
+{% endif %}

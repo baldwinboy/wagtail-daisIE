@@ -1,0 +1,39 @@
+{% load static i18n %}
+{% if audience_allowed %}
+  <div
+    class="{% if block_css %}{{ block_css }}{% endif %}"
+    data-daisie-feed
+    data-url="{{ feed_url }}"
+    data-offset="{{ next_offset }}"
+    data-infinite="{% if value.feed.infinite %}true{% else %}false{% endif %}"
+  >
+    {% if filters %}
+      <form method="get" class="mb-6 space-y-4" data-daisie-feed-form>
+        {% for filter in filters %}
+          {% include "wagtail_daisIE/blocks/data/feed_filter.html" with filter=filter %}
+        {% endfor %}
+        <noscript>
+          <button type="submit" class="{{ submit_css }}">{% trans "Apply" %}</button>
+        </noscript>
+      </form>
+    {% endif %}
+
+    <div data-daisie-feed-items>{{ items_html|safe }}</div>
+
+    {% if not items_html %}
+      <p class="text-base-content/70">{{ value.feed.empty_message }}</p>
+    {% endif %}
+
+    <p class="mt-3 text-sm" role="status" aria-live="polite" data-daisie-feed-status></p>
+
+    {% if has_more %}
+      <div class="mt-4 text-center">
+        <a href="?offset={{ next_offset }}" class="{{ submit_css }}" data-daisie-feed-more>
+          {% trans "Load more" %}
+        </a>
+      </div>
+    {% endif %}
+
+    <script src="{% static 'wagtail_daisIE/js/feed.js' %}" defer></script>
+  </div>
+{% endif %}

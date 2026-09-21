@@ -1,0 +1,87 @@
+{% load i18n %}
+{% if filter.type == "choice" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        {% if filter.multi %}
+            <div class="flex flex-wrap gap-2">
+                {% for option in filter.options %}
+                    <label class="{{ filter.button_css }}{% if option.value in filter.values %} btn-active{% endif %}">
+                        <input
+                            type="checkbox"
+                            name="filter_{{ filter.key }}"
+                            value="{{ option.value }}"
+                            class="sr-only"
+                            {% if option.value in filter.values %}checked{% endif %}
+                        />
+                        {{ option.label }}
+                    </label>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="filter">
+                <a href="{{ request.path }}" class="{{ filter.button_css }} btn-square filter-reset" aria-label="{% trans 'Reset' %}">&times;</a>
+                {% for option in filter.options %}
+                    <input
+                        type="radio"
+                        name="filter_{{ filter.key }}"
+                        value="{{ option.value }}"
+                        class="{{ filter.button_css }}"
+                        aria-label="{{ option.label }}"
+                        {% if filter.value == option.value %}checked{% endif %}
+                    />
+                {% endfor %}
+            </div>
+        {% endif %}
+    </fieldset>
+{% elif filter.type == "boolean" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        <div class="filter">
+            <a href="{{ request.path }}" class="{{ filter.button_css }} btn-square filter-reset" aria-label="{% trans 'Reset' %}">&times;</a>
+            {% for option in filter.options %}
+                <input
+                    type="radio"
+                    name="filter_{{ filter.key }}"
+                    value="{{ option.value }}"
+                    class="{{ filter.button_css }}"
+                    aria-label="{{ option.label }}"
+                    {% if filter.value == option.value %}checked{% endif %}
+                />
+            {% endfor %}
+        </div>
+    </fieldset>
+{% elif filter.type == "date" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        <input type="date" name="filter_{{ filter.key }}" value="{{ filter.value }}" class="input w-full {{ filter.input_css }}" />
+    </fieldset>
+{% elif filter.type == "date_range" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        <div class="flex flex-wrap items-center gap-2">
+            <input type="date" name="filter_{{ filter.key }}_from" value="{{ filter.from }}" class="input {{ filter.input_css }}" aria-label="{% trans 'From' %}" />
+            <span aria-hidden="true">–</span>
+            <input type="date" name="filter_{{ filter.key }}_to" value="{{ filter.to }}" class="input {{ filter.input_css }}" aria-label="{% trans 'To' %}" />
+        </div>
+    </fieldset>
+{% elif filter.type == "number_range" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        <div class="flex flex-wrap items-center gap-2">
+            <input type="number" name="filter_{{ filter.key }}_min" value="{{ filter.min }}" class="input {{ filter.input_css }}" aria-label="{% trans 'Minimum' %}" />
+            <span aria-hidden="true">–</span>
+            <input type="number" name="filter_{{ filter.key }}_max" value="{{ filter.max }}" class="input {{ filter.input_css }}" aria-label="{% trans 'Maximum' %}" />
+        </div>
+    </fieldset>
+{% elif filter.type == "search" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        <input
+            type="search"
+            name="feed_search"
+            value="{{ request.GET.feed_search }}"
+            class="input w-full {{ filter.input_css }}"
+            placeholder="{{ filter.label }}"
+        />
+    </fieldset>
+{% endif %}

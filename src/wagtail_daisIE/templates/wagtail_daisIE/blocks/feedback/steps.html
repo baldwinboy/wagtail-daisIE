@@ -1,0 +1,7 @@
+{% if audience_allowed %}
+  <ul class="steps {{ value.direction }}{% if block_css %} {{ block_css }}{% endif %}">
+    {% for step in value.steps %}
+      <li class="step{% if forloop.counter <= value.active %} {{ value.color }}{% endif %}">{{ step }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}

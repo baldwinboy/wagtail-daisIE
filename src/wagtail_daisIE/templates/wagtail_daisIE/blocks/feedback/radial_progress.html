@@ -1,0 +1,10 @@
+{% if audience_allowed %}
+  <div
+    class="radial-progress{% if block_css %} {{ block_css }}{% endif %}"
+    style="--value:{{ value.value }}; --size:{{ value.size }}rem; --thickness:{{ value.thickness }};"
+    role="progressbar"
+    aria-valuenow="{{ value.value }}"
+    aria-valuemin="0"
+    aria-valuemax="100"
+  >{{ value.value }}%</div>
+{% endif %}

@@ -1,0 +1,8 @@
+{% if audience_allowed %}
+  <progress
+    class="progress {{ value.color }}{% if block_css %} {{ block_css }}{% endif %}"
+    value="{{ progress_value }}"
+    max="{{ value.maximum }}"
+    {% if value.label %}aria-label="{{ value.label }}"{% endif %}
+  ></progress>
+{% endif %}

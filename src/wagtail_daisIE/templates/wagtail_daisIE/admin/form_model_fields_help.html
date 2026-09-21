@@ -1,0 +1,36 @@
+{% load i18n wagtailadmin_tags %}
+<fieldset>
+    <div class="help-block help-info" data-daisie-model-fields data-model-key="{{ bound_model.key }}">
+        {% icon name="help" %}
+        <h3>{% trans "Fields available to link" %}</h3>
+        {% if bound_model.key %}
+            <p>
+                {% trans "Inputs can be linked to any editable field on" %}
+                <strong>{{ bound_model.label }}</strong>.
+            </p>
+            {% if bound_model.fields %}
+                <table class="listing">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Field" %}</th>
+                            <th>{% trans "Label" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody data-daisie-model-fields-body>
+                        {% for field in bound_model.fields %}
+                            <tr>
+                                <td><code>{{ field.name }}</code></td>
+                                <td>{{ field.label }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p data-daisie-model-fields-empty hidden>{% trans "This model has no editable fields." %}</p>
+            {% else %}
+                <p data-daisie-model-fields-empty>{% trans "This model has no editable fields." %}</p>
+            {% endif %}
+        {% else %}
+            <p>{% trans "Choose a model to see the fields you can link inputs to." %}</p>
+        {% endif %}
+    </div>
+</fieldset>

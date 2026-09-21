@@ -14,7 +14,7 @@ from wagtail.admin.panels import (
     PublishingPanel,
 )
 from wagtail.api import APIField
-from wagtail.contrib.forms.models import AbstractFormField
+from wagtail_daisIE.forms.fields import DaisieFormField
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.models import (
     DraftStateMixin,
@@ -357,7 +357,7 @@ class Bread(models.Model):
         return f"/breads/#bread-{self.pk}"
 
 
-class BreadSuggestionFormField(AbstractFormField):
+class BreadSuggestionFormField(DaisieFormField):
     page = ParentalKey(
         "blog.BreadSuggestionFormPage",
         related_name="form_fields",

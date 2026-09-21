@@ -1,0 +1,26 @@
+{% load wagtailcore_tags wagtail_daisIE_tags %}
+<!DOCTYPE html>
+<html lang="en"{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{ error_page.title|default:status_code }}</title>
+        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_theme_full_css daisyui_theme %}
+    </head>
+    <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
+        <main id="main-content" class="mx-auto flex w-full max-w-3xl grow flex-col items-center justify-center px-4 py-16 text-center">
+            {% if error_page %}
+                {% if error_page.title %}
+                    <h1 class="mb-6 text-4xl font-bold">{{ error_page.title }}</h1>
+                {% endif %}
+                {% for block in error_page.body %}
+                    {% include_block block %}
+                {% endfor %}
+            {% else %}
+                <h1 class="mb-4 text-4xl font-bold">Error {{ status_code }}</h1>
+                <p class="text-base-content/70">Something went wrong.</p>
+            {% endif %}
+        </main>
+    </body>
+</html>
