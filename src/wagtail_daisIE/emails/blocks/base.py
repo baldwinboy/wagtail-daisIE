@@ -14,6 +14,7 @@ Email blocks reuse the web block classes (fields, design composites and the
 import hashlib
 
 from ...base_blocks.mjml import build_design_style, split_style, style_to_css
+from ...notifications.context import PLACEHOLDER_CONTEXT_KEYS
 from ..mjml import ATTR_MAPS, CATEGORY_TAGS
 
 
@@ -71,4 +72,9 @@ class EmailThemedMixin:
         # Propagate the shared registry to children even when this block has
         # no leftovers of its own.
         context["mjml_styles"] = styles
+        # Withheld block templates only receive this block's context, so carry
+        # the placeholder values down for {% daisie_text %} etc.
+        for key in PLACEHOLDER_CONTEXT_KEYS:
+            if key not in context and key in parent_context:
+                context[key] = parent_context[key]
         return context

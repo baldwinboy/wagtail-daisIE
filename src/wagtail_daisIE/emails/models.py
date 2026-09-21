@@ -15,6 +15,9 @@ from wagtail.fields import StreamField
 from wagtail.models import LockableMixin, PreviewableMixin, RevisionMixin
 
 from ..base_blocks.design import PageDesignBlock
+from ..notifications.context import build_context
+from ..notifications.panels import EmailPlaceholdersHelpPanel
+from ..notifications.placeholders import render_placeholders
 from .blocks import EmailContentBlock
 from .rendering import (
     body_background_color,
@@ -37,6 +40,17 @@ class EmailTemplate(
         verbose_name=_("Name"),
         help_text=_(
             'A unique name used to identify this template, e.g. "Welcome email".'
+        ),
+    )
+    template_key = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name=_("Template key"),
+        help_text=_(
+            "Optional stable key used to bind this template to a bridge or "
+            "integration (e.g. an allauth email prefix)."
         ),
     )
     subject = models.CharField(
@@ -90,7 +104,9 @@ class EmailTemplate(
     )
 
     panels = [
+        EmailPlaceholdersHelpPanel(),
         FieldPanel("name"),
+        FieldPanel("template_key"),
         FieldPanel("subject"),
         FieldPanel("preheader"),
         FieldPanel("content"),
@@ -121,25 +137,69 @@ class EmailTemplate(
 
     def get_preview_context(self, request, mode_name):
         context = super().get_preview_context(request, mode_name)
-        context["mjml_source"] = self.get_mjml()
+        context["mjml_source"] = self.get_mjml(context=build_context(request=request))
         return context
 
     def get_design_value(self):
         return self.design[0].value if self.design else None
 
-    def get_mjml_context(self):
+    def get_mjml_context(self, *, payload=None, recipient=None, context=None):
+        render_context = (
+            dict(context)
+            if context is not None
+            else build_context(payload=payload, recipient=recipient)
+        )
         theme = self.get_theme()
-        return {
-            "email_theme": theme,
-            "content": self.content,
-            "subject": self.subject,
-            "preheader": self.preheader,
-            "theme_attributes": theme_attributes(theme),
-            "font_urls": font_urls(theme),
-            "mj_classes": category_classes(self.get_design_value(), theme),
-            "body_background_color": body_background_color(theme),
-        }
+        render_context.update(
+            {
+                "email_theme": theme,
+                "content": self.content,
+                "subject": render_placeholders(
+                    self.subject,
+                    render_context,
+                    escape_literals=False,
+                    escape_values=False,
+                ),
+                "preheader": render_placeholders(
+                    self.preheader,
+                    render_context,
+                    escape_literals=False,
+                    escape_values=False,
+                ),
+                "theme_attributes": theme_attributes(theme),
+                "font_urls": font_urls(theme),
+                "mj_classes": category_classes(self.get_design_value(), theme),
+                "body_background_color": body_background_color(theme),
+            }
+        )
+        return render_context
 
-    def get_mjml(self):
+    def get_mjml(self, *, payload=None, recipient=None, context=None):
         """Return the raw MJML document (not yet compiled to HTML)."""
-        return render_mjml(self)
+        return render_mjml(
+            self,
+            payload=payload,
+            recipient=recipient,
+            context=context,
+        )
+
+    def render(
+        self,
+        *,
+        payload=None,
+        recipient=None,
+        request=None,
+        site=None,
+        from_email=None,
+    ):
+        """Render to a subject/HTML/text bundle for the given context."""
+        from ..notifications.rendering import render_email_template
+
+        return render_email_template(
+            self,
+            payload=payload,
+            recipient=recipient,
+            request=request,
+            site=site,
+            from_email=from_email,
+        )

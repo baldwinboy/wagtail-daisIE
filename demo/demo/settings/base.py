@@ -52,7 +52,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "colorfield",
+    "allauth",
+    "allauth.account",
 ]
 
 MIDDLEWARE = [
@@ -64,6 +67,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "demo.urls"
@@ -198,3 +202,131 @@ WAGTAILDOCS_EXTENSIONS = [
     "xlsx",
     "zip",
 ]
+
+# ---------------------------------------------------------------------------
+# Wagtail DaisyUI Interface Editor demo configuration
+# ---------------------------------------------------------------------------
+
+SITE_ID = 1
+
+# Context models: values authors can reference in content as {{ key.field }}.
+WAGTAIL_DAISIE_CONTEXT_MODELS = {
+    "user": {
+        "label": "Current user",
+        "model": "auth.User",
+        "source": "request.user",
+    },
+    "blog_post": {
+        "label": "Current blog post",
+        "model": "blog.BlogPage",
+        "source": "url",
+        "lookup_field": "slug",
+        "url_source": "get_absolute_url",
+        "queryset": "blog.feed.live_posts",
+        "filters": {
+            "tag": {
+                "label": "Tag",
+                "type": "choice",
+                "field": "tags__slug",
+                "choices": "blog.filters.tags",
+            },
+            "author": {
+                "label": "Author",
+                "type": "choice",
+                "multi": True,
+                "field": "blog_person_relationship__person_id",
+                "choices": "blog.filters.authors",
+            },
+            "published": {
+                "label": "Published",
+                "type": "date_range",
+                "field": "date_published",
+            },
+        },
+    },
+    "bread_suggestion": {
+        "label": "Bread suggestion",
+        "model": "blog.BreadSuggestion",
+        "source": "url",
+        "lookup_field": "pk",
+    },
+    "bread": {
+        "label": "Bread",
+        "model": "blog.Bread",
+        "source": "url",
+        "lookup_field": "pk",
+        "url_source": "url",
+        "select_related": ["image"],
+    },
+    "basket": {
+        "label": "Bread basket",
+        "model": "blog.Bread",
+        "source": "blog.actions.basket_items",
+    },
+    "basket_count": {
+        "label": "Basket item count",
+        "model": "blog.Bread",
+        "source": "blog.actions.basket_count",
+    },
+}
+
+# Developer-defined actions used by Action buttons.
+WAGTAIL_DAISIE_ACTIONS = {
+    "basket.add": {
+        "label": "Add to basket",
+        "handler": "blog.actions.basket_add",
+    },
+    "basket.remove": {
+        "label": "Remove from basket",
+        "handler": "blog.actions.basket_remove",
+    },
+    "basket.clear": {
+        "label": "Clear basket",
+        "handler": "blog.actions.basket_clear",
+    },
+}
+
+# Audiences: request rules plus an optional queryset for campaigns.
+WAGTAIL_DAISIE_AUDIENCE_RULES = {
+    "staff": {
+        "label": "Staff members",
+        "rule": "blog.audience.is_staff",
+        "queryset": "blog.audience.staff_users",
+    },
+    "newsletter": {
+        "label": "Newsletter subscribers",
+        "rule": "blog.audience.has_newsletter",
+    },
+}
+
+# Notification bridges: email the Newsletter audience when a blog post publishes.
+WAGTAIL_DAISIE_NOTIFICATION_BRIDGES = {
+    "blog_post_published": {
+        "label": "Blog post published",
+        "template": "Blog post published",
+        "signal": "wagtail.signals.page_published",
+        "sender": "blog.BlogPage",
+        "context": "blog.notifications.blog_post_context",
+        "recipients": "blog.notifications.newsletter_recipients",
+        "placeholders": {
+            "title": "The published post title",
+            "url": "The published post URL",
+        },
+    },
+}
+
+# DaisyUI styling for the allauth account pages and forms.
+WAGTAIL_DAISIE_ALLAUTH_UI = True
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+ACCOUNT_ADAPTER = "demo.adapters.AccountAdapter"
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_SIGNUP_FIELDS = ["username*", "email*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_LOGOUT_ON_GET = True
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"

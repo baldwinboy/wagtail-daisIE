@@ -236,6 +236,9 @@ class ThemedBlock(blocks.StructBlock):
         audience_keys = (value.get("audience") or {}).get("audience") or []
         request = parent_context.get("request")
         context["audience_allowed"] = evaluate_audience(audience_keys, request)
+        from ..dynamic.context import copy_context_values
+
+        copy_context_values(parent_context, context)
         return context
 
     class Meta:

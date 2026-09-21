@@ -97,8 +97,12 @@ def body_background_color(theme):
     return _palette(theme).get("base_100", "")
 
 
-def render_mjml(template):
-    context = template.get_mjml_context()
+def render_mjml(template, *, payload=None, recipient=None, context=None):
+    context = template.get_mjml_context(
+        payload=payload,
+        recipient=recipient,
+        context=context,
+    )
     context.setdefault("mjml_styles", {})
     context["mjml_body"] = render_to_string(
         "wagtail_daisIE/emails/blocks/body_body.html", context

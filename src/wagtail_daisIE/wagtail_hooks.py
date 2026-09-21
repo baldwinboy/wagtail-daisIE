@@ -10,15 +10,20 @@ from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 
 from .context import set_current_theme, theme_from_instance
+from .dynamic.views import object_options
 from .emails.view_sets import EmailViewSetGroup
+from .errors.view_sets import ErrorViewSetGroup
 from .icons.providers.iconify import ICONIFY_ICON_SCRIPT
 from .icons.views import icon_search
+from .notifications.view_sets import (
+    AllauthEmailOverrideViewSet,
+    AudienceViewSet,
+    EmailCampaignViewSet,
+)
 from .view_sets import DaisyUIViewSetGroup
 
 
 # Register the design view set group.
-
-
 @hooks.register("register_icons")
 def register_icons(icons):
     return icons + [
@@ -31,9 +36,27 @@ register_snippet(DaisyUIViewSetGroup)
 # Register the email snippet view set group.
 register_snippet(EmailViewSetGroup)
 
+
+@hooks.register("register_admin_viewset")
+def register_audience_viewset():
+    return AudienceViewSet()
+
+
+@hooks.register("register_admin_viewset")
+def register_email_campaign_viewset():
+    return EmailCampaignViewSet()
+
+
+@hooks.register("register_admin_viewset")
+def register_allauth_email_viewset():
+    return AllauthEmailOverrideViewSet()
+
+
+# Register the error page snippet view set group.
+register_snippet(ErrorViewSetGroup)
+
+
 # Set the current theme for the page/menu being created/edited.
-
-
 @hooks.register("before_create_page")
 def _set_theme_before_create_page(request, page):
     set_current_theme(theme_from_instance(page))
@@ -66,6 +89,11 @@ def register_admin_urls():
             name="javascript_catalog",
         ),
         path("icons/search/", icon_search, name="icon_search"),
+        path(
+            "dynamic/objects/",
+            object_options,
+            name="dynamic_object_options",
+        ),
         # Add other package-scoped URLs here so they are access-restricted to the admin.
     ]
 
@@ -116,11 +144,44 @@ def register_block_settings_js():
     )
 
 
+# Register the dynamic context-model metadata for the binding block.
+
+
+@hooks.register("insert_global_admin_js")
+def register_context_models_js():
+    from .dynamic.registry import get_context_models_state
+
+    state_json = json.dumps(get_context_models_state())
+    return format_html(
+        "<script type='text/javascript'>window.WAGTAIL_DAISIE_CONTEXT_MODELS = {};</script>",
+        mark_safe(state_json),  # noqa: S308
+    )
+
+
+@hooks.register("insert_global_admin_js")
+def register_context_binding_js():
+    return format_html(
+        '<script src="{}"></script>',
+        static("wagtail_daisIE/js/context_binding_block.js"),
+    )
+
+
 @hooks.register("insert_global_admin_css")
 def register_block_settings_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
         static("wagtail_daisIE/css/block_settings.css"),
+    )
+
+
+# Register the context binding styles.
+
+
+@hooks.register("insert_global_admin_css")
+def register_context_binding_css():
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("wagtail_daisIE/css/context_binding.css"),
     )
 
 

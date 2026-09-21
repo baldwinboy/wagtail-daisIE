@@ -1,2 +1,2 @@
-{% load mjml wagtailcore_tags %}
-{% if audience_allowed %}<mj-text {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{{ value.text|richtext }}</mj-text>{% endif %}
+{% load mjml wagtailcore_tags notifications %}
+{% if audience_allowed %}<mj-text {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% daisie_richtext value.text %}</mj-text>{% endif %}

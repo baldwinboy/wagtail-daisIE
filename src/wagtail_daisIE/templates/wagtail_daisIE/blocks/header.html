@@ -1,7 +1,8 @@
+{% load notifications %}
 {% if audience_allowed %}
   <div class="{% if block_css %}{{ block_css }}{% endif %}">
     {% if value.text %}
-      <h2 class="mb-4 text-3xl font-bold">{{ value.text }}</h2>
+      <h2 class="mb-4 text-3xl font-bold">{% daisie_text value.text %}</h2>
     {% endif %}
   </div>
 {% endif %}

@@ -8,11 +8,38 @@ This document maps the package for developers and AI agents.
 choices/        Plain constants: Tailwind/DaisyUI class choices
 base_blocks/    Reusable design primitives and the block CSS pipeline
 blocks/         Public block composition built on base_blocks
-models/         Snippets: DaisyUITheme, DaisyUIMenu, DaisyUIIconSource
+models/         Snippets: DaisyUITheme, DaisyUIMenu, DaisyUIIconSource, ErrorPage
 icons/          Icon provider registry, chooser field/block/widget
 emails/         MJML email templates (see docs/emails.md)
+dynamic/        Context models, dynamic image/link values, resolution
+notifications/  Email bridges, allauth emails, audiences and campaigns
+forms/          DaisieFormPage and the DaisyUI form builder
+errors/         Admin-designable error pages and Django handlers
+allauth_ui/     Opt-in DaisyUI templates for allauth pages and forms
 templates/      Block, tag, admin and preview templates
 ```
+
+### `dynamic/`
+
+`registry.py` parses `WAGTAIL_DAISIE_CONTEXT_MODELS`; `resolvers.py` resolves
+request/URL/fixed values and dynamic expressions (including the URL scheme
+allow-list); `mixins.py` injects the values into page and block contexts;
+`blocks.py`/`forms.py` provide the per-page binding chooser; `feeds.py`
+implements typed filters and feed rendering; `models.py` defines the `Feed`
+snippet; `blocks_data.py` holds the Feed, Action button and Calendar blocks;
+`actions.py` + `urls.py` + `views.py` run developer-defined actions and serve
+feed slices.
+
+### `notifications/`
+
+`placeholders.py` renders `{{ ... }}` expressions (Django engine, autoescape,
+tags left literal); `context.py` builds the built-in context; `rendering.py`
+turns an `EmailTemplate` into subject/HTML/text; `bridges.py` dispatches events;
+`registry.py`/`conf.py` read bridge settings; `allauth.py` +
+`allauth_catalogue.py` bridge allauth; `campaigns.py` sends audiences;
+`models.py` holds `AllauthEmailOverride`, `Audience`, `AudienceMember`,
+`EmailCampaign` and `CampaignRecipientLog`.
+
 
 ### `choices/`
 

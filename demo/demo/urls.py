@@ -11,8 +11,15 @@ urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
+    path("accounts/", include("allauth.urls")),
+    path("newsletter/", include("wagtail_daisIE.notifications.urls")),
+    path("daisie/", include("wagtail_daisIE.dynamic.urls")),
     path("search/", search_views.search, name="search"),
 ]
+
+handler403 = "wagtail_daisIE.errors.handlers.handler403"
+handler404 = "wagtail_daisIE.errors.handlers.handler404"
+handler500 = "wagtail_daisIE.errors.handlers.handler500"
 
 
 if settings.DEBUG:

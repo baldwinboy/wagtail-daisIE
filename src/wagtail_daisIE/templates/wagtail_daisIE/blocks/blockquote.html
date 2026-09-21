@@ -1,8 +1,9 @@
+{% load notifications %}
 {% if audience_allowed %}
   <blockquote class="{% if block_css %}{{ block_css }}{% endif %}">
-    <p>{{ value.text }}</p>
+    <p>{% daisie_text value.text %}</p>
     {% if value.attribute_name %}
-      <cite>{{ value.attribute_name }}</cite>
+      <cite>{% daisie_text value.attribute_name %}</cite>
     {% endif %}
   </blockquote>
 {% endif %}

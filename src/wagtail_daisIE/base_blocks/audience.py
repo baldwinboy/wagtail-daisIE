@@ -2,6 +2,8 @@ import logging
 
 from django import forms
 from django.conf import settings
+from django.http import Http404
+from django.shortcuts import redirect
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
@@ -20,6 +22,44 @@ def get_audience_choices():
             settings, "WAGTAIL_DAISIE_AUDIENCE_RULES", {}
         ).items()
     ]
+
+
+def get_audience_rule(key):
+    """Return the raw config for an audience rule key."""
+    rules = getattr(settings, "WAGTAIL_DAISIE_AUDIENCE_RULES", {})
+    return rules.get(key) or {}
+
+
+def get_audience_rule_choices():
+    """Choices for selecting a configured audience rule."""
+    return [
+        (key, config.get("label", key))
+        for key, config in getattr(
+            settings, "WAGTAIL_DAISIE_AUDIENCE_RULES", {}
+        ).items()
+    ]
+
+
+def resolve_audience_queryset(key):
+    """Return the User queryset for a rule key's optional ``queryset``.
+
+    Rules are ``request``-based; campaigns need a way to select users without a
+    request, so a rule may additionally declare ``"queryset":
+    "myapp.audience.subscribers"`` (or a callable) returning a User queryset.
+    Returns ``None`` when the rule has no queryset.
+    """
+    rule = get_audience_rule(key)
+    target = rule.get("queryset")
+    if not target:
+        return None
+    if callable(target):
+        return target()
+    try:
+        factory = import_string(target)
+    except ImportError as exc:
+        logger.warning("Could not resolve audience queryset %r: %s", target, exc)
+        return None
+    return factory()
 
 
 def evaluate_audience(audience_keys, request):
@@ -41,11 +81,14 @@ def evaluate_audience(audience_keys, request):
         rule = (config or {}).get("rule")
         if not rule:
             continue
-        try:
-            rule_callable = import_string(rule)
-        except ImportError as exc:
-            logger.warning("Could not resolve audience rule %r: %s", rule, exc)
-            continue
+        if callable(rule):
+            rule_callable = rule
+        else:
+            try:
+                rule_callable = import_string(rule)
+            except ImportError as exc:
+                logger.warning("Could not resolve audience rule %r: %s", rule, exc)
+                continue
         try:
             if rule_callable(request):
                 return True
@@ -97,3 +140,40 @@ class AudienceBlockAdapter(StructBlockAdapter):
 
 
 register(AudienceBlockAdapter(), AudienceBlock)
+
+
+class PageAudienceMixin:
+    """Page-level audience gating.
+
+    Composed by ``StyledPageMixin`` (and form pages). Concrete classes supply
+    the ``audience`` StreamField and the ``audience_denied``/``audience_denied_page``
+    fields.
+    """
+
+    audience_denied = "403"
+
+    def get_audience_keys(self):
+        stream = getattr(self, "audience", None)
+        first = stream[0].value if stream else None
+        if not first:
+            return []
+        return list(first.get("audience") or [])
+
+    def page_audience_allowed(self, request):
+        return evaluate_audience(self.get_audience_keys(), request)
+
+    def audience_denied_response(self, request):
+        if self.audience_denied == "redirect" and getattr(
+            self, "audience_denied_page_id", None
+        ):
+            return redirect(self.audience_denied_page.url)
+        if self.audience_denied == "404":
+            raise Http404
+        from ..errors.handlers import render_error_page
+
+        return render_error_page(request, 403)
+
+    def serve(self, request, *args, **kwargs):
+        if not self.page_audience_allowed(request):
+            return self.audience_denied_response(request)
+        return super().serve(request, *args, **kwargs)

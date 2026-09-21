@@ -14,6 +14,7 @@ from wagtail.admin.panels import (
     PublishingPanel,
 )
 from wagtail.api import APIField
+from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.models import (
     DraftStateMixin,
@@ -25,6 +26,7 @@ from wagtail.models import (
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
+from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.pages import StyledPageMixin
 
 
@@ -219,7 +221,7 @@ class BlogPage(StyledPageMixin):
     subpage_types = []
 
 
-class BlogIndexPage(RoutablePageMixin, Page):
+class BlogIndexPage(RoutablePageMixin, StyledPageMixin):
     introduction = models.TextField(help_text="Text to describe the page", blank=True)
     image = models.ForeignKey(
         "wagtailimages.Image",
@@ -230,7 +232,7 @@ class BlogIndexPage(RoutablePageMixin, Page):
         help_text="Landscape mode only; horizontal width between 1000px and 3000px.",
     )
 
-    content_panels = Page.content_panels + [
+    content_panels = StyledPageMixin.content_panels + [
         FieldPanel("introduction"),
         FieldPanel("image"),
     ]
@@ -288,3 +290,88 @@ class BlogIndexPage(RoutablePageMixin, Page):
             tags += post.get_tags
         tags = sorted(set(tags))
         return tags
+
+
+@register_snippet
+class BreadSuggestion(models.Model):
+    """A bread suggestion submitted through the demo form page."""
+
+    title = models.CharField("Title", max_length=255)
+    description = models.TextField("Description", blank=True)
+    is_approved = models.BooleanField(
+        "Approved",
+        default=False,
+        help_text="Approved suggestions have been reviewed by an editor.",
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    panels = [
+        FieldPanel("title"),
+        FieldPanel("description"),
+        FieldPanel("is_approved"),
+    ]
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        verbose_name = "bread suggestion"
+        verbose_name_plural = "bread suggestions"
+
+    def __str__(self):
+        return self.title
+
+
+@register_snippet
+class Bread(models.Model):
+    """A loaf the demo lists, calendars and adds to a basket."""
+
+    name = models.CharField("Name", max_length=255)
+    description = models.TextField("Description", blank=True)
+    image = models.ForeignKey(
+        "wagtailimages.Image",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    added_on = models.DateField("Added on")
+    is_available = models.BooleanField("Available", default=True)
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("description"),
+        FieldPanel("image"),
+        FieldPanel("added_on"),
+        FieldPanel("is_available"),
+    ]
+
+    class Meta:
+        ordering = ["-added_on", "name"]
+        verbose_name = "bread"
+        verbose_name_plural = "breads"
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def url(self):
+        return f"/breads/#bread-{self.pk}"
+
+
+class BreadSuggestionFormField(AbstractFormField):
+    page = ParentalKey(
+        "blog.BreadSuggestionFormPage",
+        related_name="form_fields",
+        on_delete=models.CASCADE,
+    )
+
+
+class BreadSuggestionFormPage(DaisieFormPage):
+    """Demonstrates a FormPage that creates a model instance, pending approval.
+
+    The model to create and the approval behaviour are set on the page instance
+    (see ``load_initial_data``); do not shadow the inherited fields with class
+    attributes.
+    """
+
+    parent_page_types = ["home.HomePage"]
+    subpage_types = []

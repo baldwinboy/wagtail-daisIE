@@ -1,10 +1,14 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..dynamic.blocks_data import DATA_BLOCKS
 from .accordion import AccordionBlock
 from .blockquote import BlockQuote
 from .cards import CARD_CONTENT_BLOCKS, CONTENT_BLOCKS, INLINE_CARD_CONTENT
+from .content_blocks import PAGE_CONTENT_BLOCKS
+from .feedback import FEEDBACK_BLOCKS
 from .inline import CopyrightBlock
+from .inputs import INPUT_BLOCKS
 from .layout import ColumnBlock, GridBlock, RowBlock
 from .marquee import MarqueeBlock
 from .section import SectionBlock
@@ -13,15 +17,8 @@ from .table import TableBlock
 
 
 ALL_CONTENT_BLOCKS = [
-    *LIST_CONTENT_BLOCKS,
-    ("accordion", AccordionBlock()),
-    ("row", RowBlock()),
-    ("column", ColumnBlock()),
-    ("grid", GridBlock()),
-    ("table", TableBlock()),
-    ("marquee", MarqueeBlock()),
-    ("copyright", CopyrightBlock()),
-    ("blockquote", BlockQuote()),
+    *PAGE_CONTENT_BLOCKS,
+    *DATA_BLOCKS,
 ]
 
 
@@ -48,9 +45,12 @@ __all__ = [
     "ColumnBlock",
     "CONTENT_BLOCKS",
     "CONTENT_BLOCK",
+    "ContentBlock",
     "CopyrightBlock",
+    "FEEDBACK_BLOCKS",
     "GridBlock",
     "INLINE_CARD_CONTENT",
+    "INPUT_BLOCKS",
     "LIST_CONTENT_BLOCKS",
     "MarqueeBlock",
     "RowBlock",

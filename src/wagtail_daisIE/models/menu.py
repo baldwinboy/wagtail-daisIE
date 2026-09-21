@@ -16,6 +16,9 @@ from wagtail.models import (
 
 from ..base_blocks import MenuItemDesignBlock
 from ..blocks.menu_items import MenuBranding, MenuItemStreamBlock
+from ..dynamic.blocks import CONTEXT_BINDING_BLOCKS
+from ..dynamic.resolvers import parse_bindings, resolve_context_models
+from ..notifications.context import build_context
 from .theme import DaisyUITheme
 
 
@@ -142,6 +145,16 @@ class DaisyUIMenu(
         help_text=_("Add links, buttons, accordions and other menu components."),
     )
 
+    context_bindings = StreamField(
+        CONTEXT_BINDING_BLOCKS,
+        blank=True,
+        use_json_field=True,
+        verbose_name=_("Context bindings"),
+        help_text=_(
+            "Expose context models to this menu's items, e.g. the current user."
+        ),
+    )
+
     revisions = GenericRelation(
         "wagtailcore.Revision",
         content_type_field="base_content_type",
@@ -174,6 +187,7 @@ class DaisyUIMenu(
             classname="collapsed",
         ),
         FieldPanel("body"),
+        FieldPanel("context_bindings"),
     ]
 
     styling_panels = [
@@ -212,4 +226,11 @@ class DaisyUIMenu(
         context["daisyui_theme"] = theme
         context["menu_theme"] = theme
         context["menu_item_css"] = self.get_item_css()
+        context.update(build_context(request=request))
+        context.update(
+            resolve_context_models(
+                request,
+                bindings=parse_bindings(self),
+            )
+        )
         return context

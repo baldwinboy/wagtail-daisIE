@@ -25,14 +25,24 @@ from django.core.files.base import ContentFile
 from django.core.files.images import get_image_dimensions
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.dateparse import parse_datetime
-from home.models import HomePage
+from home.models import DemoPage, HomePage
 from wagtail.images.models import Image
 from wagtail.models import Collection, Site
 from wagtail.rich_text import RichText
 from wagtail.users.models import UserProfile
 
-from blog.models import BlogIndexPage, BlogPage, Person
+from blog.models import (
+    BlogIndexPage,
+    BlogPage,
+    Bread,
+    BreadSuggestionFormField,
+    BreadSuggestionFormPage,
+    Person,
+)
 from wagtail_daisIE.models import (
+    AllauthEmailOverride,
+    Audience,
+    AudienceMember,
     DaisyUIMenu,
     DaisyUITheme,
     DaisyUIThemeBackground,
@@ -43,6 +53,9 @@ from wagtail_daisIE.models import (
     DaisyUIThemeFonts,
     DaisyUIThemeRadii,
     DaisyUIThemeSizes,
+    EmailTemplate,
+    ErrorPage,
+    Feed,
 )
 
 
@@ -297,6 +310,455 @@ def _ensure_menu(
     return menu
 
 
+def _ensure_newsletter_audience():
+    audience, _ = Audience.objects.get_or_create(
+        name="Newsletter",
+        defaults={"description": "People who signed up for the demo newsletter."},
+    )
+    for email, name in (
+        ("roberta@example.com", "Roberta"),
+        ("olivia@example.com", "Olivia"),
+    ):
+        AudienceMember.objects.get_or_create(
+            audience=audience, email=email, defaults={"name": name}
+        )
+    return audience
+
+
+def _ensure_email_template(theme, name, subject, paragraphs, *, force=False):
+    template = EmailTemplate.objects.filter(name=name).first()
+    if template and not force:
+        return template
+    template, _ = EmailTemplate.objects.update_or_create(
+        name=name,
+        defaults={"subject": subject, "email_theme": theme},
+    )
+    template.content = [
+        {
+            "type": "section",
+            "value": {
+                "design": {},
+                "content": [
+                    {
+                        "type": "rich_text",
+                        "value": {"text": paragraphs, "design": {}, "audience": {}},
+                    }
+                ],
+            },
+        }
+    ]
+    template.save()
+    return template
+
+
+def _ensure_allauth_overrides(confirm, reset):
+    for prefix in (
+        "account/email/email_confirmation_signup",
+        "account/email/email_confirmation",
+    ):
+        AllauthEmailOverride.objects.update_or_create(
+            template_prefix=prefix,
+            defaults={"email_template": confirm, "is_active": True},
+        )
+    AllauthEmailOverride.objects.update_or_create(
+        template_prefix="account/email/password_reset_key",
+        defaults={"email_template": reset, "is_active": True},
+    )
+
+
+def _ensure_error_pages():
+    specs = {
+        403: (
+            "Access denied",
+            "<p>You do not have permission to view this page.</p>",
+        ),
+        404: (
+            "Page not found",
+            "<p>We could not find the page you were looking for.</p>",
+        ),
+        500: (
+            "Something went wrong",
+            "<p>An unexpected error occurred. Please try again later.</p>",
+        ),
+    }
+    for code, (title, text) in specs.items():
+        page, _ = ErrorPage.objects.update_or_create(
+            status_code=code, defaults={"title": title, "is_active": True}
+        )
+        page.body = [{"type": "rich_text", "value": {"text": text}}]
+        page.save()
+
+
+def _ensure_demo_page(
+    home, title, slug, body, *, theme=None, audience=None, denied="403", force=False
+):
+    existing = DemoPage.objects.child_of(home).filter(slug=slug).first()
+    if existing and not force:
+        return existing
+    if existing:
+        existing.delete()
+    page = DemoPage(title=title, slug=slug)
+    if theme is not None:
+        page.page_theme = theme
+    home.add_child(instance=page)
+    page.body = body
+    if audience:
+        page.audience = [{"type": "audience", "value": {"audience": audience}}]
+    page.audience_denied = denied
+    page.save()
+    page.save_revision().publish()
+    return page
+
+
+def _ensure_form_page(home, *, force=False):
+    existing = (
+        BreadSuggestionFormPage.objects.child_of(home)
+        .filter(slug="suggest-a-bread")
+        .first()
+    )
+    if existing and not force:
+        return existing
+    if existing:
+        existing.delete()
+    page = BreadSuggestionFormPage(title="Suggest a bread", slug="suggest-a-bread")
+    home.add_child(instance=page)
+    page.instance_model = "bread_suggestion"
+    page.require_approval = True
+    page.approval_field = "is_approved"
+    page.submit_label = "Suggest a bread"
+    page.field_map = [
+        ("mapping", {"form_field": "title", "model_field": "title"}),
+        ("mapping", {"form_field": "description", "model_field": "description"}),
+    ]
+    page.save()
+    page.form_fields.create(
+        label="Title", field_type="singleline", required=True, sort_order=1
+    )
+    page.form_fields.create(
+        label="Description", field_type="multiline", required=False, sort_order=2
+    )
+    page.save_revision().publish()
+    return page
+
+
+def _ensure_showcase(theme, home, *, force=False):
+    confirm = _ensure_email_template(
+        theme,
+        "Account confirmation",
+        "Confirm your account",
+        "<p>Hello {{ recipient.email }}, please confirm your account.</p>"
+        "<p>Your code is <strong>{{ payload.code }}</strong>.</p>",
+        force=force,
+    )
+    reset = _ensure_email_template(
+        theme,
+        "Password reset",
+        "Reset your password",
+        '<p>Use this link to reset your password: '
+        '<a href="{{ payload.password_reset_url }}">reset</a></p>',
+        force=force,
+    )
+    _ensure_allauth_overrides(confirm, reset)
+    _ensure_error_pages()
+
+    _ensure_demo_page(
+        home,
+        "Context and components",
+        "context-and-components",
+        [
+            {
+                "type": "rich_text",
+                "value": {
+                    "text": (
+                        "<p>Signed in as "
+                        "<strong>{{ user.username|default:'anonymous' }}</strong>. "
+                        "This page demonstrates context models, feedback blocks and "
+                        "data-input blocks.</p>"
+                    )
+                },
+            },
+            {
+                "type": "alert",
+                "value": {
+                    "content": "<p>This is a DaisyUI alert block.</p>",
+                    "color": "alert-success",
+                    "style": "",
+                    "direction": "",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+            {
+                "type": "progress",
+                "value": {
+                    "value": 60,
+                    "maximum": 100,
+                    "color": "progress-primary",
+                    "label": "Progress",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+            {
+                "type": "input",
+                "value": {
+                    "label": "Your name",
+                    "input_type": "text",
+                    "name": "demo_name",
+                    "placeholder": "Ada",
+                    "value": "",
+                    "required": False,
+                    "helper_text": "A DaisyUI input block.",
+                    "error_text": "",
+                    "color": "",
+                    "size": "",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+        ],
+        theme=theme,
+        force=force,
+    )
+
+    _ensure_demo_page(
+        home,
+        "Members only",
+        "members-only",
+        [
+            {
+                "type": "rich_text",
+                "value": {
+                    "text": (
+                        "<p>This page is limited to the "
+                        "<em>Staff members</em> audience.</p>"
+                    )
+                },
+            }
+        ],
+        theme=theme,
+        audience=["staff"],
+        denied="403",
+        force=force,
+    )
+
+    _ensure_form_page(home, force=force)
+
+
+def _ensure_breads(load_image):
+    if Bread.objects.exists():
+        return
+    specs = [
+        ("Seeded Harvest Loaf", "A nutty, seeded sourdough.", "seeded-harvest-loaf", "2026-02-03"),
+        ("Dark Rye Sourdough", "Dense, malty rye with a crisp crust.", "dark-rye-sourdough", "2026-02-05"),
+        ("Everyday White", "A soft, dependable white loaf.", "dark-rye-sourdough", "2026-02-09"),
+        ("Sliced Sandwich Loaf", "Even slices, perfect for lunch.", "seeded-harvest-loaf", "2026-02-12"),
+        ("Olive & Rosemary", "Fragrant herbs and briny olives.", "dark-rye-sourdough", "2026-02-16"),
+        ("Weekend Focaccia", "Dimpled, olive-oil-rich and crisp.", "seeded-harvest-loaf", "2026-02-21"),
+    ]
+    for name, description, image_key, added_on in specs:
+        try:
+            image = load_image(image_key)
+        except Exception:
+            image = None
+        Bread.objects.create(
+            name=name,
+            description=description,
+            image=image,
+            added_on=date.fromisoformat(added_on),
+        )
+
+
+def _ensure_feed(
+    name,
+    context_model,
+    *,
+    order_by="-pk",
+    page_size=6,
+    infinite=False,
+    empty_message="Nothing to show yet.",
+    item=None,
+    filters=None,
+):
+    feed, _ = Feed.objects.update_or_create(
+        name=name,
+        defaults={
+            "context_model": context_model,
+            "order_by": order_by,
+            "page_size": page_size,
+            "infinite": infinite,
+            "empty_message": empty_message,
+        },
+    )
+    feed.filters = [("filter", {"key": key}) for key in (filters or [])]
+    feed.item = item or []
+    feed.save()
+    return feed
+
+
+def _ensure_data_pages(theme, home, *, force=False):
+    basket_feed = _ensure_feed(
+        "Basket feed",
+        "basket",
+        order_by="",
+        page_size=20,
+        empty_message="Your basket is empty.",
+        item=[
+            {
+                "type": "header",
+                "value": {"text": "{{ basket.name }}", "design": {}, "audience": {}},
+            },
+            {
+                "type": "action",
+                "value": {
+                    "action": "basket.remove",
+                    "label": "Remove",
+                    "button_class": "btn btn-sm btn-outline",
+                    "target_expression": "basket.pk",
+                    "confirm": "",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+        ],
+    )
+    breads_feed = _ensure_feed(
+        "Breads feed",
+        "bread",
+        order_by="name",
+        page_size=6,
+        empty_message="No breads yet.",
+        item=[
+            {
+                "type": "image",
+                "value": {
+                    "image": None,
+                    "image_source": "dynamic",
+                    "image_expression": "bread.image",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+            {
+                "type": "header",
+                "value": {"text": "{{ bread.name }}", "design": {}, "audience": {}},
+            },
+            {
+                "type": "text",
+                "value": {
+                    "text": "{{ bread.description }}",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+            {
+                "type": "action",
+                "value": {
+                    "action": "basket.add",
+                    "label": "Add to basket",
+                    "button_class": "btn btn-primary btn-sm",
+                    "target_expression": "bread.pk",
+                    "confirm": "",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+        ],
+    )
+
+    _ensure_demo_page(
+        home,
+        "Breads and basket",
+        "breads",
+        [
+            {
+                "type": "rich_text",
+                "value": {
+                    "text": (
+                        "<p>You have <strong>{{ basket_count }}</strong> bread(s) "
+                        "in your basket.</p>"
+                    )
+                },
+            },
+            {
+                "type": "feed",
+                "value": {"feed": basket_feed.pk, "design": {}, "audience": {}},
+            },
+            {
+                "type": "action",
+                "value": {
+                    "action": "basket.clear",
+                    "label": "Clear basket",
+                    "button_class": "btn btn-warning btn-sm",
+                    "target_expression": "",
+                    "confirm": "Empty your basket?",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+            {
+                "type": "feed",
+                "value": {"feed": breads_feed.pk, "design": {}, "audience": {}},
+            },
+        ],
+        theme=theme,
+        force=force,
+    )
+
+    _ensure_demo_page(
+        home,
+        "Bread calendar",
+        "bread-calendar",
+        [
+            {
+                "type": "rich_text",
+                "value": {
+                    "text": "<p>Pick a day to see which breads were added.</p>"
+                },
+            },
+            {
+                "type": "calendar",
+                "value": {
+                    "context_model": "bread",
+                    "date_field": "added_on",
+                    "event": [
+                        {
+                            "type": "header",
+                            "value": {"text": "{{ bread.name }}", "design": {}, "audience": {}},
+                        },
+                        {
+                            "type": "text",
+                            "value": {
+                                "text": "Added {{ bread.added_on }}",
+                                "design": {},
+                                "audience": {},
+                            },
+                        },
+                        {
+                            "type": "action",
+                            "value": {
+                                "action": "basket.add",
+                                "label": "Add",
+                                "button_class": "btn btn-sm btn-primary",
+                                "target_expression": "bread.pk",
+                                "confirm": "",
+                                "design": {},
+                                "audience": {},
+                            },
+                        },
+                    ],
+                    "limit": 200,
+                    "empty_message": "No breads to show.",
+                    "design": {},
+                    "audience": {},
+                },
+            },
+        ],
+        theme=theme,
+        force=force,
+    )
+
+
 class Command(BaseCommand):
     help = (
         "Create demo content from demo/fixtures/content.json: homepage, blog index, "
@@ -327,6 +789,17 @@ class Command(BaseCommand):
             force=force,
         )
         self.stdout.write(self.style.SUCCESS("Ensured default light and dark themes."))
+
+        # Seed the bridge template before posts are published so the
+        # page_published bridge has somewhere to render to.
+        _ensure_email_template(
+            light_theme,
+            "Blog post published",
+            "New bread: {{ payload.title }}",
+            "<h2>{{ payload.title }}</h2><p>{{ payload.subtitle }}</p>"
+            '<p><a href="{{ payload.url }}">Read the post</a></p>',
+            force=force,
+        )
 
         site = Site.objects.get(is_default_site=True)
         home = HomePage.objects.live().first()
@@ -431,6 +904,66 @@ class Command(BaseCommand):
                     bp.tags.add(tag_name)
                 bp.save_revision().publish()
 
+            blog_index.page_theme = light_theme
+            blog_feed = _ensure_feed(
+                "Blog feed",
+                "blog_post",
+                order_by="-date_published",
+                page_size=6,
+                empty_message="No posts yet.",
+                filters=["blog_post:tag", "blog_post:author"],
+                item=[
+                    {
+                        "type": "image",
+                        "value": {
+                            "image": None,
+                            "image_source": "dynamic",
+                            "image_expression": "blog_post.image",
+                            "design": {},
+                            "audience": {},
+                        },
+                    },
+                    {
+                        "type": "header",
+                        "value": {
+                            "text": "{{ blog_post.title }}",
+                            "design": {},
+                            "audience": {},
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "value": {
+                            "text": "{{ blog_post.introduction }}",
+                            "design": {},
+                            "audience": {},
+                        },
+                    },
+                    {
+                        "type": "link",
+                        "value": {
+                            "text": "Read more",
+                            "destination": [
+                                {
+                                    "type": "link_dynamic",
+                                    "value": "{{ blog_post.url }}",
+                                }
+                            ],
+                            "open_in_new_tab": False,
+                            "design": {},
+                            "audience": {},
+                        },
+                    },
+                ],
+            )
+            blog_index.body = [
+                {
+                    "type": "feed",
+                    "value": {"feed": blog_feed.pk, "design": {}, "audience": {}},
+                }
+            ]
+            blog_index.save_revision().publish()
+
             self.stdout.write(self.style.SUCCESS("Created blog index and posts."))
 
         home.page_theme = light_theme
@@ -444,6 +977,7 @@ class Command(BaseCommand):
 
         # Demo navigation + footer.
         logo = load_image(data["home"]["image"])
+        newsletter_audience = _ensure_newsletter_audience()
 
         _ensure_menu(
             "Main navigation",
@@ -483,6 +1017,14 @@ class Command(BaseCommand):
                         "open_in_new_tab": False,
                     },
                 },
+                {
+                    "type": "text",
+                    "value": {
+                        "text": "Hi {{ user.username|default:'guest' }}",
+                        "design": {},
+                        "audience": {},
+                    },
+                },
             ],
         )
         _ensure_menu(
@@ -519,15 +1061,21 @@ class Command(BaseCommand):
                 {
                     "type": "newsletter",
                     "value": {
-                        "action": "https://example.com/subscribe",
+                        "mode": "daisie",
+                        "target_audience": newsletter_audience,
                         "method": "post",
                         "email_field": "email",
                         "placeholder": "Enter your email",
                         "button_label": "Subscribe",
+                        "success_message": "Thanks! You are subscribed.",
                     },
                 },
             ],
         )
+
+        _ensure_showcase(light_theme, home, force=force)
+        _ensure_breads(load_image)
+        _ensure_data_pages(light_theme, home, force=force)
 
         self.stdout.write(
             self.style.SUCCESS(

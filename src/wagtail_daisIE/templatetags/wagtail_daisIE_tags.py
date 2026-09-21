@@ -88,9 +88,13 @@ def daisyui_menu(context, menu_name, css_class=""):
         {% load wagtail_daisIE_tags %}
         {% daisyui_menu "Main Navigation" css_class="bg-base-200" %}
     """
+    from ..dynamic.resolvers import parse_bindings, resolve_context_models
     from ..models import DaisyUIMenu
+    from ..notifications.context import build_context
 
     request = context.get("request")
+    values = build_context(request=request)
+
     try:
         menu = DaisyUIMenu.objects.get(name=menu_name)
     except DaisyUIMenu.DoesNotExist:
@@ -101,7 +105,10 @@ def daisyui_menu(context, menu_name, css_class=""):
             "request": request,
             "menu_theme": None,
             "menu_item_css": "",
+            **values,
         }
+
+    values.update(resolve_context_models(request, bindings=parse_bindings(menu)))
 
     return {
         "menu": menu,
@@ -111,6 +118,7 @@ def daisyui_menu(context, menu_name, css_class=""):
         "daisyui_theme": context.get("daisyui_theme"),
         "menu_theme": menu.get_theme(),
         "menu_item_css": menu.get_item_css(),
+        **values,
     }
 
 

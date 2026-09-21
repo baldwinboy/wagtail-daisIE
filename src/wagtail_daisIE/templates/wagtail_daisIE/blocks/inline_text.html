@@ -1,5 +1,6 @@
+{% load notifications %}
 {% if audience_allowed %}
   <span class="{% if block_css %}{{ block_css }}{% endif %}">
-    {{ value.text }}
+    {% daisie_text value.text %}
   </span>
 {% endif %}

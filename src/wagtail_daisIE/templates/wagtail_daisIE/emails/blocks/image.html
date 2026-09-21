@@ -1,2 +1,10 @@
 {% load mjml wagtailimages_tags %}
-{% if audience_allowed and value.image %}{% image value.image width-1200 as img %}<mj-image src="{{ img.url }}" alt="{{ value.image.title|default:'' }}" {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %} />{% endif %}
+{% if audience_allowed %}
+  {% if resolved_image %}
+    {% image resolved_image width-1200 as img %}<mj-image src="{{ img.url }}" alt="{{ resolved_image_alt|default:resolved_image.title }}" {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %} />
+  {% elif resolved_image_url %}
+    <mj-image src="{{ resolved_image_url }}" alt="{{ resolved_image_alt|default:'' }}" {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %} />
+  {% elif value.image %}
+    {% image value.image width-1200 as img %}<mj-image src="{{ img.url }}" alt="{{ value.image.title|default:'' }}" {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %} />
+  {% endif %}
+{% endif %}

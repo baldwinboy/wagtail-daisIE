@@ -13,6 +13,9 @@ them to pages, and build navigation menus from the same block components.
 
 - [Documentation](https://github.com/baldwinboy/wagtail-daisIE/blob/main/README.md)
 - [Developer docs](docs/architecture.md)
+- [Emails](docs/emails.md) · [Context models](docs/context-models.md) ·
+  [Forms](docs/forms.md) · [Data components](docs/data-components.md) ·
+  [Notifications](docs/notifications.md) · [django-allauth](docs/allauth.md)
 - [Changelog](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CHANGELOG.md)
 - [Contributing](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CONTRIBUTING.md)
 
@@ -186,6 +189,88 @@ Each rule is a dotted path to a callable invoked as `rule(request)` returning a
 boolean. Selecting multiple audiences is a logical **OR**. If
 `WAGTAIL_DAISIE_AUDIENCE_RULES` is empty, the audience field is hidden.
 
+For campaigns (which have no request) a rule may also declare a `queryset`
+returning a User queryset — see [docs/notifications.md](docs/notifications.md).
+
+## Context models and dynamic content
+
+Expose project models so authors can reference them from any block:
+
+```python
+WAGTAIL_DAISIE_CONTEXT_MODELS = {
+    "user": {"label": "Current user", "model": "users.User", "source": "request.user"},
+    "meeting": {
+        "label": "Meeting",
+        "model": "meetings.Meeting",
+        "source": "url",
+        "lookup_field": "slug",
+        "url_source": "get_absolute_url",
+    },
+}
+```
+
+Then use `{{ user.first_name }}`, `{{ meeting.url }}` in text, rich text,
+**Image** blocks (dynamic source) and **link** destinations. Pages can pin a
+value to a specific instance or resolve it from the URL. Full guide:
+[docs/context-models.md](docs/context-models.md).
+
+## Data components
+
+Render project data and trigger actions with reusable components:
+
+- **Feeds** — a snippet (Design → Feeds) that lists a context model with
+  admin-designed item cards, typed filters (choice/multi, boolean, date, date
+  range, price range, search), AJAX filtering and optional infinite scroll.
+- **Action button** — posts to a developer-defined action
+  (`WAGTAIL_DAISIE_ACTIONS`), e.g. *Add to basket*.
+- **Calendar** — a [Cally](https://cally.dev) date picker showing each day's
+  events as designed cards.
+
+```python
+WAGTAIL_DAISIE_ACTIONS = {
+    "basket.add": {
+        "label": "Add to basket",
+        "handler": "myapp.actions.add_to_basket",
+    },
+}
+```
+
+```python
+# urls.py
+(path("daisie/", include("wagtail_daisIE.dynamic.urls")),)
+```
+
+Full guide: [docs/data-components.md](docs/data-components.md).
+
+## Emails and notifications
+
+Build responsive MJML emails from the same design primitives and edit them in
+Wagtail, with `{{ payload.* }}` placeholders and an admin help panel listing
+what's available:
+
+- Emails: [docs/emails.md](docs/emails.md)
+- Bridges, audiences and scheduled campaigns:
+  [docs/notifications.md](docs/notifications.md)
+- django-allauth pages, forms and email overrides:
+  [docs/allauth.md](docs/allauth.md)
+
+```python
+WAGTAIL_DAISIE_NOTIFICATION_BRIDGES = {
+    "booking_requested": {
+        "label": "Booking requested",
+        "template": "Booking requested",
+        "signal": "myapp.signals.booking_requested",
+        "sender": "myapp.models.MeetingRequest",
+    },
+}
+```
+
+## Form pages
+
+`DaisieFormPage` renders DaisyUI forms and can create a configured model
+instance from a submission, with an optional approval flag so new records start
+unapproved. See [docs/forms.md](docs/forms.md).
+
 ## Icons
 
 Icons are stored as `"<prefix>:<name>"` (e.g. `mdi:home`) or as raw CSS classes
@@ -248,6 +333,29 @@ WAGTAIL_DAISIE_ICONS = {
 WAGTAIL_DAISIE_AUDIENCE_RULES = {
     "adults": {"label": "Adults", "rule": "home.audience.is_adult"},
 }
+
+WAGTAIL_DAISIE_CONTEXT_MODELS = {
+    "user": {"label": "Current user", "model": "users.User", "source": "request.user"},
+}
+
+WAGTAIL_DAISIE_NOTIFICATION_BRIDGES = {
+    "booking_requested": {
+        "label": "Booking requested",
+        "template": "Booking requested",
+        "signal": "myapp.signals.booking_requested",
+        "sender": "myapp.models.MeetingRequest",
+    },
+}
+
+# Requires the [allauth] extra.
+WAGTAIL_DAISIE_ALLAUTH_UI = True
+
+WAGTAIL_DAISIE_ACTIONS = {
+    "basket.add": {"label": "Add to basket", "handler": "myapp.actions.add"},
+}
+
+# Optional: self-hosted Cally for the calendar block.
+WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally"
 ```
 
 ## Demo
@@ -260,6 +368,28 @@ The loader reads `demo/fixtures/content.json` and
 `demo/fixtures/media/original_images/`, then seeds themes and menus
 programmatically. It is idempotent (use `--force` to recreate content). See
 [`demo/fixtures/README.md`](demo/fixtures/README.md) for the fixture schema.
+
+The demo also showcases the notification, context-model, form and allauth
+features:
+
+- **Context and components** page — context models plus feedback/data-input
+  blocks.
+- **Members only** page — audience-gated with a designed 403 error page.
+- **Suggest a bread** — a `DaisieFormPage` that creates an unapproved
+  `BreadSuggestion` for review.
+- **Newsletter** in the footer — posts to the Daisie subscribe endpoint and
+  populates the *Newsletter* audience.
+- **Breads and basket** — a `Model list` of the `Bread` model with an
+  *Add to basket* action button, a session basket list, and a *Clear basket*
+  action (a cart parallel).
+- **Bread calendar** — the breads grouped by `added_on` in a Cally calendar.
+- **Blog feed** — the blog index renders a filterable feed (tag/author/date) of
+  live posts with AJAX pagination.
+- **Blog post published** — a notification bridge emailing that audience.
+- **Account pages** at `/accounts/` — DaisyUI allauth pages and emails, with
+  sample *Account confirmation* and *Password reset* email templates.
+- Admin user `admin` / `changeme`.
+
 
 ## Development
 

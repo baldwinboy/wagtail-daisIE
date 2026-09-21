@@ -1,10 +1,17 @@
 {% load wagtailimages_tags %}
 {% if audience_allowed %}
   <div class="{% if block_css %}{{ block_css }}{% endif %}">
-    {% if value.image %}
-      {% image value.image width-1200 as img %}
+    {% if resolved_image or resolved_image_url or value.image %}
       <figure class="not-prose m-0">
-        <img {{ img.attrs }} class="max-w-full h-auto rounded-box" />
+        {% if resolved_image %}
+          {% image resolved_image width-1200 as img %}
+          <img {{ img.attrs }} class="max-w-full h-auto rounded-box" />
+        {% elif resolved_image_url %}
+          <img src="{{ resolved_image_url }}" alt="{{ resolved_image_alt }}" class="max-w-full h-auto rounded-box" />
+        {% elif value.image %}
+          {% image value.image width-1200 as img %}
+          <img {{ img.attrs }} class="max-w-full h-auto rounded-box" />
+        {% endif %}
         {% if value.caption or value.attribution %}
           <figcaption class="mt-2 text-sm text-base-content/70">
             {% if value.caption %}{{ value.caption }}{% endif %}

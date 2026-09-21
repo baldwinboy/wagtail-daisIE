@@ -1,6 +1,6 @@
-{% load wagtailcore_tags %}
+{% load wagtailcore_tags notifications %}
 {% if audience_allowed %}
   <div class="{% if block_css %}{{ block_css }}{% endif %}">
-    {{ value.text|richtext }}
+    {% daisie_richtext value.text %}
   </div>
 {% endif %}

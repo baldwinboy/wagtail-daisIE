@@ -78,6 +78,49 @@ in `emails/mjml.py`:
 3. Register it in `EMAIL_COLUMN_BLOCKS` (layout.py) or `EMAIL_BODY_BLOCKS`
    (content.py) as appropriate.
 
+## Placeholders
+
+Every email renders through a Django expression engine, so any content field
+(subject, preheader, text, rich text, button/link labels, raw HTML) can contain
+`{{ variable }}` expressions that are replaced with real values when the email
+is sent or previewed.
+
+Built-in variables:
+
+| Variable | Example |
+|----------|---------|
+| `site` | `{{ site.hostname }}`, `{{ site.site_name }}`, `{{ site.root_url }}` |
+| `now` | `{{ now|date:"j F Y" }}` (any Django `date`/`time` filter) |
+| `recipient` / `user` | `{{ recipient.email }}`, `{{ recipient.first_name }}`, `{{ recipient.user.profile… }}` |
+| `payload` | values from the bridge, campaign or integration, e.g. `{{ payload.code }}` |
+
+Practical rules:
+
+* Only `{{ ... }}` expressions are supported. Django template tags
+  (`{% ... %}`) are shown literally.
+* Substituted values are HTML-escaped.
+* Values resolve from the same context as the rest of the site, so configured
+  [context models](context-models.md) are available in emails too
+  (`{{ meeting.title }}`).
+
+The **help panel** on the Email template editor lists the built-ins plus the
+variables declared by every configured notification bridge and by the installed
+allauth events, and links to Django's date filter reference.
+
+## Previewing with real values
+
+The Wagtail preview renders the email with sample data (`now`, the current site
+and a sample payload), so you can see how placeholders resolve before sending.
+
+Emails can also be rendered programmatically:
+
+```python
+rendered = template.render(payload={"name": "Ada"}, recipient="ada@example.com")
+rendered.subject  # "Hello Ada"
+rendered.html  # compiled HTML
+rendered.text  # plain-text fallback
+```
+
 ## Limits
 
 MJML has no equivalent for `box-shadow`, margins, `gap`, hover/active button

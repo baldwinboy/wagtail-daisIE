@@ -14,6 +14,15 @@ class LinkDestinationBlock(blocks.StreamBlock):
 
     link_page = blocks.PageChooserBlock(required=False, label=_("Page"))
     link_url = blocks.URLBlock(required=False, blank=True, label=_("External URL"))
+    link_dynamic = blocks.CharBlock(
+        required=False,
+        blank=True,
+        label=_("Dynamic URL"),
+        help_text=_(
+            "An expression resolving to a URL at render time, "
+            "e.g. {{ meeting.url }}. Only http, https, mailto and tel are allowed."
+        ),
+    )
     link_document = DocumentChooserBlock(required=False, label=_("Document"))
     link_email = blocks.EmailBlock(required=False, blank=True, label=_("Email"))
     link_phone = blocks.CharBlock(required=False, blank=True, label=_("Phone"))
@@ -49,12 +58,16 @@ def _destination_items(value):
                 yield child
 
 
-def link_url(value):
+def link_url(value, context=None):
     """Resolve a stored destination value to a URL."""
     for dest in _destination_items(value) or []:
         page = dest.get("link_page")
         if page:
             return getattr(page, "url", "") or ""
+        if dest.get("link_dynamic"):
+            from ..dynamic.resolvers import resolve_dynamic_url
+
+            return resolve_dynamic_url(dest["link_dynamic"], context or {})
         if dest.get("link_url"):
             return dest["link_url"]
         document = dest.get("link_document")
@@ -97,7 +110,7 @@ class AbstractLinkBlock(blocks.StructBlock):
         context = super().get_context(value, parent_context)
         request = (parent_context or {}).get("request")
         destination = (value or {}).get("destination")
-        context["link_url"] = link_url(destination)
+        context["link_url"] = link_url(destination, context=context)
         context["link_new_tab"] = bool((value or {}).get("open_in_new_tab", False))
         context["link_is_active"] = link_is_active(destination, request)
         return context

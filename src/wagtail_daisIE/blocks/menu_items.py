@@ -1,6 +1,8 @@
+from django.urls import NoReverseMatch, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
+from wagtail.snippets.blocks import SnippetChooserBlock
 
 from wagtail_daisIE.blocks.accordion import AccordionBlock
 from wagtail_daisIE.blocks.inline import HeaderBlock, InlineTextBlock
@@ -123,10 +125,26 @@ class MenuSearchBoxBlock(ThemedBlock):
 
 
 class MenuNewsletterBlock(ThemedBlock):
+    mode = blocks.ChoiceBlock(
+        choices=[
+            ("external", _("External URL")),
+            ("daisie", _("Daisie audience")),
+        ],
+        default="external",
+        label=_("Mode"),
+        help_text=_("Post to an external service or to a Daisie audience."),
+    )
     action = blocks.URLBlock(
         required=False,
         blank=True,
         label=_("Form action URL"),
+        help_text=_("Used when the mode is an external URL."),
+    )
+    target_audience = SnippetChooserBlock(
+        "wagtail_daisIE.Audience",
+        required=False,
+        label=_("Audience"),
+        help_text=_("Used when the mode is a Daisie audience."),
     )
     method = blocks.ChoiceBlock(
         choices=[("post", "POST"), ("get", "GET")],
@@ -156,6 +174,21 @@ class MenuNewsletterBlock(ThemedBlock):
         label=_("Success message"),
     )
 
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        value = value or {}
+        context["newsletter_action"] = value.get("action") or ""
+        context["audience_id"] = None
+        if (value.get("mode") or "external") == "daisie":
+            try:
+                context["newsletter_action"] = reverse(
+                    "wagtail_daisIE_notifications:subscribe"
+                )
+            except NoReverseMatch:
+                context["newsletter_action"] = ""
+            context["audience_id"] = getattr(value.get("target_audience"), "pk", None)
+        return context
+
     class Meta:
         icon = "mail"
         label = _("Newsletter")
@@ -164,7 +197,9 @@ class MenuNewsletterBlock(ThemedBlock):
         label_format = "Newsletter"
         form_layout = blocks.BlockGroup(
             children=[
+                "mode",
                 "action",
+                "target_audience",
                 "method",
                 "email_field",
                 "placeholder",
@@ -176,6 +211,7 @@ class MenuNewsletterBlock(ThemedBlock):
         template = "wagtail_daisIE/blocks/menu_newsletter.html"
         preview_template = "wagtail_daisIE/blocks/menu_newsletter.html"
         preview_value = {
+            "mode": "external",
             "action": "/subscribe/",
             "method": "post",
             "placeholder": "Enter your email",

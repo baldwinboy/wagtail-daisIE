@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import ObjectList, TabbedInterface
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
+from .dynamic.view_sets import FeedViewSet
 from .models import DaisyUIIconSource, DaisyUIMenu, DaisyUITheme
 
 
@@ -35,6 +36,7 @@ class DaisyUIViewSetGroup(SnippetViewSetGroup):
         DaisyUIThemeViewSet,
         DaisyUIMenuViewSet,
         DaisyUIIconSourceViewSet,
+        FeedViewSet,
     )
     menu_icon = "palette"
     menu_label = "Design"

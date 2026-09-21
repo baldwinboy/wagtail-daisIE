@@ -9,5 +9,13 @@ urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
+    path(
+        "notifications/",
+        include("wagtail_daisIE.notifications.urls"),
+    ),
+    path(
+        "daisie/",
+        include("wagtail_daisIE.dynamic.urls"),
+    ),
     path("", include(wagtail_urls)),
 ]
