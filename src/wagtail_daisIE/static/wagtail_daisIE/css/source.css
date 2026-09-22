@@ -72,3 +72,7 @@
 @plugin "daisyui";
 
 @source inline("border-spacing-{0..96} border-spacing-x-{0..96} border-spacing-y-{0..96}");
+
+/* Button appearance hover/active variants are built at runtime from the
+   ButtonAppearanceBlock choices, so safelist them for Tailwind to generate. */
+@source inline("{hover,active}:btn-{neutral,primary,secondary,accent,info,success,warning,error,outline,dash,soft,ghost,link,xs,sm,md,lg,xl,active,disabled,wide,block,square,circle}");

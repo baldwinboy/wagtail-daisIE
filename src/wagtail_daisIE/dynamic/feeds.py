@@ -13,6 +13,7 @@ import logging
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from django.db import models as django_models
 from django.db.models import Q
 from django.middleware.csrf import get_token
 from django.utils.module_loading import import_string
@@ -172,13 +173,27 @@ def apply_filters(queryset, config, params):
         return queryset
     for key, spec in config.get_filters().items():
         try:
-            queryset = _apply_one(queryset, key, spec, params)
+            queryset = _apply_one(queryset, config, key, spec, params)
         except Exception:  # pragma: no cover - defensive
             logger.debug("Ignoring invalid filter %r", key, exc_info=True)
     return queryset
 
 
-def _apply_one(queryset, key, spec, params):
+def _date_transform(config, field):
+    """Return the ORM path to filter a date, adding ``__date`` for datetimes."""
+    base = field.split("__")[0]
+    model_field = None
+    if config is not None and config.model is not None:
+        try:
+            model_field = config.model._meta.get_field(base)
+        except Exception:  # pragma: no cover - defensive
+            model_field = None
+    if isinstance(model_field, django_models.DateTimeField):
+        return f"{field}__date"
+    return field
+
+
+def _apply_one(queryset, config, key, spec, params):
     filter_type = spec.get("type", "choice")
     field = spec.get("field")
 
@@ -200,14 +215,15 @@ def _apply_one(queryset, key, spec, params):
     elif filter_type == "date":
         value = _parse_date(params.get(f"filter_{key}"))
         if value is not None:
-            queryset = queryset.filter(**{f"{field}__date": value})
+            queryset = queryset.filter(**{_date_transform(config, field): value})
     elif filter_type == "date_range":
+        lookup = _date_transform(config, field)
         start = _parse_date(params.get(f"filter_{key}_from"))
         end = _parse_date(params.get(f"filter_{key}_to"))
         if start is not None:
-            queryset = queryset.filter(**{f"{field}__date__gte": start})
+            queryset = queryset.filter(**{f"{lookup}__gte": start})
         if end is not None:
-            queryset = queryset.filter(**{f"{field}__date__lte": end})
+            queryset = queryset.filter(**{f"{lookup}__lte": end})
     elif filter_type == "number_range":
         minimum = _parse_number(params.get(f"filter_{key}_min"))
         maximum = _parse_number(params.get(f"filter_{key}_max"))
@@ -237,7 +253,7 @@ def _selected_filters(feed):
 
 def build_filters(feed, config, params, request=None, page=None):
     """Return the UI definitions for the feed's selected filters."""
-    from ..base_blocks.css import build_design_css
+    from ..base_blocks.css import build_button_state_css, build_design_css
 
     filters = []
     for value in _selected_filters(feed):
@@ -251,6 +267,8 @@ def build_filters(feed, config, params, request=None, page=None):
         if not spec:
             continue
         filter_type = spec.get("type", "choice")
+        appearance = value.get("button_appearance") or {}
+        active_state = appearance.get("active") if hasattr(appearance, "get") else None
         entry = {
             "key": filter_key,
             "type": filter_type,
@@ -263,6 +281,7 @@ def build_filters(feed, config, params, request=None, page=None):
                 {"button_appearance": value.get("button_appearance")}
             )
             or "btn",
+            "selected_css": build_button_state_css(active_state),
             "input_css": build_design_css(value.get("input_design")),
             "label_css": build_design_css(value.get("label_design")),
             "value": params.get(f"filter_{filter_key}", "") if params else "",

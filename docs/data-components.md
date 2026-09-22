@@ -138,10 +138,15 @@ Each selected filter can be styled individually, and the controls offered
 depend on the filter type:
 
 * **Button filters** (choice, multi-choice, boolean) expose **Filter buttons**
-  (`ButtonAppearanceBlock`) — colour, style, size, behaviour and modifier states.
+  (`ButtonAppearanceBlock`) — colour, style, size, behaviour and modifier for the
+  normal, hover and active states. The **selected** tab uses the configured
+  active state (with DaisyUI’s `btn-active` as a fallback).
 * **Input filters** (date, date range, price range, search) expose **Input
   design** (typography and input styling).
 * All filters expose **Label design** (typography for the legend).
+
+Date and date-range filters work with both `DateField` and `DateTimeField`
+(datetimes are compared by date).
 
 The Feed’s **Submit / Load more button** exposes the same button appearance,
 styling the filter form’s Apply button and the Load more button.

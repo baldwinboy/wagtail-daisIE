@@ -5,7 +5,7 @@
         {% if filter.multi %}
             <div class="flex flex-wrap gap-2">
                 {% for option in filter.options %}
-                    <label class="{{ filter.button_css }}{% if option.value in filter.values %} btn-active{% endif %}">
+                    <label class="{{ filter.button_css }}{% if option.value in filter.values %} {{ filter.selected_css }} btn-active{% endif %}">
                         <input
                             type="checkbox"
                             name="filter_{{ filter.key }}"
@@ -25,7 +25,7 @@
                         type="radio"
                         name="filter_{{ filter.key }}"
                         value="{{ option.value }}"
-                        class="{{ filter.button_css }}"
+                        class="{{ filter.button_css }}{% if filter.value == option.value %} {{ filter.selected_css }} btn-active{% endif %}"
                         aria-label="{{ option.label }}"
                         {% if filter.value == option.value %}checked{% endif %}
                     />
@@ -43,7 +43,7 @@
                     type="radio"
                     name="filter_{{ filter.key }}"
                     value="{{ option.value }}"
-                    class="{{ filter.button_css }}"
+                    class="{{ filter.button_css }}{% if filter.value == option.value %} {{ filter.selected_css }} btn-active{% endif %}"
                     aria-label="{{ option.label }}"
                     {% if filter.value == option.value %}checked{% endif %}
                 />

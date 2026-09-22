@@ -171,3 +171,19 @@ class LoadInitialDataTests(WagtailPageTestCase):
 
         content = self.client.get(index.url).content.decode()
         assert post.title in content
+
+    def test_blog_feed_date_range_filter(self):
+        from blog.models import BlogPage
+        from wagtail_daisIE.models import Feed
+
+        call_command("load_initial_data")
+        feed = Feed.objects.get(name="Blog feed")
+        latest = BlogPage.objects.live().order_by("-date_published").first()
+
+        url = (
+            f"/daisie/feeds/{feed.pk}/items/"
+            f"?filter_published_from={latest.date_published.isoformat()}"
+        )
+        data = self.client.get(url).json()
+        assert data["total"] == 1
+        assert latest.title in data["html"]
