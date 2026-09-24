@@ -1245,7 +1245,7 @@ wheels = [
 
 [[package]]
 name = "wagtail-daisie"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "cssutils" },
@@ -1279,7 +1279,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cssutils", specifier = ">=2.15.0" },
-    { name = "django", specifier = ">=5.0" },
+    { name = "django", specifier = ">=5.1" },
     { name = "django-allauth", marker = "extra == 'allauth'", specifier = ">=65" },
     { name = "django-colorfield", specifier = ">=0.14.0" },
     { name = "draftail-text-utils", marker = "extra == 'blocks'", specifier = ">=0.1.7" },

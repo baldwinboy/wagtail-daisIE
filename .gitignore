@@ -24,5 +24,4 @@ __pycache__/
 
 demo/media
 demo/static
-demo/**/migrations/*.py
 demo/.env

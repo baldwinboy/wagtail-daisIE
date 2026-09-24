@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v1.0.0...v1.1.0) (2026-09-22)
+
+
+### Features
+
+* add context bindings ([3f180cf](https://github.com/baldwinboy/wagtail-daisIE/commit/3f180cf287d886035e62f07770aa20dcc3bfa598))
+* add draftail_text_utils plugin ([2cb3134](https://github.com/baldwinboy/wagtail-daisIE/commit/2cb31344e023e04992fc4d58630d566a85188ae7))
+* add email logic and filters ([ae267eb](https://github.com/baldwinboy/wagtail-daisIE/commit/ae267eb8135961df9b833debda8336db2b31a036))
+* add email templates ([d612491](https://github.com/baldwinboy/wagtail-daisIE/commit/d612491d8c40ae2a166ce192130fcb622613d1ab))
+* add filters ([065e551](https://github.com/baldwinboy/wagtail-daisIE/commit/065e55168beaece7b608fad806fa1792a7b2a94f))
+* add settings layout ([1e59ea4](https://github.com/baldwinboy/wagtail-daisIE/commit/1e59ea457e8aa7b47111258e005c6c83e878a01f))
+* add table block ([cc183ca](https://github.com/baldwinboy/wagtail-daisIE/commit/cc183caba88416c2309fc3b3cd38d881348f1e67))
+
+
+### Bug Fixes
+
+* add release please config ([1d9ae19](https://github.com/baldwinboy/wagtail-daisIE/commit/1d9ae1980c7bbaab967f81f81ac1f761a353edb3))
+* add release please manifest ([5a1a162](https://github.com/baldwinboy/wagtail-daisIE/commit/5a1a162fcaa3c5da9202943f19c9a2b70d722084))
+* add workflow call ([55ec604](https://github.com/baldwinboy/wagtail-daisIE/commit/55ec604d1ba5a6888fd8ab74f5c1cdc5e9523734))
+* exclude migrations from linting ([4552da1](https://github.com/baldwinboy/wagtail-daisIE/commit/4552da1f9c101538faed07e052abb7636db1e62d))
+* remove incompatible python version tests ([8d57403](https://github.com/baldwinboy/wagtail-daisIE/commit/8d574039a31ec7e3540c6c52b91b71a49235113f))
+* remove incompatible wagtail version tests ([6c70d3b](https://github.com/baldwinboy/wagtail-daisIE/commit/6c70d3bab19f9dc71c71858f2d41df4d26d8c472))
+* remove template check ([012d7a0](https://github.com/baldwinboy/wagtail-daisIE/commit/012d7a0d2bae565b74ab513461d90741be7d9a0b))
+
 ## [1.0.0] - 2026-09-16
 
 ### Added

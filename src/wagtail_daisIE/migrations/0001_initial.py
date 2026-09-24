@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('wagtailcore', '0098_apitoken'),
+        ('wagtailcore', '0070_rename_pagerevision_revision'),
         ('wagtailimages', '0027_image_description'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
