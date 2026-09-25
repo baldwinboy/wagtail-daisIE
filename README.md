@@ -14,7 +14,8 @@ them to pages, and build navigation menus from the same block components.
 - [Documentation](https://github.com/baldwinboy/wagtail-daisIE/blob/main/README.md)
 - [Developer docs](docs/architecture.md)
 - [Emails](docs/emails.md) · [Context models](docs/context-models.md) ·
-  [Forms](docs/forms.md) · [Data components](docs/data-components.md) ·
+  [Error pages](docs/error-pages.md) · [Forms](docs/forms.md) ·
+  [Data components](docs/data-components.md) ·
   [Notifications](docs/notifications.md) · [django-allauth](docs/allauth.md)
 - [Changelog](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CHANGELOG.md)
 - [Contributing](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CONTRIBUTING.md)
@@ -272,6 +273,13 @@ styles inputs and labels individually, and can create a configured model
 instance from a submission (with an optional approval flag, success/error
 bodies and a success redirect). See [docs/forms.md](docs/forms.md).
 
+## Error pages
+
+`ErrorPage` snippets provide themed bodies for supported HTTP statuses. Wire
+Django's handlers in the root URL configuration; audience-gated pages can also
+render the 403 snippet directly. See
+[docs/error-pages.md](docs/error-pages.md).
+
 ## Icons
 
 Icons are stored as `"<prefix>:<name>"` (e.g. `mdi:home`) or as raw CSS classes
@@ -366,16 +374,23 @@ The `demo/` project is a DaisyUI-styled Wagtail site. Run it with `just demo`
 `just load_initial_data`.
 
 The loader reads `demo/fixtures/content.json` and
-`demo/fixtures/media/original_images/`, then seeds themes and menus
-programmatically. It is idempotent (use `--force` to recreate content). See
+`demo/fixtures/media/original_images/`, then seeds related snippets
+programmatically, including themes, menus, 403/404/500 error pages, email
+templates, notification audiences and feeds. It is idempotent (use `--force` to
+recreate content). See
 [`demo/fixtures/README.md`](demo/fixtures/README.md) for the fixture schema.
+
+The demo wires the 403, 404 and 500 handlers. Since `just demo` enables
+`DEBUG=True`, check the designed 404 and 500 responses with non-debug settings;
+the audience-gated 403 renders directly in either mode.
 
 The demo also showcases the notification, context-model, form and allauth
 features:
 
 - **Context and components** page — context models plus feedback/data-input
   blocks.
-- **Members only** page — audience-gated with a designed 403 error page.
+- **Members only** page — audience-gated with a
+  [designed 403 error page](docs/error-pages.md#audience-gated-pages).
 - **Suggest a bread** — a `DaisieFormPage` that creates an unapproved
   `BreadSuggestion` for review.
 - **Newsletter** in the footer — posts to the Daisie subscribe endpoint and

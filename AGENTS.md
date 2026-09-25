@@ -39,6 +39,7 @@ src/wagtail_daisIE/
 ├── blocks/          # Public block composition (content, cards, inline, link, menu_items, ...)
 ├── choices/         # DaisyUI/Tailwind class-choice constants
 ├── icons/           # Icon providers, registry, chooser field/block/widget
+├── errors/          # ErrorPage snippet, admin view set, Django handlers
 ├── models/          # DaisyUITheme (+ orderables), DaisyUIMenu, DaisyUIIconSource
 ├── templates/wagtail_daisIE/  # Block, tag, admin, preview templates
 ├── context.py       # Theme contextvar used by FontFamilyChoiceBlock
@@ -81,12 +82,16 @@ When adding a block, subclass the appropriate `Themed*Block` from
 - **Menu item design cascade**: `menu.item_design` is a `MenuItemDesignBlock`
   stored in a one-item `StreamField`; `DaisyUIMenu.get_item_css()` returns its
   classes and the menu templates set `{% with block_css=menu_item_css %}`.
+- **Error handlers are opt-in**: projects expose the relevant functions from
+  `wagtail_daisIE.errors.handlers` in their root URLconf. Audience-denied
+  `StyledPageMixin` pages render the 403 snippet directly.
 
 ## Demo content
 
 `demo/blog/management/commands/load_initial_data.py` reads
 `demo/fixtures/content.json` and media from `demo/fixtures/media/`, then seeds
-themes and menus programmatically. It is idempotent; use `--force` to recreate.
+themes, menus, error pages, email templates, notification audiences and feeds
+programmatically. It is idempotent; use `--force` to recreate.
 Block values passed to StreamFields must use the JSONish `{"type", "value"}`
 form (with chooser values as primary keys) so nested blocks resolve.
 

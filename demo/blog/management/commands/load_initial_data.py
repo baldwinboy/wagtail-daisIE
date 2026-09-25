@@ -2,9 +2,9 @@
 
 Content (pages, posts, people, images) is read from
 ``demo/fixtures/content.json``; media is read from
-``demo/fixtures/media/original_images``. DaisyUI themes and menus are seeded
-programmatically because they use revisions and orderable models that are a
-poor fit for flat fixtures.
+``demo/fixtures/media/original_images``. DaisyUI themes, menus, error pages and
+other configured snippets are seeded programmatically because themes and menus
+use revisions and orderable models that are a poor fit for flat fixtures.
 """
 
 from __future__ import annotations
@@ -788,7 +788,8 @@ def _ensure_data_pages(theme, home, *, force=False):
 class Command(BaseCommand):
     help = (
         "Create demo content from demo/fixtures/content.json: homepage, blog index, "
-        "posts, author snippets, themes, menus and an admin user (idempotent)."
+        "posts, author snippets, themes, menus, error pages, email templates, feeds, "
+        "notification audiences and an admin user (idempotent)."
     )
 
     def add_arguments(self, parser):

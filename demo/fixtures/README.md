@@ -1,7 +1,9 @@
 # Demo fixtures
 
 The demo loader (`demo/blog/management/commands/load_initial_data.py`) reads
-these files and then seeds DaisyUI themes and menus programmatically.
+flat page, post, author and image data from these files, then seeds related
+snippets programmatically, including DaisyUI themes, menus, 403/404/500 error
+pages, email templates, notification audiences and feeds.
 
 ## Layout
 
@@ -49,4 +51,5 @@ demo/fixtures/
 types (`paragraph_block`/`rich_text` → `rich_text`, `image_block` → `image`,
 `block_quote` → `blockquote`, `embed_block` → `embed`).
 
-The command is idempotent; pass `--force` to recreate content.
+The command is idempotent; pass `--force` to recreate content and seeded
+snippets.

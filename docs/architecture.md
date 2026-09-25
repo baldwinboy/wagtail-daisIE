@@ -106,6 +106,16 @@ context.
 stores `branding`, `item_design`, and `body`, and is rendered by the
 `daisyui_menu` inclusion tag. See [menus.md](menus.md).
 
+## Errors
+
+`errors/models.py` defines the status-specific `ErrorPage` snippet and
+`errors/view_sets.py` registers **Errors → Error pages** in the Wagtail admin.
+`errors/handlers.py` selects the active page, resolves its explicit or default
+theme, and renders `templates/wagtail_daisIE/errors/error_page.html` with the
+original HTTP status. Projects opt in from their root URL configuration, while
+audience-gated pages can render the 403 snippet directly. See
+[error-pages.md](error-pages.md).
+
 ## Icons
 
 Provider-based registry; see [icons.md](icons.md).

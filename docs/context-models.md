@@ -107,6 +107,11 @@ Add bindings in one of two places:
 * **Menu** — the **Context bindings** panel on a `DaisyUIMenu`, so items can use
   `{{ user.username }}` and friends.
 
+`ErrorPage` bodies do not have a binding panel, and error rendering does not
+inject configured context-model values. See
+[Themes and fallbacks](error-pages.md#themes-and-fallbacks) for the standalone
+error-page context.
+
 Each binding row names the value and shows an inline, model-aware help panel
 with the source in use, ready-to-paste examples (`{{ meeting.title }}`) and the
 model's fields. Only the fields relevant to the chosen source are shown —
@@ -141,7 +146,8 @@ and whole pages:
 
 * Blocks: the **Audience** setting in the block's settings panel.
 * Pages: the page-level **Audience** field, plus **When access is denied**
-  (show a 403, show a 404, or redirect to a chosen page).
+  (show a 403, show a 404, or redirect to a chosen page). See
+  [Audience-gated pages](error-pages.md#audience-gated-pages).
 
 When empty, content is visible to everyone. Multiple selected audiences are a
 logical OR.
