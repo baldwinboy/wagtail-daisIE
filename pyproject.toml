@@ -34,7 +34,7 @@ allauth = [
     "django-allauth>=65",
 ]
 blocks = [
-    "draftail-text-utils>=0.1.7",
+    "draftail-text-utils>=0.3.1",
 ]
 
 [project.urls]

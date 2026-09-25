@@ -1,6 +1,15 @@
+from types import SimpleNamespace
+
 import pytest
 
+from django import forms
+
 from wagtail_daisIE.dynamic.registry import reset_context_models
+from wagtail_daisIE.forms.blocks import (
+    FormFieldBlock,
+    duplicate_field_names,
+    placed_field_names,
+)
 from wagtail_daisIE.forms.builder import DaisyUIFormBuilder
 from wagtail_daisIE.forms.models import DaisieFormPage
 
@@ -110,3 +119,98 @@ class TestInstanceCreation:
             _DummyPage(), _FakeForm()
         )
         assert not hasattr(result, "ignored")
+
+
+def _child(block_type, value):
+    return SimpleNamespace(block_type=block_type, value=value)
+
+
+class _Body(list):
+    pass
+
+
+class TestPlacement:
+    def test_placed_field_names_ignores_other_blocks(self):
+        body = _Body(
+            [
+                _child("header", {"text": "Hi"}),
+                _child("form_field", "title"),
+                _child("form_field", ""),
+                _child("rich_text", {"text": "…"}),
+                _child("form_field", "description"),
+            ]
+        )
+        assert placed_field_names(body) == ["title", "description"]
+
+    def test_placed_field_names_handles_empty_body(self):
+        assert placed_field_names(None) == []
+        assert placed_field_names([]) == []
+
+    def test_duplicate_field_names(self):
+        body = _Body(
+            [
+                _child("form_field", "title"),
+                _child("header", {}),
+                _child("form_field", "title"),
+                _child("form_field", "notes"),
+                _child("form_field", "title"),
+                _child("form_field", "notes"),
+            ]
+        )
+        assert duplicate_field_names(body) == ["title", "notes"]
+
+    def test_no_duplicates(self):
+        body = _Body([_child("form_field", "a"), _child("form_field", "b")])
+        assert duplicate_field_names(body) == []
+
+
+class _TitleForm(forms.Form):
+    title = forms.CharField()
+    notes = forms.CharField(required=False)
+
+
+class TestFormFieldBlock:
+    def test_resolves_bound_field_from_parent_context(self):
+        form = _TitleForm()
+        context = FormFieldBlock().get_context("title", {"form": form})
+        assert context["bound_field"].name == "title"
+
+    def test_unknown_field_has_no_bound_field(self):
+        context = FormFieldBlock().get_context("nope", {"form": _TitleForm()})
+        assert context["bound_field"] is None
+
+    def test_no_form_in_context(self):
+        assert FormFieldBlock().get_context("title", {})["bound_field"] is None
+
+    def test_stored_value_is_rendered_in_the_admin_widget(self):
+        block = FormFieldBlock()
+        html = str(block.field.widget.render("title", "notes"))
+        assert "notes" in html
+        assert "data-daisie-form-field" in html
+
+
+class TestUnplacedFormFields:
+    def test_skips_placed_fields(self):
+        from wagtail_daisIE.templatetags.wagtail_daisIE_tags import (
+            unplaced_form_fields,
+        )
+
+        page = SimpleNamespace(get_placed_field_names=lambda: ["title"])
+        remaining = unplaced_form_fields(page, _TitleForm())
+        assert [field.name for field in remaining] == ["notes"]
+
+    def test_without_placement_returns_every_field(self):
+        from wagtail_daisIE.templatetags.wagtail_daisIE_tags import (
+            unplaced_form_fields,
+        )
+
+        page = SimpleNamespace(get_placed_field_names=lambda: [])
+        remaining = unplaced_form_fields(page, _TitleForm())
+        assert [field.name for field in remaining] == ["title", "notes"]
+
+    def test_without_form_returns_nothing(self):
+        from wagtail_daisIE.templatetags.wagtail_daisIE_tags import (
+            unplaced_form_fields,
+        )
+
+        assert unplaced_form_fields(SimpleNamespace(), None) == []

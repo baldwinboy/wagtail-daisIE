@@ -432,8 +432,9 @@ def _ensure_form_page(home, *, force=False):
             "type": "rich_text",
             "value": {
                 "text": (
-                    "<p>Thanks! Your suggestion is awaiting review by an "
-                    "editor.</p>"
+                    "<p>Thanks for suggesting "
+                    "{{ payload.submission.title }} — your suggestion is "
+                    "awaiting review by an editor.</p>"
                 )
             },
         }
@@ -461,6 +462,20 @@ def _ensure_form_page(home, *, force=False):
         sort_order=2,
         model_field="description",
     )
+    # Interleave the fields with content blocks: a heading, the title field,
+    # some rich text, then the description field.
+    page.body = [
+        {"type": "header", "value": {"text": "Suggest a bread"}},
+        {"type": "form_field", "value": "title"},
+        {
+            "type": "rich_text",
+            "value": {
+                "text": "<p>Tell us what bread we should bake next.</p>"
+            },
+        },
+        {"type": "form_field", "value": "description"},
+    ]
+    page.save()
     page.save_revision().publish()
     return page
 

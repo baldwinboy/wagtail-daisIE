@@ -13,10 +13,6 @@
         <main id="main-content" class="mx-auto w-full max-w-2xl grow px-4 py-12">
             {% if page.title %}<h1 class="mb-6 text-4xl font-bold">{{ page.title }}</h1>{% endif %}
 
-            {% for block in page.body %}
-                {% include_block block %}
-            {% endfor %}
-
             {% if form_has_errors and page.error_body %}
                 <div class="mb-6">
                     {% for block in page.error_body %}
@@ -25,7 +21,11 @@
                 </div>
             {% endif %}
 
-            <form method="post" action="" enctype="multipart/form-data" class="mt-8 space-y-4">
+            {% for block in page.body %}
+                {% include_block block %}
+            {% endfor %}
+
+            <form id="{{ page.form_id }}" method="post" action="" enctype="multipart/form-data" class="mt-8 space-y-4">
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
@@ -34,7 +34,8 @@
                     </div>
                 {% endif %}
 
-                {% for field in form %}
+                {% unplaced_form_fields page form as unplaced_fields %}
+                {% for field in unplaced_fields %}
                     {% include "wagtail_daisIE/forms/form_field.html" with field=field %}
                 {% endfor %}
 

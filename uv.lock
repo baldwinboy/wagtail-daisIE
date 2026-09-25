@@ -500,7 +500,7 @@ wheels = [
 
 [[package]]
 name = "draftail-text-utils"
-version = "0.3.0"
+version = "0.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cssutils" },
@@ -508,9 +508,9 @@ dependencies = [
     { name = "wagtail" },
     { name = "wagtail-traverse" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/59/77/e721764f4505cb9779d25f858a2529e4a93fd05ffd0bf01e72dee9948e73/draftail_text_utils-0.3.0.tar.gz", hash = "sha256:9048faf8b5a48ade3ff1db4ce9e31092d8ab198fa8ede063bd5823bbf035c757", size = 23476, upload-time = "2026-07-21T15:08:51.846Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/41/c2e026c6abd61837b321cad75bebcd9983175a0e7abb92be5eb871674323/draftail_text_utils-0.3.1.tar.gz", hash = "sha256:6f1e330573e64306494eed716c04030d1539117662852c4ef8235a7f4edd8f23", size = 23629, upload-time = "2026-09-25T09:29:03.858Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/a9/981a08736bad814b6ed266953b0b9ead3000274ab4f96b86568fc3b9c9ea/draftail_text_utils-0.3.0-py3-none-any.whl", hash = "sha256:bfa51f1bad16ef392391d958b455f01d1cec5e57c77e7a0040530f7c0bccd98a", size = 43020, upload-time = "2026-07-21T15:08:50.698Z" },
+    { url = "https://files.pythonhosted.org/packages/92/91/fb37075850a041d747d5bbde9b81c54f79d0aff6d4d3c22d944093286bdc/draftail_text_utils-0.3.1-py3-none-any.whl", hash = "sha256:497902fbfd5c54fb921ef11f9b35218a7c2bc72c55614befdda4161ce0c6c761", size = 43030, upload-time = "2026-09-25T09:29:02.574Z" },
 ]
 
 [[package]]
@@ -1282,7 +1282,7 @@ requires-dist = [
     { name = "django", specifier = ">=5.1" },
     { name = "django-allauth", marker = "extra == 'allauth'", specifier = ">=65" },
     { name = "django-colorfield", specifier = ">=0.14.0" },
-    { name = "draftail-text-utils", marker = "extra == 'blocks'", specifier = ">=0.1.7" },
+    { name = "draftail-text-utils", marker = "extra == 'blocks'", specifier = ">=0.3.1" },
     { name = "lxml", specifier = ">=6.1.3" },
     { name = "mjml-python", specifier = ">=1.4.2" },
     { name = "wagtail", specifier = ">=7.3.2" },

@@ -114,6 +114,17 @@ class LoadInitialDataTests(WagtailPageTestCase):
 
         form_page = BreadSuggestionFormPage.objects.get(slug="suggest-a-bread")
 
+        content = self.client.get(form_page.url).content.decode()
+        heading = content.index("Suggest a bread")
+        title_input = content.index('name="title"')
+        blurb = content.index("Tell us what bread we should bake next")
+        description_input = content.index('name="description"')
+        assert heading < title_input < blurb < description_input
+        assert 'id="daisie-form"' in content
+        assert 'form="daisie-form"' in content
+        # The inputs live outside <form> but are associated with it.
+        assert content.index('id="daisie-form"') > content.index('name="title"')
+
         invalid = self.client.post(
             form_page.url, {"title": "", "description": "Dark rye please"}
         )
@@ -127,9 +138,26 @@ class LoadInitialDataTests(WagtailPageTestCase):
         )
         assert response.status_code == 200
         assert "awaiting review" in response.content.decode()
+        assert "Rye loaf" in response.content.decode()
         assert BreadSuggestion.objects.filter(
             title="Rye loaf", is_approved=False
         ).exists()
+
+    def test_form_page_rejects_duplicate_field_placement(self):
+        from django.core.exceptions import ValidationError
+
+        from blog.models import BreadSuggestionFormPage
+
+        call_command("load_initial_data")
+
+        form_page = BreadSuggestionFormPage.objects.get(slug="suggest-a-bread")
+        form_page.body = [
+            {"type": "form_field", "value": "title"},
+            {"type": "form_field", "value": "title"},
+        ]
+        with self.assertRaises(ValidationError) as ctx:
+            form_page.full_clean()
+        assert "title" in str(ctx.exception.message_dict["body"])
 
     def test_data_pages_and_basket(self):
         from blog.models import Bread
@@ -152,9 +180,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
         assert response.status_code == 200
         assert "cally" in response.content.decode()
 
-        response = self.client.post(
-            "/daisie/actions/basket.add/", {"target": bread.pk}
-        )
+        response = self.client.post("/daisie/actions/basket.add/", {"target": bread.pk})
         assert response.status_code == 302
         content = self.client.get(breads_page.url).content.decode()
         assert bread.name in content

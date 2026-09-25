@@ -66,6 +66,35 @@ DaisyUI defaults.
 The page's **Submit button** field exposes the same button appearance
 (`ButtonAppearanceBlock`).
 
+## Ordering fields in the body
+
+The page body is a form-specific stream (`FormContentBlock`). It carries every
+block a normal page body has **plus** a **Form field** block, so inputs can be
+interleaved with content:
+
+```
+Header
+[Form field: Title]
+Rich text
+[Form field: Description]
+```
+
+How it works:
+
+* the **Form field** block stores the clean name of one of the page's form
+  fields (the dropdown is populated with the page's own fields);
+* the page renders the real bound field there, so the input keeps its label,
+  help text, styling and errors;
+* because the body sits outside the `<form>` element, each input is associated
+  with it through `form="daisie-form"`. This keeps body blocks that render
+  their own `<form>` (newsletter, search, feed, action button) valid;
+* any field you do **not** place is rendered inside the `<form>`, just above the
+  submit button, so existing pages keep working;
+* placing the same field twice is rejected when the page is saved.
+
+`success_body` and `error_body` do not include the **Form field** block — there
+is no form to render on those views.
+
 ## Success and error bodies
 
 `success_body` and `error_body` are content streams (the same blocks as a page
@@ -75,8 +104,20 @@ body). They are **only** shown after a submission:
 * a valid POST renders `success_body`, unless **Success redirect** is set, in
   which case the visitor is redirected to that page.
 
+On a valid submission the landing context gains `payload.submission`, a mapping
+of `{clean_name: cleaned value}` taken from the stored `FormSubmission`. Use it
+to confirm what the visitor sent:
+
+```html
+{% daisie_richtext "Thanks for suggesting {{ payload.submission.title }}!" %}
+```
+
+Preview mode passes an empty mapping, so the expression renders as empty.
+
 Templates: `wagtail_daisIE/forms/form_page.html`,
-`wagtail_daisIE/forms/form_field.html`, `wagtail_daisIE/forms/form_page_landing.html`.
+`wagtail_daisIE/forms/form_field.html`,
+`wagtail_daisIE/forms/form_field_block.html`,
+`wagtail_daisIE/forms/form_page_landing.html`.
 Override them or `get_template()` / `get_landing_page_template()` as needed.
 
 ## How submission works

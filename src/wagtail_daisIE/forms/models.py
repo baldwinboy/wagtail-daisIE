@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -18,6 +19,7 @@ from ..base_blocks.css import build_design_css
 from ..blocks.content import ContentBlock
 from ..dynamic.registry import get_context_model, get_context_model_choices
 from ..pages import StyledPageMixin
+from .blocks import FormContentBlock, duplicate_field_names, placed_field_names
 from .builder import DaisyUIFormBuilder
 from .panels import FormModelFieldsHelpPanel
 
@@ -33,6 +35,22 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
     """
 
     form_builder = DaisyUIFormBuilder
+
+    #: ``id`` of the single ``<form>`` element in the page template. Inputs
+    #: rendered outside it (via the ``form_field`` body block) point back at it
+    #: with the HTML ``form`` attribute.
+    form_id = "daisie-form"
+
+    body = StreamField(
+        FormContentBlock(),
+        blank=True,
+        use_json_field=True,
+        verbose_name=_("Body"),
+        help_text=_(
+            "Add content blocks and place the form's fields in any order. Fields "
+            "that are not placed here are shown above the submit button."
+        ),
+    )
 
     instance_model = models.CharField(
         max_length=64,
@@ -134,6 +152,45 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
     def get_submit_css(self):
         value = self.submit_appearance[0].value if self.submit_appearance else None
         return build_design_css({"button_appearance": value}) or "btn"
+
+    def get_placed_field_names(self):
+        """Return the clean names of form fields placed in ``body``, in order."""
+        return placed_field_names(self.body)
+
+    def clean(self):
+        super().clean()
+        duplicates = duplicate_field_names(self.body)
+        if duplicates:
+            raise ValidationError(
+                {
+                    "body": _("These form fields are placed more than once: %(names)s")
+                    % {"names": ", ".join(duplicates)}
+                }
+            )
+
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        for field in form.fields.values():
+            widget = getattr(field, "widget", None)
+            if widget is None:
+                continue
+            for target in [widget, *getattr(widget, "widgets", ())]:
+                attrs = getattr(target, "attrs", None)
+                if attrs is not None:
+                    attrs.setdefault("form", self.form_id)
+        return form
+
+    def render_landing_page(self, request, form_submission=None, *args, **kwargs):
+        context = self.get_context(request)
+        context["form_submission"] = form_submission
+        payload = dict(context.get("payload") or {})
+        payload["submission"] = (
+            form_submission.form_data if form_submission is not None else {}
+        )
+        context["payload"] = payload
+        return TemplateResponse(
+            request, self.get_landing_page_template(request), context
+        )
 
     def get_model_field_map(self):
         """Return ``{clean_name: model_field}`` for the form's fields."""

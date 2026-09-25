@@ -272,3 +272,17 @@ def is_active(item, request):
     if callable(checker):
         return checker(request)
     return False
+
+
+@register.simple_tag
+def unplaced_form_fields(page, form):
+    """Return the bound fields that ``page.body`` does not already render.
+
+    Fields the author placed with the ``form_field`` body block are skipped so
+    they are not repeated in the form's own field loop.
+    """
+    if form is None:
+        return []
+    getter = getattr(page, "get_placed_field_names", None)
+    placed = set(getter()) if callable(getter) else set()
+    return [form[name] for name in form.fields if name not in placed]

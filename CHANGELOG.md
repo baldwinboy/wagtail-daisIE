@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Form field** body block on `DaisieFormPage`, letting editors interleave
+  form inputs with content blocks in any order. Inputs rendered outside the
+  `<form>` are associated with it via `form="daisie-form"`.
+- `payload.submission` in the form page landing context, exposing the stored
+  `FormSubmission` data to `success_body` placeholders.
+
+### Changed
+
+- Form page bodies now accept form fields; any field not placed in the body is
+  still rendered above the submit button, so existing pages are unaffected.
+
+### Validation
+
+- Saving a form page that places the same field more than once now raises a
+  validation error on the body field.
+
 ## [1.1.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v1.0.0...v1.1.0) (2026-09-22)
 
 

@@ -9,7 +9,12 @@ from django.views.i18n import JavaScriptCatalog
 from wagtail import hooks
 from wagtail.snippets.models import register_snippet
 
-from .context import set_current_theme, theme_from_instance
+from .context import (
+    get_current_form_fields,
+    set_current_form_fields,
+    set_current_theme,
+    theme_from_instance,
+)
 from .dynamic.views import object_options
 from .emails.view_sets import EmailViewSetGroup
 from .errors.view_sets import ErrorViewSetGroup
@@ -75,6 +80,31 @@ def _set_theme_before_create_snippet(request, page):
 @hooks.register("before_edit_snippet")
 def _set_theme_before_edit_snippet(request, instance):
     set_current_theme(theme_from_instance(instance))
+
+
+# Offer the page's form fields as choices for the ``form_field`` body block.
+
+
+def _form_page_fields(page):
+    from .forms.models import DaisieFormPage
+
+    if not isinstance(page, DaisieFormPage):
+        return []
+    return [
+        {"name": field.clean_name, "label": field.label}
+        for field in page.get_form_fields()
+        if field.clean_name
+    ]
+
+
+@hooks.register("before_create_page")
+def _set_form_fields_before_create_page(request, page):
+    set_current_form_fields(_form_page_fields(page))
+
+
+@hooks.register("before_edit_page")
+def _set_form_fields_before_edit_page(request, page):
+    set_current_form_fields(_form_page_fields(page))
 
 
 # Register admin views
@@ -171,6 +201,15 @@ def register_forms_admin_js():
     return format_html(
         '<script src="{}"></script>',
         static("wagtail_daisIE/js/forms_admin.js"),
+    )
+
+
+@hooks.register("insert_global_admin_js")
+def register_form_fields_js():
+    state_json = json.dumps(get_current_form_fields())
+    return format_html(
+        "<script type='text/javascript'>window.WAGTAIL_DAISIE_FORM_FIELDS = {};</script>",
+        mark_safe(state_json),  # noqa: S308
     )
 
 

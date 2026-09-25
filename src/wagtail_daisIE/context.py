@@ -20,6 +20,24 @@ def get_current_theme():
     return _current_theme.get()
 
 
+_current_form_fields: contextvars.ContextVar = contextvars.ContextVar(
+    "wagtail_daisIE_current_form_fields", default=()
+)
+
+
+def set_current_form_fields(fields):
+    """
+    Set the form-field choices offered by the ``form_field`` block for the
+    current admin request. Each entry is a ``{"name", "label"}`` mapping.
+    """
+    return _current_form_fields.set(tuple(fields or ()))
+
+
+def get_current_form_fields():
+    """Return the form-field choices active for the current admin request."""
+    return list(_current_form_fields.get())
+
+
 def theme_from_instance(instance):
     """
     Extract a DaisyUITheme from a Page or DaisyUIMenu-like instance.
