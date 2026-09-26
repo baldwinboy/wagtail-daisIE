@@ -86,10 +86,87 @@ class ActionButtonBlock(ThemedBlock):
 ITEM_BLOCKS = [*PAGE_CONTENT_BLOCKS, ("action", ActionButtonBlock())]
 
 
+LAYOUT_OVERRIDE_CHOICES = [
+    ("", _("Use feed default")),
+    ("grid", _("Grid")),
+    ("row", _("Row")),
+    ("list", _("List")),
+]
+ROW_MODE_OVERRIDE_CHOICES = [
+    ("", _("Use feed default")),
+    ("wrap", _("Wrap onto new lines")),
+    ("scroll", _("Scroll horizontally")),
+]
+GAP_OVERRIDE_CHOICES = [
+    ("", _("Use feed default")),
+    ("gap-1", "1"),
+    ("gap-2", "2"),
+    ("gap-3", "3"),
+    ("gap-4", "4"),
+    ("gap-6", "6"),
+    ("gap-8", "8"),
+]
+TOGGLE_OVERRIDE_CHOICES = [
+    ("", _("Use feed default")),
+    ("grid_list", _("Grid / List")),
+    ("grid_row", _("Grid / Row")),
+    ("row_list", _("Row / List")),
+]
+
+
+class FeedLayoutOverrideBlock(blocks.StructBlock):
+    """Per-placement overrides for a feed's layout. Blank = use the feed."""
+
+    layout = blocks.ChoiceBlock(
+        choices=LAYOUT_OVERRIDE_CHOICES, required=False, default="", label=_("Layout")
+    )
+    columns = blocks.IntegerBlock(
+        required=False, min_value=1, max_value=6, label=_("Grid columns")
+    )
+    gap = blocks.ChoiceBlock(
+        choices=GAP_OVERRIDE_CHOICES, required=False, default="", label=_("Gap")
+    )
+    row_mode = blocks.ChoiceBlock(
+        choices=ROW_MODE_OVERRIDE_CHOICES,
+        required=False,
+        default="",
+        label=_("Row behaviour"),
+    )
+    show_toggle = blocks.ChoiceBlock(
+        choices=[("", _("Use feed default")), ("yes", _("Yes")), ("no", _("No"))],
+        required=False,
+        default="",
+        label=_("Visitor toggle"),
+    )
+    toggle_layouts = blocks.ChoiceBlock(
+        choices=TOGGLE_OVERRIDE_CHOICES,
+        required=False,
+        default="",
+        label=_("Toggle options"),
+    )
+
+    class Meta:
+        icon = "cogs"
+        label = _("Layout override")
+        collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=[
+                "layout",
+                "columns",
+                "gap",
+                "row_mode",
+                "show_toggle",
+                "toggle_layouts",
+            ],
+            heading=_("Layout override"),
+        )
+
+
 class FeedBlock(ThemedBlock):
     """Render an admin-designed :class:`~wagtail_daisIE.dynamic.models.Feed`."""
 
     feed = SnippetChooserBlock("wagtail_daisIE.Feed", label=_("Feed"))
+    layout = FeedLayoutOverrideBlock(required=False, label=_("Layout override"))
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -117,7 +194,10 @@ class FeedBlock(ThemedBlock):
         except (TypeError, ValueError):
             offset = 0
 
-        context.update(render_feed(feed, request, offset=offset, page=page))
+        override = (value or {}).get("layout") or {}
+        context.update(
+            render_feed(feed, request, offset=offset, page=page, override=override)
+        )
         try:
             context["feed_url"] = reverse(
                 "wagtail_daisIE_dynamic:feed_items", args=[feed.pk]
@@ -133,7 +213,7 @@ class FeedBlock(ThemedBlock):
         template = "wagtail_daisIE/blocks/data/feed.html"
         form_layout = blocks.BlockGroup(
             children=["feed"],
-            settings=["design", "audience"],
+            settings=["design", "audience", "layout"],
         )
 
 

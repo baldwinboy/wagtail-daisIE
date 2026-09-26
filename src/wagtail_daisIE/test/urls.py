@@ -17,5 +17,6 @@ urlpatterns = [
         "daisie/",
         include("wagtail_daisIE.dynamic.urls"),
     ),
+    path("", include("wagtail_daisIE.favicon.urls")),
     path("", include(wagtail_urls)),
 ]

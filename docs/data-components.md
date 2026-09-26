@@ -75,6 +75,24 @@ applied automatically.
 
 A **Feed block** in a page or menu references a Feed snippet.
 
+### Layout
+
+Each feed has a **Layout**: **Grid**, **Row** or **List**.
+
+* **Grid** — responsive columns (1–6) using **Grid columns** and **Gap**.
+* **Row** — **Row behaviour** chooses whether items **wrap onto new lines** or
+  **scroll horizontally**.
+* **List** — a divided, full-width list.
+
+A **Feed block** can override the feed's layout per placement (**Layout
+override**); leave a field blank to use the feed's value.
+
+Admins can let visitors switch layout with **Let visitors switch layout** and
+**Toggle options** (Grid/List, Grid/Row or Row/List). The toggle is progressive
+enhancement: the server renders the configured (or `?layout=`) layout and the
+script swaps the container classes instantly and remembers the choice in
+`localStorage`. The toggle stays hidden without JavaScript.
+
 ### Filtering
 
 Filters are declared per context model (developers) and selected/ordered on the

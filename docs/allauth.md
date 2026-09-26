@@ -194,6 +194,26 @@ The layouts use the project's **default `DaisyUITheme`**, so the account pages
 match the rest of your site automatically. If you have no default theme, the
 pages render with DaisyUI defaults.
 
+### Page parity with the rest of the site
+
+By default allauth pages render with the package's chrome base (header/footer
+menus, theme, favicon). To make them **identical** to standard pages, point the
+layout at your own base template:
+
+```python
+WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
+```
+
+The package's `allauth/layouts/base.html` then extends your base and maps
+allauth's `head_title`/`content` blocks into it, so allauth pages get your real
+header, footer, menus, breadcrumbs and favicon for free. Your base template must
+expose the blocks `title`, `content`, `body_class`, `extra_head` and
+`extra_body`.
+
+The default chrome base renders menus named by `WAGTAIL_DAISIE_HEADER_MENU`
+(default `"Main navigation"`) and `WAGTAIL_DAISIE_FOOTER_MENU` (default
+`"Footer"`).
+
 ## 5. Adding a custom adapter behaviour
 
 The mixin only intercepts email rendering. Everything else is a normal allauth

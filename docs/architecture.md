@@ -30,6 +30,15 @@ snippet; `blocks_data.py` holds the Feed, Action button and Calendar blocks;
 `actions.py` + `urls.py` + `views.py` run developer-defined actions and serve
 feed slices.
 
+### `detail_pages/`
+
+`registry.py` parses `WAGTAIL_DAISIE_DETAIL_PAGES`; `models.py` provides the
+abstract `ModelDetailPage` and `ModelDetailTemplate` page types; `bridges.py`
+connects `post_save`/`pre_delete` receivers (wired in `apps.py`) that create,
+update and delete a generated page for each model record. `favicon/` serves the
+web-app manifest and browser config, and `models/favicon.py` holds the
+`DaisyUIFavicon` snippet.
+
 ### `notifications/`
 
 `placeholders.py` renders `{{ ... }}` expressions (Django engine, autoescape,

@@ -31,7 +31,9 @@ Each entry supports:
 | `label` | Name shown in the admin. |
 | `model` | `"app_label.ModelName"` or a dotted import path. |
 | `source` | `"request.<attr>"`, `"url"`, `"page"`, or a dotted callable `(request, page) -> instance`. |
-| `lookup_field` | URL keyword used with the `url` source (default `pk`). |
+| `lookup_field` | Parameter name used with the `url` source (default `pk`). |
+| `lookup_in` | `"path"` (default) or `"query"` — where the `url` source reads the value. |
+| `lookup_pattern` | Optional regex the URL value must fully match (per binding). |
 | `url_source` | How `{{ key.url }}` is derived: a field name, `"get_absolute_url"`, or a dotted callable. |
 | `select_related` / `prefetch_related` | Eager loading for url-sourced lookups. |
 | `queryset` | Optional dotted callable (or callable) `(request, page) -> QuerySet` used by data blocks to scope/filter rows (e.g. live posts for the blog feed). |
@@ -96,8 +98,14 @@ Each configured model has a **source** that determines how its value is found:
 * **Automatic** — `request.*`, `page`, or a project callable. No binding is
   needed; the value is always available (`{{ user.username }}`,
   `{{ site.hostname }}`).
-* **From the URL** — the model is looked up from a URL keyword
-  (`lookup_field`). A binding chooses the keyword (or uses the model default).
+* **From the URL** — the model is looked up from a request parameter
+  (`lookup_field`). The admin picks **Path parameter** or **Query parameter**
+  under the binding's **Read from** setting (the model config supplies the
+  default). Path values come from the page slug, `RoutablePageMixin` sub-route
+  keywords, named Django URL keywords, or values a page publishes; query values
+  come from the query string. Values are validated against the field type and
+  the optional **Value pattern** regex before any lookup, so a bad value simply
+  renders the fallback.
 * **Specific instance** — a binding pins the value to one instance, chosen
   inline by searching the model's records.
 

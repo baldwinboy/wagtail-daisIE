@@ -1,0 +1,16 @@
+{% if favicon and favicon.image %}
+    {% for icon in favicon.apple_icons %}
+        <link rel="apple-touch-icon" sizes="{{ icon.size }}" href="{{ icon.url }}" />
+    {% endfor %}
+    {% for icon in favicon.icons %}
+        <link rel="icon" type="image/png" sizes="{{ icon.size }}" href="{{ icon.url }}" />
+    {% endfor %}
+    <meta name="msapplication-TileImage" content="{{ favicon.tile_image }}" />
+    {% if browser_config_url %}<meta name="msapplication-config" content="{{ browser_config_url }}" />{% endif %}
+    {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}" />{% endif %}
+{% endif %}
+{% if favicon.theme_color %}
+    <meta name="msapplication-TileColor" content="{{ favicon.theme_color }}" />
+    <meta name="theme-color" content="{{ favicon.theme_color }}" />
+    {% if favicon.background_color %}<meta name="background-color" content="{{ favicon.background_color }}" />{% endif %}
+{% endif %}

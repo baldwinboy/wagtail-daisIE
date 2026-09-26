@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block content %}
+    <article class="prose mx-auto max-w-3xl">
+        <h1>{{ bread.name|default:page.title }}</h1>
+
+        {% if bread.image %}
+            {% picture bread.image format-{avif,webp,jpeg} fill-800x450-c100 class="w-full rounded-lg" %}
+        {% endif %}
+
+        {% if bread.description %}
+            <p>{{ bread.description }}</p>
+        {% endif %}
+
+        {% if page.body %}
+            {% for block in page.body %}
+                {% include_block block %}
+            {% endfor %}
+        {% endif %}
+    </article>
+{% endblock %}

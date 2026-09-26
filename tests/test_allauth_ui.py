@@ -37,6 +37,20 @@ class TestRegisterTemplateDir:
         assert register_template_dir([engine]) is False
         assert engine["DIRS"].count(template_dir()) == 1
 
+    def test_injects_context_processors(self):
+        from wagtail_daisIE.allauth_ui import CONTEXT_PROCESSORS
+
+        engine = {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [],
+        }
+        assert register_template_dir([engine]) is True
+        processors = engine["OPTIONS"]["context_processors"]
+        for path in CONTEXT_PROCESSORS:
+            assert path in processors
+        assert register_template_dir([engine]) is False
+        assert len(engine["OPTIONS"]["context_processors"]) == len(CONTEXT_PROCESSORS)
+
     def test_ignores_other_backends(self):
         engine = {"BACKEND": "django.template.backends.jinja2.Jinja2", "DIRS": []}
         assert register_template_dir([engine]) is False
@@ -72,10 +86,14 @@ def allauth_ui(settings):
     settings.WAGTAIL_DAISIE_ALLAUTH_UI = True
     engine = settings.TEMPLATES[0]
     original = list(engine.get("DIRS") or [])
+    original_processors = list(
+        engine.get("OPTIONS", {}).get("context_processors") or []
+    )
     register_template_dir()
     engines._engines = {}
     yield
     engine["DIRS"] = original
+    engine.setdefault("OPTIONS", {})["context_processors"] = original_processors
     engines._engines = {}
 
 
@@ -87,13 +105,33 @@ class TestAllauthTemplates:
         DaisyUITheme.objects.create(name="default", default=True)
         request = rf.get("/accounts/login/")
         request.user = AnonymousUser()
-        html = render_to_string(
-            "allauth/layouts/base.html",
-            {"head_title": "Sign In", "request": request},
-        )
+        html = render_to_string("test_allauth_child.html", request=request)
         assert "data-theme" in html
-        assert "navbar" in html
-        assert "card" in html
+        assert "template-allauth" in html
+        assert "Sign In" in html
+        assert "Sign in form" in html
+
+    def test_layout_extends_configured_parent(self, allauth_ui, rf, settings):
+        settings.WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "test_project_base.html"
+        request = rf.get("/accounts/login/")
+        request.user = AnonymousUser()
+        html = render_to_string("test_allauth_child.html", request=request)
+        assert "PROJECT-CHROME" in html
+        assert "Sign In" in html
+        assert "Sign in form" in html
+
+    def test_allauth_theme_processor_is_namespace_guarded(self, rf):
+        from wagtail_daisIE.allauth_ui import context_processors
+        from wagtail_daisIE.models import DaisyUITheme
+
+        DaisyUITheme.objects.create(name="default", default=True)
+        request = rf.get("/accounts/login/")
+        request.resolver_match = type(
+            "Match", (), {"namespace": "allauth", "app_name": "allauth"}
+        )()
+        assert context_processors.allauth_theme(request)["daisyui_theme"] is not None
+        request.resolver_match = type("Match", (), {"namespace": "", "app_name": ""})()
+        assert context_processors.allauth_theme(request) == {}
 
     def test_fields_element_renders_daisyui_fields(self, allauth_ui):
         html = render_to_string(

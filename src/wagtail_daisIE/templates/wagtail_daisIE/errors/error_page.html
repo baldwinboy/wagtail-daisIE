@@ -7,6 +7,7 @@
         <title>{{ error_page.title|default:status_code }}</title>
         <link rel="stylesheet" href="{% daisyui_global_css %}" />
         {% daisyui_theme_full_css daisyui_theme %}
+        {% daisyui_favicon %}
     </head>
     <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
         <main id="main-content" class="mx-auto flex w-full max-w-3xl grow flex-col items-center justify-center px-4 py-16 text-center">

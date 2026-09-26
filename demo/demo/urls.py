@@ -14,6 +14,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("newsletter/", include("wagtail_daisIE.notifications.urls")),
     path("daisie/", include("wagtail_daisIE.dynamic.urls")),
+    path("", include("wagtail_daisIE.favicon.urls")),
     path("search/", search_views.search, name="search"),
 ]
 

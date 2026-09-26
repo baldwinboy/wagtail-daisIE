@@ -76,3 +76,14 @@
 /* Button appearance hover/active variants are built at runtime from the
    ButtonAppearanceBlock choices, so safelist them for Tailwind to generate. */
 @source inline("{hover,active}:btn-{neutral,primary,secondary,accent,info,success,warning,error,outline,dash,soft,ghost,link,xs,sm,md,lg,xl,active,disabled,wide,block,square,circle}");
+
+/* Feed layout container classes are built in dynamic/feeds.py. */
+@source inline("divide-y divide-base-300 overflow-x-auto snap-x flex-row flex-wrap flex-nowrap grid-cols-{1,2,3,4,5,6} sm:grid-cols-{1,2,3,4,5,6} lg:grid-cols-{1,2,3,4,5,6} gap-{1,2,3,4,6,8}");
+
+/* Feed layouts. Container classes are built in dynamic/feeds.py. */
+@layer components {
+  .daisie-feed--row-scroll > .daisie-feed__item {
+    flex: 0 0 min(80vw, 18rem);
+    scroll-snap-align: start;
+  }
+}

@@ -18,7 +18,27 @@
       </form>
     {% endif %}
 
-    <div data-daisie-feed-items>{{ items_html|safe }}</div>
+    {% if allow_layout_toggle and toggle_options %}
+      <div class="mb-4 flex justify-end" data-daisie-feed-toggle hidden>
+        <div class="join" role="radiogroup" aria-label="{% trans 'Layout' %}">
+          {% for option in toggle_options %}
+            <label class="btn btn-sm join-item{% if option.value == layout %} btn-active{% endif %}">
+              <input type="radio" name="feed_layout" value="{{ option.value }}"
+                     class="sr-only"{% if option.value == layout %} checked{% endif %}
+                     data-daisie-feed-layout-option />
+              {{ option.label }}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+      {{ layout_classes|json_script:"daisie-feed-layout-classes" }}
+    {% endif %}
+
+    <div
+      data-daisie-feed-items
+      data-daisie-feed-layout="{{ layout }}"
+      class="{{ layout_container_css }}"
+    >{{ items_html|safe }}</div>
 
     {% if not items_html %}
       <p class="text-base-content/70">{{ value.feed.empty_message }}</p>

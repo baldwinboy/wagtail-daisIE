@@ -270,6 +270,22 @@ WAGTAIL_DAISIE_CONTEXT_MODELS = {
     },
 }
 
+# Model detail pages: one generated Wagtail page per record.
+WAGTAIL_DAISIE_DETAIL_PAGES = {
+    "bread": {
+        "label": "Bread",
+        "model": "blog.Bread",
+        "page_type": "blog.BreadDetailPage",
+        "parent": "blog.BreadDetailTemplate",
+        "template_page": "blog.BreadDetailTemplate",
+        "lookup_field": "slug",
+        "lookup_in": "path",
+        "publish_field": "is_available",
+        "title_source": "name",
+        "slug_source": "name",
+    },
+}
+
 # Developer-defined actions used by Action buttons.
 WAGTAIL_DAISIE_ACTIONS = {
     "basket.add": {
@@ -317,6 +333,9 @@ WAGTAIL_DAISIE_NOTIFICATION_BRIDGES = {
 
 # DaisyUI styling for the allauth account pages and forms.
 WAGTAIL_DAISIE_ALLAUTH_UI = True
+
+# Render allauth pages with the same chrome as standard pages.
+WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",

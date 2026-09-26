@@ -11,6 +11,31 @@ def daisyui_global_css():
     return static("wagtail_daisIE/css/global.css")
 
 
+@register.inclusion_tag("wagtail_daisIE/tags/favicon.html", takes_context=True)
+def daisyui_favicon(context):
+    """Render favicon/PWA ``<link>`` and ``<meta>`` tags, if configured."""
+    from django.urls import NoReverseMatch, reverse
+
+    from ..models import DaisyUIFavicon
+
+    try:
+        favicon = DaisyUIFavicon.for_request(context.get("request"))
+    except Exception:  # pragma: no cover - table may not exist yet
+        favicon = None
+
+    def _url(name):
+        try:
+            return reverse(f"wagtail_daisIE_favicon:{name}")
+        except NoReverseMatch:  # project has not included the URLs
+            return ""
+
+    return {
+        "favicon": favicon,
+        "manifest_url": _url("manifest"),
+        "browser_config_url": _url("browser_config"),
+    }
+
+
 @register.inclusion_tag("wagtail_daisIE/tags/theme.html")
 def daisyui_theme_css(theme):
     return {"theme": theme}

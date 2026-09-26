@@ -379,3 +379,98 @@ class TestDatetimeRange:
         params = QueryDict(f"filter_joined_from={from_date}")
         result = apply_filters(USER_MODEL.objects.all(), config, params)
         assert list(result.values_list("username", flat=True)) == ["new"]
+
+
+class TestFeedLayout:
+    def _feed(self, **kwargs):
+        defaults = {
+            "name": "Layout feed",
+            "context_model": "user",
+            "order_by": "username",
+        }
+        defaults.update(kwargs)
+        feed = Feed.objects.create(**defaults)
+        feed.item = [
+            {
+                "type": "header",
+                "value": {"text": "{{ user.username }}", "design": {}, "audience": {}},
+            }
+        ]
+        feed.save()
+        return feed
+
+    def _render(self, **kwargs):
+        return render_feed(self._feed(**kwargs), RequestFactory().get("/"))
+
+    def test_grid_classes(self):
+        data = self._render(layout="grid", layout_columns=4, layout_gap="gap-6")
+        css = data["layout_container_css"]
+        assert "grid" in css
+        assert "lg:grid-cols-4" in css
+        assert "gap-6" in css
+
+    def test_row_wrap_classes(self):
+        data = self._render(layout="row", row_mode="wrap")
+        css = data["layout_container_css"]
+        assert "flex-row" in css and "flex-wrap" in css
+        assert "daisie-feed--row" in css
+
+    def test_row_scroll_classes(self):
+        data = self._render(layout="row", row_mode="scroll")
+        css = data["layout_container_css"]
+        assert "flex-nowrap" in css
+        assert "overflow-x-auto" in css
+        assert "daisie-feed--row-scroll" in css
+
+    def test_list_classes(self):
+        data = self._render(layout="list")
+        assert "divide-y" in data["layout_container_css"]
+
+    def test_invalid_columns_clamped(self):
+        data = self._render(layout="grid", layout_columns=99)
+        assert "lg:grid-cols-3" in data["layout_container_css"]
+
+    def test_items_are_wrapped(self):
+        USER_MODEL.objects.create(username="ada")
+        data = self._render()
+        assert 'class="daisie-feed__item"' in data["items_html"]
+        assert "data-daisie-feed-item" in data["items_html"]
+
+    def test_block_override_wins(self):
+        from wagtail_daisIE.dynamic.feeds import resolve_layout
+
+        feed = self._feed(layout="grid", layout_columns=2)
+        ctx = resolve_layout(feed, {"layout": "list", "columns": 5}, None)
+        assert ctx["layout"] == "list"
+        assert "lg:grid-cols-5" in ctx["layout_classes"]["grid"]
+
+    def test_toggle_options_when_enabled(self):
+        from wagtail_daisIE.dynamic.feeds import resolve_layout
+
+        feed = self._feed(allow_layout_toggle=True, toggle_layouts="grid_row")
+        ctx = resolve_layout(feed, None, None)
+        assert [o["value"] for o in ctx["toggle_options"]] == ["grid", "row"]
+
+    def test_toggle_options_empty_when_disabled(self):
+        from wagtail_daisIE.dynamic.feeds import resolve_layout
+
+        feed = self._feed(allow_layout_toggle=False)
+        assert resolve_layout(feed, None, None)["toggle_options"] == []
+
+    def test_query_override(self):
+        from wagtail_daisIE.dynamic.feeds import resolve_layout
+
+        feed = self._feed(layout="grid", allow_layout_toggle=True)
+        request = RequestFactory().get("/?layout=list")
+        assert resolve_layout(feed, None, request)["layout"] == "list"
+        request = RequestFactory().get("/?layout=bogus")
+        assert resolve_layout(feed, None, request)["layout"] == "grid"
+
+    def test_ajax_payload_contains_wrapper(self):
+        from wagtail_daisIE.dynamic.views import feed_items
+
+        USER_MODEL.objects.create(username="ada")
+        feed = self._feed()
+        response = feed_items(RequestFactory().get("/"), feed.pk)
+        payload = json.loads(response.content)
+        assert "daisie-feed__item" in payload["html"]

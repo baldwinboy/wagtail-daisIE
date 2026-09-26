@@ -50,6 +50,7 @@ class ContextModel:
     model_path: str
     source: object = "request.user"
     lookup_field: str = "pk"
+    lookup_in: str = "path"
     url_source: str = ""
     select_related: tuple[str, ...] = ()
     prefetch_related: tuple[str, ...] = ()
@@ -117,6 +118,11 @@ class ContextModel:
         return "url" if self.source == "url" else "automatic"
 
     @property
+    def lookup_in_kind(self):
+        """Return ``"query"`` or ``"path"`` for URL-sourced lookups."""
+        return "query" if self.lookup_in == "query" else "path"
+
+    @property
     def is_automatic(self):
         return self.source_kind == "automatic"
 
@@ -141,7 +147,9 @@ class ContextModel:
             return _("Resolved automatically by a project function.")
         source = str(source or "")
         if source == "url":
-            return _("Looked up from a URL keyword.")
+            if self.lookup_in_kind == "query":
+                return _("Looked up from a query parameter.")
+            return _("Looked up from a path parameter.")
         if source == "page":
             return _("The current page.")
         if source.startswith("request"):
@@ -206,6 +214,7 @@ def _build_context_model(key, raw, **overrides):
         model_path=raw.get("model", ""),
         source=raw.get("source", "request.user"),
         lookup_field=raw.get("lookup_field", "pk") or "pk",
+        lookup_in=(raw.get("lookup_in", "path") or "path").lower(),
         url_source=raw.get("url_source", "") or "",
         select_related=_as_tuple(raw.get("select_related")),
         prefetch_related=_as_tuple(raw.get("prefetch_related")),
@@ -276,6 +285,7 @@ def get_context_models_state():
             "modes": config.modes,
             "sourceSummary": str(config.source_summary),
             "lookupField": config.lookup_field,
+            "lookupIn": config.lookup_in_kind,
             "urlSource": config.url_source,
             "fields": config.field_docs(),
             "examples": config.examples(),

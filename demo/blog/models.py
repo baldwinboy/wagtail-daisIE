@@ -26,6 +26,7 @@ from wagtail.models import (
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
+from wagtail_daisIE.detail_pages.models import ModelDetailPage, ModelDetailTemplate
 from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.pages import StyledPageMixin
 
@@ -336,6 +337,13 @@ class Bread(models.Model):
     added_on = models.DateField("Added on")
     is_available = models.BooleanField("Available", default=True)
 
+    detail_pages = GenericRelation(
+        "blog.BreadDetailPage",
+        content_type_field="source_content_type",
+        object_id_field="source_object_id",
+        related_query_name="bread_detail_pages",
+    )
+
     panels = [
         FieldPanel("name"),
         FieldPanel("description"),
@@ -352,8 +360,10 @@ class Bread(models.Model):
     def __str__(self):
         return self.name
 
-    @property
-    def url(self):
+    def get_absolute_url(self):
+        page = self.detail_pages.filter(live=True).first()
+        if page is not None:
+            return page.get_url()
         return f"/breads/#bread-{self.pk}"
 
 
@@ -374,4 +384,25 @@ class BreadSuggestionFormPage(DaisieFormPage):
     """
 
     parent_page_types = ["home.HomePage"]
+    subpage_types = []
+
+
+class BreadDetailTemplate(ModelDetailTemplate):
+    """Shared design and ``{{ bread }}`` binding for generated bread pages."""
+
+    template = "blog/bread_detail_template.html"
+    parent_page_types = ["home.HomePage"]
+    subpage_types = ["blog.BreadDetailPage"]
+
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context["breads"] = Bread.objects.filter(is_available=True)
+        return context
+
+
+class BreadDetailPage(ModelDetailPage):
+    """Auto-generated page for one ``Bread``."""
+
+    template = "blog/bread_detail_page.html"
+    parent_page_types = ["blog.BreadDetailTemplate"]
     subpage_types = []

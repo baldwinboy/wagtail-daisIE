@@ -38,9 +38,14 @@ src/wagtail_daisIE/
 ├── base_blocks/     # Design primitives: size, box, background, typography, link, design, audience
 ├── blocks/          # Public block composition (content, cards, inline, link, menu_items, ...)
 ├── choices/         # DaisyUI/Tailwind class-choice constants
+├── detail_pages/    # ModelDetailPage/ModelDetailTemplate + post_save/pre_delete bridges
+├── dynamic/         # Context models, bindings, feeds, actions, calendar
+├── favicon/         # Public manifest.json / browser-config.xml / favicon.ico views
 ├── icons/           # Icon providers, registry, chooser field/block/widget
 ├── errors/          # ErrorPage snippet, admin view set, Django handlers
-├── models/          # DaisyUITheme (+ orderables), DaisyUIMenu, DaisyUIIconSource
+├── forms/           # DaisieFormPage (form pages that create context-model instances)
+├── models/          # DaisyUITheme (+ orderables), DaisyUIMenu, DaisyUIIconSource, DaisyUIFavicon
+├── notifications/   # Email campaigns, audiences, bridges, allauth overrides
 ├── templates/wagtail_daisIE/  # Block, tag, admin, preview templates
 ├── context.py       # Theme contextvar used by FontFamilyChoiceBlock
 ├── pages.py         # StyledPageMixin
@@ -85,6 +90,17 @@ When adding a block, subclass the appropriate `Themed*Block` from
 - **Error handlers are opt-in**: projects expose the relevant functions from
   `wagtail_daisIE.errors.handlers` in their root URLconf. Audience-denied
   `StyledPageMixin` pages render the 403 snippet directly.
+- **Detail-page bridges** connect `post_save`/`pre_delete` receivers in
+  `AppConfig.ready()` inside `try/except` (like notification bridges) and resolve
+  models lazily; never query at import time. Deletion runs in `pre_delete` via
+  `Page.delete()` because `GenericRelation` cascades outside Wagtail's tree
+  bookkeeping.
+- **Feed layout classes are container-only** and built in
+  `dynamic/feeds.py`; add any new utility to the `@source inline(...)` safelist in
+  `static/wagtail_daisIE/css/source.css` and rerun `npm run compile-global-css`.
+- **The package must never ship a `base.html`**: the allauth layout extends
+  `WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE` (default a package chrome base) and the
+  package template dir is prepended to `TEMPLATES.DIRS`.
 
 ## Demo content
 

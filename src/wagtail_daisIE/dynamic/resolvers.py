@@ -6,10 +6,13 @@ Everything here runs lazily at render time and never at import.
 from __future__ import annotations
 
 import logging
+import re
 
 from dataclasses import dataclass
 from urllib.parse import urlsplit
+from uuid import UUID
 
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from django.utils.module_loading import import_string
 
@@ -25,6 +28,24 @@ logger = logging.getLogger(__name__)
 #: URL schemes allowed in dynamic link destinations.
 ALLOWED_URL_SCHEMES = frozenset({"", "http", "https", "mailto", "tel"})
 
+#: Model field types coerced to ``int`` before a lookup is attempted.
+_NUMERIC_LOOKUP_FIELDS = frozenset(
+    {
+        "AutoField",
+        "BigAutoField",
+        "SmallAutoField",
+        "IntegerField",
+        "BigIntegerField",
+        "SmallIntegerField",
+        "PositiveIntegerField",
+        "PositiveBigIntegerField",
+        "PositiveSmallIntegerField",
+    }
+)
+
+#: Longest value accepted from an untrusted URL parameter.
+MAX_LOOKUP_LENGTH = 255
+
 
 @dataclass
 class ContextBinding:
@@ -34,14 +55,28 @@ class ContextBinding:
     mode: str = "automatic"
     object_id: int | None = None
     lookup_field: str = ""
+    lookup_in: str = ""
+    lookup_pattern: str = ""
     fallback: str = ""
 
 
-def resolve_url_kwargs(request):
-    """Return the URL kwargs of the matched view (or an empty dict)."""
+def resolve_url_kwargs(request, page=None):
+    """Return the request's path parameters as a ``{name: value}`` mapping.
+
+    Sources, in increasing precedence: the served page's own slug, a Wagtail
+    ``RoutablePageMixin`` sub-route match, the Django resolver match, and any
+    values published on ``request.daisie_path_params``.
+    """
+    values = {}
+    slug = getattr(page, "slug", "")
+    if slug:
+        values["slug"] = slug
+    routable = getattr(request, "routable_resolver_match", None)
+    values.update(getattr(routable, "kwargs", None) or {})
     match = getattr(request, "resolver_match", None)
-    kwargs = getattr(match, "kwargs", None)
-    return dict(kwargs or {})
+    values.update(getattr(match, "kwargs", None) or {})
+    values.update(getattr(request, "daisie_path_params", None) or {})
+    return values
 
 
 def _lookup(value, attr):
@@ -191,8 +226,49 @@ def _binding_from_value(value):
         mode=str(raw.get("mode", "automatic") or "automatic"),
         object_id=object_id,
         lookup_field=str(raw.get("lookup_field", "") or ""),
+        lookup_in=str(raw.get("lookup_in", "") or ""),
+        lookup_pattern=str(raw.get("lookup_pattern", "") or ""),
         fallback=str(raw.get("fallback", "") or ""),
     )
+
+
+def _coerce_lookup_value(model, name, raw):
+    """Coerce ``raw`` to ``model``'s field type, or return ``None`` if invalid."""
+    if model is None:
+        return raw
+    try:
+        field = model._meta.pk if name == "pk" else model._meta.get_field(name)
+    except FieldDoesNotExist:
+        return raw
+    internal = field.get_internal_type()
+    if internal in _NUMERIC_LOOKUP_FIELDS:
+        return int(raw) if raw.isdigit() else None
+    if internal == "UUIDField":
+        try:
+            return UUID(raw)
+        except (ValueError, AttributeError, TypeError):
+            return None
+    max_length = getattr(field, "max_length", None)
+    if max_length and len(raw) > max_length:
+        return None
+    return raw
+
+
+def _clean_lookup_value(config, name, raw, binding):
+    """Validate an untrusted URL value before it reaches a queryset."""
+    if raw in (None, ""):
+        return None
+    raw = str(raw).strip()
+    if not raw or len(raw) > MAX_LOOKUP_LENGTH:
+        return None
+    pattern = getattr(binding, "lookup_pattern", "") if binding is not None else ""
+    if pattern:
+        try:
+            if re.fullmatch(pattern, raw) is None:
+                return None
+        except re.error:
+            logger.warning("Ignoring invalid lookup pattern %r", pattern)
+    return _coerce_lookup_value(config.model, name, raw)
 
 
 def parse_bindings(page):
@@ -213,42 +289,57 @@ def parse_bindings(page):
     return bindings
 
 
-def _base_queryset(model, config):
+def _base_queryset(model, config, request=None, page=None):
     if model is None:
         return None
-    qs = model._default_manager.all()
+    queryset = None
+    if config is not None:
+        queryset = config.get_queryset(request, page)
+    if queryset is None:
+        queryset = model._default_manager.all()
     if config is not None and config.select_related:
-        qs = qs.select_related(*config.select_related)
+        queryset = queryset.select_related(*config.select_related)
     if config is not None and config.prefetch_related:
-        qs = qs.prefetch_related(*config.prefetch_related)
-    return qs
+        queryset = queryset.prefetch_related(*config.prefetch_related)
+    return queryset
 
 
-def _resolve_fixed(config, binding):
+def _resolve_fixed(config, binding, request=None, page=None):
     model = config.model
     if model is None or binding is None or not binding.object_id:
         return None
-    queryset = _base_queryset(model, config)
+    queryset = _base_queryset(model, config, request, page)
     if queryset is None:
         return None
     return queryset.filter(pk=binding.object_id).first()
 
 
-def _resolve_url(config, binding, request):
+def _resolve_url(config, binding, request, page=None):
     model = config.model
-    lookup_field = (
+    if model is None:
+        return None
+    name = (
         binding.lookup_field
         if binding is not None and binding.lookup_field
         else config.lookup_field
     ) or "pk"
-    kwargs = resolve_url_kwargs(request)
-    value = kwargs.get(lookup_field) or kwargs.get("pk") or kwargs.get("slug")
+    lookup_in = (
+        binding.lookup_in
+        if binding is not None and binding.lookup_in
+        else config.lookup_in
+    ) or "path"
+
+    if lookup_in == "query":
+        source = request.GET
+    else:
+        source = resolve_url_kwargs(request, page=page)
+    value = _clean_lookup_value(config, name, source.get(name), binding)
     if value is None:
         return None
-    queryset = _base_queryset(model, config)
+    queryset = _base_queryset(model, config, request, page)
     if queryset is None:
         return None
-    return queryset.filter(**{lookup_field: value}).first()
+    return queryset.filter(**{name: value}).first()
 
 
 def _resolve_source(config, request, page):
@@ -290,9 +381,9 @@ def resolve_binding(config: ContextModel, binding, request, page=None):
     mode = (binding.mode if binding is not None else "") or config.source_kind
 
     if mode == "fixed":
-        result = _resolve_fixed(config, binding)
+        result = _resolve_fixed(config, binding, request, page)
     elif mode == "url" or config.source == "url":
-        result = _resolve_url(config, binding, request)
+        result = _resolve_url(config, binding, request, page)
     else:
         result = _resolve_source(config, request, page)
 

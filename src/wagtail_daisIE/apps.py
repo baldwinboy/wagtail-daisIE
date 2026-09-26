@@ -48,6 +48,14 @@ class WagtailDaisIEAppConfig(AppConfig):
         except Exception:
             logger.exception("Could not connect notification bridges")
 
+        # Connect model detail-page bridges from project settings.
+        try:
+            from .detail_pages import bridges as detail_bridges
+
+            detail_bridges.connect_signals()
+        except Exception:
+            logger.exception("Could not connect detail page bridges")
+
         # Opt-in DaisyUI styling for allauth pages/forms.
         if getattr(settings, "WAGTAIL_DAISIE_ALLAUTH_UI", False):
             from .allauth_ui import register_template_dir

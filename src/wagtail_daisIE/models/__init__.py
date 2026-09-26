@@ -18,6 +18,7 @@ from .background import (
 )
 from .box import DaisyUIThemeEffects, DaisyUIThemeRadii, DaisyUIThemeSizes
 from .colors import DaisyUIThemeColors
+from .favicon import DaisyUIFavicon
 from .fields import DaisyUIColorField, DaisyUIColorSchemeChoices, DaisyUISizeField
 from .fonts import (
     DaisyUIThemeFontCDN,
@@ -48,6 +49,7 @@ __all__ = [
     "DaisyUIColorField",
     "DaisyUIColorSchemeChoices",
     "DaisyUISizeField",
+    "DaisyUIFavicon",
     "DaisyUIIconSource",
     "DaisyUIMenu",
     "DaisyUITheme",

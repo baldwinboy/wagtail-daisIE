@@ -28,6 +28,61 @@
     var hasMore = !!more;
     var loading = false;
 
+    var container = root.querySelector('[data-daisie-feed-items]');
+    var toggle = root.querySelector('[data-daisie-feed-toggle]');
+    var storageKey = 'daisie-feed-layout:' + (url || window.location.pathname);
+
+    function applyLayout(name) {
+      if (!container || !toggle) {
+        return;
+      }
+      var script = document.getElementById('daisie-feed-layout-classes');
+      var map = {};
+      try {
+        map = script ? JSON.parse(script.textContent) : {};
+      } catch (e) {
+        map = {};
+      }
+      if (!map[name]) {
+        return;
+      }
+      container.className = map[name];
+      toggle
+        .querySelectorAll('[data-daisie-feed-layout-option]')
+        .forEach(function (input) {
+          var on = input.value === name;
+          input.checked = on;
+          var label = input.closest('label');
+          if (label) {
+            label.classList.toggle('btn-active', on);
+          }
+        });
+    }
+
+    if (toggle) {
+      toggle.hidden = false;
+      var saved = null;
+      try {
+        saved = window.localStorage.getItem(storageKey);
+      } catch (e) {
+        saved = null;
+      }
+      if (saved) {
+        applyLayout(saved);
+      }
+      toggle.addEventListener('change', function (event) {
+        if (!event.target.matches('[data-daisie-feed-layout-option]')) {
+          return;
+        }
+        applyLayout(event.target.value);
+        try {
+          window.localStorage.setItem(storageKey, event.target.value);
+        } catch (e) {
+          /* storage unavailable */
+        }
+      });
+    }
+
     function setStatus(message) {
       if (status) {
         status.textContent = message || '';

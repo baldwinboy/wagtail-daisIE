@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags wagtailimages_tags %}
+
+{% block content %}
+    <h1 class="mb-8 text-3xl font-bold">{{ page.title }}</h1>
+
+    {% if page.body %}
+        {% for block in page.body %}
+            {% include_block block %}
+        {% endfor %}
+    {% endif %}
+
+    {% if breads %}
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {% for bread in breads %}
+                <a class="card bg-base-200 shadow transition hover:shadow-lg" href="{{ bread.get_absolute_url }}">
+                    {% if bread.image %}
+                        {% picture bread.image format-{avif,webp,jpeg} fill-400x250-c100 class="h-40 w-full object-cover" %}
+                    {% endif %}
+                    <div class="card-body">
+                        <h2 class="card-title">{{ bread.name }}</h2>
+                        <p class="text-base-content/70">{{ bread.description }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

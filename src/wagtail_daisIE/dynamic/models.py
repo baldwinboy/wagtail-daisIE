@@ -63,6 +63,29 @@ class FeedFilterBlock(blocks.StructBlock):
 class Feed(ClusterableModel):
     """An admin-designed, filterable list of a context model."""
 
+    LAYOUT_CHOICES = [
+        ("grid", _("Grid")),
+        ("row", _("Row")),
+        ("list", _("List")),
+    ]
+    ROW_MODE_CHOICES = [
+        ("wrap", _("Wrap onto new lines")),
+        ("scroll", _("Scroll horizontally")),
+    ]
+    GAP_CHOICES = [
+        ("gap-1", "1"),
+        ("gap-2", "2"),
+        ("gap-3", "3"),
+        ("gap-4", "4"),
+        ("gap-6", "6"),
+        ("gap-8", "8"),
+    ]
+    TOGGLE_CHOICES = [
+        ("grid_list", _("Grid / List")),
+        ("grid_row", _("Grid / Row")),
+        ("row_list", _("Row / List")),
+    ]
+
     name = models.CharField(max_length=255, unique=True, verbose_name=_("Name"))
     context_model = models.CharField(
         max_length=64,
@@ -89,6 +112,34 @@ class Feed(ClusterableModel):
         blank=True,
         default="Nothing to show yet.",
         verbose_name=_("Empty message"),
+    )
+    layout = models.CharField(
+        max_length=8, choices=LAYOUT_CHOICES, default="grid", verbose_name=_("Layout")
+    )
+    layout_columns = models.PositiveSmallIntegerField(
+        default=3,
+        verbose_name=_("Grid columns"),
+        help_text=_("Used by the grid layout (1-6)."),
+    )
+    layout_gap = models.CharField(
+        max_length=8, choices=GAP_CHOICES, default="gap-4", verbose_name=_("Gap")
+    )
+    row_mode = models.CharField(
+        max_length=8,
+        choices=ROW_MODE_CHOICES,
+        default="wrap",
+        verbose_name=_("Row behaviour"),
+        help_text=_("Used by the row layout."),
+    )
+    allow_layout_toggle = models.BooleanField(
+        default=False, verbose_name=_("Let visitors switch layout")
+    )
+    toggle_layouts = models.CharField(
+        max_length=16,
+        blank=True,
+        default="grid_list",
+        choices=TOGGLE_CHOICES,
+        verbose_name=_("Toggle options"),
     )
     filters = StreamField(
         [("filter", FeedFilterBlock())],
@@ -124,6 +175,17 @@ class Feed(ClusterableModel):
             ],
             heading=_("Display"),
         ),
+        MultiFieldPanel(
+            [
+                FieldPanel("layout"),
+                FieldPanel("layout_columns"),
+                FieldPanel("layout_gap"),
+                FieldPanel("row_mode"),
+                FieldPanel("allow_layout_toggle"),
+                FieldPanel("toggle_layouts"),
+            ],
+            heading=_("Layout"),
+        ),
         FieldPanel("filters"),
         FieldPanel("item"),
     ]
@@ -139,3 +201,14 @@ class Feed(ClusterableModel):
     def get_submit_css(self):
         value = self.submit_appearance[0].value if self.submit_appearance else None
         return build_design_css({"button_appearance": value}) or "btn"
+
+    def get_toggle_layouts(self):
+        """Return the two layout keys the visitor toggle switches between."""
+        if not self.allow_layout_toggle:
+            return []
+        pairs = {
+            "grid_list": ("grid", "list"),
+            "grid_row": ("grid", "row"),
+            "row_list": ("row", "list"),
+        }
+        return list(pairs.get(self.toggle_layouts, ("grid", "list")))

@@ -35,6 +35,7 @@ from blog.models import (
     BlogIndexPage,
     BlogPage,
     Bread,
+    BreadDetailTemplate,
     BreadSuggestionFormField,
     BreadSuggestionFormPage,
     Person,
@@ -582,6 +583,45 @@ def _ensure_showcase(theme, home, *, force=False):
     )
 
     _ensure_form_page(home, force=force)
+
+
+def _ensure_bread_detail_template(home, theme, *, force=False):
+    existing = (
+        BreadDetailTemplate.objects.child_of(home).filter(slug="our-breads").first()
+    )
+    if existing and not force:
+        return existing
+    if existing:
+        existing.delete()
+    page = BreadDetailTemplate(title="Breads", slug="our-breads", detail_key="bread")
+    home.add_child(instance=page)
+    page.page_theme = theme
+    page.context_bindings = [
+        {
+            "type": "binding",
+            "value": {
+                "key": "bread",
+                "mode": "url",
+                "lookup_in": "path",
+                "lookup_field": "slug",
+                "lookup_pattern": r"[\w-]+",
+            },
+        }
+    ]
+    page.save()
+    page.save_revision().publish()
+    return page
+
+
+def _sync_bread_detail_pages():
+    from wagtail_daisIE.detail_pages.bridges import sync_detail_page
+    from wagtail_daisIE.detail_pages.registry import get_detail_page
+
+    config = get_detail_page("bread")
+    if config is None:
+        return
+    for bread in Bread.objects.all():
+        sync_detail_page(config, bread)
 
 
 def _ensure_breads(load_image):
@@ -1137,7 +1177,9 @@ class Command(BaseCommand):
         )
 
         _ensure_showcase(light_theme, home, force=force)
+        _ensure_bread_detail_template(home, light_theme, force=force)
         _ensure_breads(load_image)
+        _sync_bread_detail_pages()
         _ensure_data_pages(light_theme, home, force=force)
 
         self.stdout.write(

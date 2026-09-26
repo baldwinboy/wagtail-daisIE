@@ -302,10 +302,92 @@ def build_filters(feed, config, params, request=None, page=None):
     return filters
 
 
+# --- Layout -----------------------------------------------------------------
+
+#: Literal strings so Tailwind's scanner picks up every class.
+LAYOUT_LABELS = {"grid": "Grid", "row": "Row", "list": "List"}
+GRID_COLUMNS = {
+    1: "grid-cols-1",
+    2: "grid-cols-1 sm:grid-cols-2",
+    3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+    4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+    5: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5",
+    6: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6",
+}
+TOGGLE_PAIRS = {
+    "grid_list": ("grid", "list"),
+    "grid_row": ("grid", "row"),
+    "row_list": ("row", "list"),
+}
+
+
+def layout_class_map(feed, override=None):
+    """Return ``{layout: container_css}`` for a feed (and block override)."""
+    override = override or {}
+    columns = override.get("columns") or getattr(feed, "layout_columns", 3) or 3
+    if columns not in GRID_COLUMNS:
+        columns = 3
+    gap = override.get("gap") or getattr(feed, "layout_gap", "gap-4") or "gap-4"
+    row_mode = override.get("row_mode") or getattr(feed, "row_mode", "wrap") or "wrap"
+    if row_mode == "scroll":
+        row = (
+            f"flex flex-row flex-nowrap {gap} overflow-x-auto snap-x "
+            "daisie-feed--row daisie-feed--row-scroll"
+        )
+    else:
+        row = f"flex flex-row flex-wrap {gap} daisie-feed--row"
+    return {
+        "grid": f"grid {gap} {GRID_COLUMNS[columns]} daisie-feed--grid",
+        "row": row,
+        "list": "divide-y divide-base-300 daisie-feed--list",
+    }
+
+
+def resolve_layout(feed, override=None, request=None):
+    """Resolve the active layout, its classes and the visitor toggle options."""
+    override = override or {}
+    classes = layout_class_map(feed, override)
+
+    layout = override.get("layout") or getattr(feed, "layout", "grid") or "grid"
+    if layout not in classes:
+        layout = "grid"
+
+    show = override.get("show_toggle")
+    if show == "yes":
+        allow_toggle = True
+    elif show == "no":
+        allow_toggle = False
+    else:
+        allow_toggle = bool(getattr(feed, "allow_layout_toggle", False))
+
+    toggle_layouts = (
+        override.get("toggle_layouts")
+        or getattr(feed, "toggle_layouts", "grid_list")
+        or "grid_list"
+    )
+    option_keys = (
+        TOGGLE_PAIRS.get(toggle_layouts, ("grid", "list")) if allow_toggle else []
+    )
+    options = [{"value": key, "label": LAYOUT_LABELS[key]} for key in option_keys]
+
+    requested = (getattr(request, "GET", None) or {}).get("layout") if request else None
+    if requested in classes and requested in (option_keys or classes):
+        layout = requested
+
+    return {
+        "layout": layout,
+        "layout_classes": classes,
+        "layout_container_css": classes[layout],
+        "toggle_options": options,
+        "allow_layout_toggle": allow_toggle,
+        "item_css": "daisie-feed__item",
+    }
+
+
 # --- Rendering --------------------------------------------------------------
 
 
-def render_feed(feed, request, offset=0, page=None):
+def render_feed(feed, request, offset=0, page=None, override=None):
     """Render a slice of ``feed`` and return the template context data."""
     config = get_context_model(feed.context_model)
     result = {
@@ -317,6 +399,7 @@ def render_feed(feed, request, offset=0, page=None):
         "filters": [],
         "submit_css": "btn",
     }
+    result.update(resolve_layout(feed, override, request))
     get_submit_css = getattr(feed, "get_submit_css", None)
     if callable(get_submit_css):
         result["submit_css"] = get_submit_css()
@@ -364,7 +447,10 @@ def render_feed(feed, request, offset=0, page=None):
         ctx = dict(base)
         ctx[config.key] = obj
         items.append(render_stream(feed.item, ctx, item_block))
-    result["items_html"] = "".join(items)
+    item_css = result.get("item_css", "daisie-feed__item")
+    result["items_html"] = "".join(
+        f'<div class="{item_css}" data-daisie-feed-item>{html}</div>' for html in items
+    )
     return result
 
 

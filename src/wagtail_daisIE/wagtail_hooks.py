@@ -5,6 +5,7 @@ from django.templatetags.static import static
 from django.urls import include, path
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from django.views.i18n import JavaScriptCatalog
 from wagtail import hooks
 from wagtail.snippets.models import register_snippet
@@ -269,3 +270,47 @@ def register_coloris_js():
     if not settings.DEBUG:
         coloris_js = "colorfield/coloris/coloris.min.js"
     return format_html('<script src="{}"></script>', static(coloris_js))
+
+
+# Detail page admin shortcuts: jump between a page and its source record.
+
+
+@hooks.register("register_page_listing_more_buttons")
+def detail_page_listing_buttons(page, user, next_url=None):
+    from django.contrib.admin.utils import quote
+    from django.urls import NoReverseMatch, reverse
+    from wagtail.admin import widgets as wagtailadmin_widgets
+
+    source = getattr(page.specific, "source", None)
+    if source is None or source.pk is None:
+        return
+    model = type(source)
+    try:
+        url = reverse(
+            f"wagtailsnippets_{model._meta.app_label}_{model._meta.model_name}:edit",
+            args=[quote(source.pk)],
+        )
+    except NoReverseMatch:
+        return
+    yield wagtailadmin_widgets.Button(
+        _("Edit source record"), url, icon_name="edit", priority=60
+    )
+
+
+@hooks.register("register_snippet_listing_buttons")
+def detail_snippet_listing_buttons(snippet, user, next_url=None):
+    from wagtail.admin.ui.menus import MenuItem
+
+    from .detail_pages.bridges import find_detail_page
+    from .detail_pages.registry import detail_page_for_instance
+
+    try:
+        config = detail_page_for_instance(snippet)
+        if config is None:
+            return
+        page = find_detail_page(config, snippet)
+    except Exception:
+        return
+    if page is None or not page.live:
+        return
+    yield MenuItem(_("View detail page"), page.url, icon_name="doc-empty", priority=90)

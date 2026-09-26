@@ -1,0 +1,13 @@
+{% load wagtailcore_tags %}
+<!DOCTYPE html>
+<html lang="en"{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
+    <head>
+        <meta charset="utf-8" />
+        <title>{{ page.title }}</title>
+    </head>
+    <body>
+        <h1>{{ page.title }}</h1>
+        <p data-widget>{{ widget.name|default:"" }}</p>
+        {% for block in page.body %}{% include_block block %}{% endfor %}
+    </body>
+</html>

@@ -26,6 +26,8 @@
         <link rel="stylesheet" href="{% daisyui_global_css %}" />
         {% daisyui_theme_full_css daisyui_theme %}
         {% daisyui_icon_assets %}
+        {% daisyui_favicon %}
+        {% block extra_head %}{% endblock %}
     </head>
 
     <body class="flex min-h-screen flex-col bg-base-100 text-base-content {% block body_class %}template-{{ self.get_verbose_name|slugify }}{% endblock %}"{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
@@ -53,5 +55,6 @@
         {% block js %}
             <script type="module" src="{% static 'js/main.js' %}"></script>
         {% endblock %}
+        {% block extra_body %}{% endblock %}
     </body>
 </html>

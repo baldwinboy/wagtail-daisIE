@@ -301,3 +301,79 @@ class TestContextQueryset:
 
         config = get_context_model("owner")
         assert config.get_queryset(None, None) is None
+
+
+class TestUrlLookupSource:
+    def _request(self, user=None, kwargs=None, query=None, routes=None):
+        request = RequestFactory().get("/", query or {})
+        request.user = user
+        request.resolver_match = type("Match", (), {"kwargs": kwargs or {}})()
+        if routes is not None:
+            request.routable_resolver_match = type("Match", (), {"kwargs": routes})()
+        return request
+
+    def _binding(self, **kwargs):
+        kwargs.setdefault("key", "target")
+        kwargs.setdefault("mode", "url")
+        return ContextBinding(**kwargs)
+
+    def _resolve(self, binding, request, page=None):
+        from wagtail_daisIE.dynamic.registry import get_context_model
+        from wagtail_daisIE.dynamic.resolvers import resolve_binding
+
+        return resolve_binding(get_context_model("target"), binding, request, page=page)
+
+    def test_path_source_uses_resolver_kwargs(self):
+        user = USER_MODEL.objects.create(username="ada")
+        request = self._request(user=user, kwargs={"pk": user.pk})
+        assert self._resolve(self._binding(lookup_in="path"), request) == user
+
+    def test_query_source_reads_get(self):
+        user = USER_MODEL.objects.create(username="ada")
+        request = self._request(user=user, query={"pk": user.pk})
+        assert self._resolve(self._binding(lookup_in="query"), request) == user
+
+    def test_invalid_query_value_is_ignored(self):
+        request = self._request(query={"pk": "not-a-number"})
+        assert self._resolve(self._binding(lookup_in="query"), request) is None
+
+    def test_lookup_pattern_rejects_non_matching(self):
+        request = self._request(query={"pk": "abc"})
+        binding = self._binding(lookup_in="query", lookup_pattern=r"\d+")
+        assert self._resolve(binding, request) is None
+
+    def test_routable_resolver_match_kwargs_are_used(self):
+        user = USER_MODEL.objects.create(username="ada")
+        request = self._request(routes={"pk": user.pk})
+        assert self._resolve(self._binding(lookup_in="path"), request) == user
+
+    def test_page_slug_is_a_path_parameter(self):
+        page = type("P", (), {"slug": "ada"})()
+        request = self._request()
+        from wagtail_daisIE.dynamic.resolvers import resolve_url_kwargs
+
+        assert resolve_url_kwargs(request, page=page) == {"slug": "ada"}
+
+    def test_queryset_setting_scopes_url_lookup(self, settings):
+        staff = USER_MODEL.objects.create(username="ada", is_staff=True)
+        USER_MODEL.objects.create(username="bob")
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "target": {
+                "label": "Target",
+                "model": "auth.User",
+                "source": "url",
+                "lookup_field": "pk",
+                "lookup_in": "query",
+                "queryset": lambda request, page: USER_MODEL.objects.filter(
+                    is_staff=True
+                ),
+            }
+        }
+        reset_context_models()
+        request = self._request(query={"pk": staff.pk})
+        from wagtail_daisIE.dynamic.registry import get_context_model
+        from wagtail_daisIE.dynamic.resolvers import resolve_binding
+
+        binding = ContextBinding(key="target", mode="url", lookup_in="query")
+        config = get_context_model("target")
+        assert resolve_binding(config, binding, request) == staff

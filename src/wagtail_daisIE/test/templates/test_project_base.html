@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        {% block extra_head %}{% endblock %}
+    </head>
+    <body data-project-base>
+        <div id="project-chrome">PROJECT-CHROME</div>
+        {% block content %}{% endblock %}
+        {% block extra_body %}{% endblock %}
+    </body>
+</html>

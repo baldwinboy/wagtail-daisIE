@@ -15,6 +15,13 @@ from django.conf import settings
 
 DJANGO_TEMPLATES_BACKEND = "django.template.backends.django.DjangoTemplates"
 
+#: Context processors needed by the allauth layout / chrome base.
+CONTEXT_PROCESSORS = (
+    "wagtail_daisIE.allauth_ui.context_processors.allauth_base",
+    "wagtail_daisIE.allauth_ui.context_processors.allauth_theme",
+    "wagtail_daisIE.allauth_ui.context_processors.chrome_menus",
+)
+
 
 def template_dir():
     """Return the absolute path to the bundled allauth override templates."""
@@ -39,8 +46,17 @@ def register_template_dir(templates=None):
         if engine.get("BACKEND") != DJANGO_TEMPLATES_BACKEND:
             continue
         dirs = list(engine.get("DIRS") or [])
-        if target in dirs:
-            continue
-        engine["DIRS"] = [target, *dirs]
-        registered = True
+        if target not in dirs:
+            engine["DIRS"] = [target, *dirs]
+            registered = True
+
+        options = engine.setdefault("OPTIONS", {})
+        processors = list(options.get("context_processors") or [])
+        before = list(processors)
+        for path in CONTEXT_PROCESSORS:
+            if path not in processors:
+                processors.append(path)
+        if processors != before:
+            options["context_processors"] = processors
+            registered = True
     return registered

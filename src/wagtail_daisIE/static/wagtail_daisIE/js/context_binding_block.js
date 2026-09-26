@@ -23,7 +23,7 @@
     }
   }
 
-  function helpHtml(meta, mode) {
+  function helpHtml(meta, mode, lookupIn) {
     if (!meta || !meta.label) {
       return '';
     }
@@ -31,7 +31,9 @@
       mode === 'fixed'
         ? 'a specific instance'
         : mode === 'url'
-          ? 'from the URL'
+          ? lookupIn === 'query'
+            ? 'from a query parameter'
+            : 'from a path parameter'
           : esc(meta.sourceSummary || 'automatic');
     var html =
       '<p><strong>' + esc(meta.label) + '</strong> — ' + summary + '</p>';
@@ -275,9 +277,12 @@
 
     var keyEl = labeledField(root, 'key');
     var modeEl = labeledField(root, 'mode');
+    var lookupInEl = labeledField(root, 'lookup_in');
     var keyWrap = field(root, 'key');
     var modeWrap = field(root, 'mode');
     var lookupWrap = field(root, 'lookup_field');
+    var lookupInWrap = field(root, 'lookup_in');
+    var patternWrap = field(root, 'lookup_pattern');
     var instanceWrap = field(root, 'object_id');
     var state = window.WAGTAIL_DAISIE_CONTEXT_MODELS || {};
     var chooser = createChooser(chooserEl);
@@ -311,12 +316,16 @@
         }
       }
       var mode = modeEl ? modeEl.value : 'automatic';
+      var isUrl = mode === 'url';
       toggle(modeWrap, modes.length > 1);
-      toggle(lookupWrap, mode === 'url');
+      toggle(lookupInWrap, isUrl);
+      toggle(lookupWrap, isUrl);
+      toggle(patternWrap, isUrl);
       toggle(instanceWrap, mode === 'fixed');
       help.innerHTML = helpHtml(
         Object.assign({ key: keyEl.value }, meta),
         mode,
+        lookupInEl ? lookupInEl.value : meta.lookupIn,
       );
 
       if (mode === 'fixed') {
@@ -333,6 +342,9 @@
     keyEl.addEventListener('change', update);
     if (modeEl) {
       modeEl.addEventListener('change', update);
+    }
+    if (lookupInEl) {
+      lookupInEl.addEventListener('change', update);
     }
     update();
   }

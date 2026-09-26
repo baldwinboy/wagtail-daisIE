@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
@@ -43,8 +45,27 @@ class ContextBindingBlock(blocks.StructBlock):
     lookup_field = blocks.CharBlock(
         required=False,
         blank=True,
-        label=_("URL keyword"),
-        help_text=_("The URL keyword to look up (defaults to the model config)."),
+        label=_("Parameter name"),
+        help_text=_("The URL parameter to look up (defaults to the model config)."),
+    )
+    lookup_in = blocks.ChoiceBlock(
+        choices=[
+            ("path", _("Path parameter")),
+            ("query", _("Query parameter")),
+        ],
+        default="path",
+        required=False,
+        label=_("Read from"),
+        help_text=_("Where in the request URL the value is read from."),
+    )
+    lookup_pattern = blocks.CharBlock(
+        required=False,
+        blank=True,
+        max_length=200,
+        label=_("Value pattern"),
+        help_text=_(
+            "Optional regular expression the value must fully match, e.g. [\\w-]+."
+        ),
     )
     fallback = blocks.CharBlock(
         max_length=255,
@@ -65,6 +86,15 @@ class ContextBindingBlock(blocks.StructBlock):
                 value["mode"] = modes[0]
             if value.get("mode") == "fixed" and not value.get("object_id"):
                 raise ValidationError(_("Choose an instance, or switch the source."))
+        pattern = value.get("lookup_pattern") or ""
+        if pattern:
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValidationError(
+                    _("Value pattern is not a valid regular expression: %(error)s")
+                    % {"error": exc}
+                ) from exc
         return value
 
     class Meta:
@@ -72,7 +102,15 @@ class ContextBindingBlock(blocks.StructBlock):
         label = _("Context binding")
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=["key", "mode", "object_id", "lookup_field", "fallback"],
+            children=[
+                "key",
+                "mode",
+                "object_id",
+                "lookup_in",
+                "lookup_field",
+                "lookup_pattern",
+                "fallback",
+            ],
             heading=_("Context binding"),
         )
 

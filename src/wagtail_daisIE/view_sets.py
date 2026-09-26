@@ -3,7 +3,7 @@ from wagtail.admin.panels import ObjectList, TabbedInterface
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
 from .dynamic.view_sets import FeedViewSet
-from .models import DaisyUIIconSource, DaisyUIMenu, DaisyUITheme
+from .models import DaisyUIFavicon, DaisyUIIconSource, DaisyUIMenu, DaisyUITheme
 
 
 class DaisyUIThemeViewSet(SnippetViewSet):
@@ -31,11 +31,20 @@ class DaisyUIIconSourceViewSet(SnippetViewSet):
     model = DaisyUIIconSource
 
 
+class DaisyUIFaviconViewSet(SnippetViewSet):
+    icon = "site"
+    menu_label = "Favicon"
+    model = DaisyUIFavicon
+    list_display = ["site", "app_name", "theme_color"]
+    search_fields = ["app_name", "short_name"]
+
+
 class DaisyUIViewSetGroup(SnippetViewSetGroup):
     items = (
         DaisyUIThemeViewSet,
         DaisyUIMenuViewSet,
         DaisyUIIconSourceViewSet,
+        DaisyUIFaviconViewSet,
         FeedViewSet,
     )
     menu_icon = "palette"
