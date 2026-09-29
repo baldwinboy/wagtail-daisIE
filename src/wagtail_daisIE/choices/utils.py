@@ -2,6 +2,8 @@ from fractions import Fraction
 
 from django.utils.translation import gettext_lazy as _
 
+from ..choicelist import ChoiceList, get_choice_list  # noqa: F401
+
 
 # The default Tailwind spacing suffixes (values after the side prefix, e.g. "8" in "pt-8")
 _DEFAULT_SPACING_SUFFIXES = [

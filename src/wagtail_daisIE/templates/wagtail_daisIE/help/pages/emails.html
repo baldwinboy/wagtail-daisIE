@@ -1,0 +1,23 @@
+{% load i18n %}
+<h2>{% trans "Design an email" %}</h2>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_notifications_emailtemplate:list' %}">{% trans "Design → Emails → Templates" %}</a>.
+    </li>
+    <li>{% trans "Add a template, set a subject and design the body." %}</li>
+    <li>{% trans "Use placeholders such as" %} <code>{% verbatim %}{{ recipient.email }}{% endverbatim %}</code>.</li>
+</ol>
+<h2>{% trans "Send it" %}</h2>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_notifications_audience:list' %}">{% trans "Audiences" %}</a>
+        {% trans "and choose who receives it." %}
+    </li>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_notifications_emailcampaign:list' %}">{% trans "Campaigns" %}</a>
+        {% trans "to send now or on a schedule." %}
+    </li>
+</ol>

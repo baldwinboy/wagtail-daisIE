@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-from .utils import make_auto_spacing_choices, make_choices
+from .utils import ChoiceList, make_auto_spacing_choices, make_choices
 
 
 _SMALL_NUMERIC_SIZES = [(f"{i}xs", (f"{i}xs")) for i in range(2, 4)]
@@ -56,33 +56,58 @@ def make_block_size_choices(prefix):
 
 # Height choices
 
-INLINE_MIN_HEIGHT_CHOICES = make_inline_size_choices("min-h-")
-INLINE_HEIGHT_CHOICES = make_inline_size_choices("h-")
-INLINE_MAX_HEIGHT_CHOICES = make_inline_size_choices("max-h-")
+INLINE_MIN_HEIGHT_CHOICES = ChoiceList(
+    make_inline_size_choices("min-h-"), "INLINE_MIN_HEIGHT_CHOICES"
+)
+INLINE_HEIGHT_CHOICES = ChoiceList(
+    make_inline_size_choices("h-"), "INLINE_HEIGHT_CHOICES"
+)
+INLINE_MAX_HEIGHT_CHOICES = ChoiceList(
+    make_inline_size_choices("max-h-"), "INLINE_MAX_HEIGHT_CHOICES"
+)
 
-BLOCK_MIN_HEIGHT_CHOICES = make_block_size_choices("min-h-")
-BLOCK_HEIGHT_CHOICES = make_block_size_choices("h-")
-BLOCK_MAX_HEIGHT_CHOICES = make_block_size_choices("max-h-")
+BLOCK_MIN_HEIGHT_CHOICES = ChoiceList(
+    make_block_size_choices("min-h-"), "BLOCK_MIN_HEIGHT_CHOICES"
+)
+BLOCK_HEIGHT_CHOICES = ChoiceList(make_block_size_choices("h-"), "BLOCK_HEIGHT_CHOICES")
+BLOCK_MAX_HEIGHT_CHOICES = ChoiceList(
+    make_block_size_choices("max-h-"), "BLOCK_MAX_HEIGHT_CHOICES"
+)
 
 # Width choices
 
-INLINE_MIN_WIDTH_CHOICES = make_inline_size_choices("min-w-")
-INLINE_WIDTH_CHOICES = make_inline_size_choices("w-")
-INLINE_MAX_WIDTH_CHOICES = make_inline_size_choices("max-w-")
+INLINE_MIN_WIDTH_CHOICES = ChoiceList(
+    make_inline_size_choices("min-w-"), "INLINE_MIN_WIDTH_CHOICES"
+)
+INLINE_WIDTH_CHOICES = ChoiceList(
+    make_inline_size_choices("w-"), "INLINE_WIDTH_CHOICES"
+)
+INLINE_MAX_WIDTH_CHOICES = ChoiceList(
+    make_inline_size_choices("max-w-"), "INLINE_MAX_WIDTH_CHOICES"
+)
 
-BLOCK_MIN_WIDTH_CHOICES = make_block_size_choices("min-w-")
-BLOCK_WIDTH_CHOICES = make_block_size_choices("w-")
-BLOCK_MAX_WIDTH_CHOICES = make_block_size_choices("max-w-")
+BLOCK_MIN_WIDTH_CHOICES = ChoiceList(
+    make_block_size_choices("min-w-"), "BLOCK_MIN_WIDTH_CHOICES"
+)
+BLOCK_WIDTH_CHOICES = ChoiceList(make_block_size_choices("w-"), "BLOCK_WIDTH_CHOICES")
+BLOCK_MAX_WIDTH_CHOICES = ChoiceList(
+    make_block_size_choices("max-w-"), "BLOCK_MAX_WIDTH_CHOICES"
+)
 
 # Size choices (width + height)
 
-INLINE_SIZE_CHOICES = make_inline_size_choices("size-")
-BLOCK_SIZE_CHOICES = make_block_size_choices("size-")
+INLINE_SIZE_CHOICES = ChoiceList(
+    make_inline_size_choices("size-"), "INLINE_SIZE_CHOICES"
+)
+BLOCK_SIZE_CHOICES = ChoiceList(make_block_size_choices("size-"), "BLOCK_SIZE_CHOICES")
 
 # Aspect ratio text choices
-ASPECT_RATIO_CHOICES = [
-    ("square", "square"),
-    ("video", "video"),
-    ("auto", "auto"),
-    ("<number>:<number>", "<number>:<number>, e.g. 16:9"),
-]
+ASPECT_RATIO_CHOICES = ChoiceList(
+    [
+        ("square", "square"),
+        ("video", "video"),
+        ("auto", "auto"),
+        ("<number>:<number>", "<number>:<number>, e.g. 16:9"),
+    ],
+    "ASPECT_RATIO_CHOICES",
+)

@@ -1,0 +1,11 @@
+{% load i18n %}
+<h2>{% trans "Simple markup" %}</h2>
+<ul>
+    <li><code>**{% trans "bold" %}**</code></li>
+    <li><code>_{% trans "italic" %}_</code></li>
+    <li><code>__{% trans "underline" %}__</code></li>
+    <li><code>~~{% trans "strikethrough" %}~~</code></li>
+    <li><code>[{% trans "text" %}](https://example.com)</code></li>
+</ul>
+<h2>{% trans "Placeholders" %}</h2>
+<p>{% trans "Double braces insert a context value, for example" %} <code>{% verbatim %}{{ bread.name }}{% endverbatim %}</code> {% trans "or" %} <code>{% verbatim %}{{ user.username }}{% endverbatim %}</code>.</p>

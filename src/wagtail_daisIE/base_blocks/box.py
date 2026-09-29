@@ -33,7 +33,6 @@ class BorderBlock(blocks.StructBlock):
         default=None,
         required=False,
         max_value=999,
-        label=_("Border width"),
         help_text=_("Border width in pixels."),
         widget=DaisyUINumberSliderWidget(
             min_value=0, max_value=999, step=1, suffix="px"
@@ -43,14 +42,12 @@ class BorderBlock(blocks.StructBlock):
         choices=DAISYUI_BORDER_COLOR_CHOICES,
         default="",
         required=False,
-        label=_("Border color"),
         widget=DaisyUISwatchWidget(prefix="border"),
     )
     border_style = blocks.ChoiceBlock(
         choices=BORDER_STYLE_CHOICES,
         default="",
         required=False,
-        label=_("Border style"),
     )
 
     class Meta:
@@ -76,10 +73,7 @@ class PaddingBlock(blocks.StructBlock):
         choices=PADDING_CHOICES["ALL"],
         default="",
         required=False,
-        label=_("All Padding"),
-        help_text=_(
-            "Padding for all sides.Use the individual padding fields for more control."
-        ),
+        help_text=_("Padding for all sides."),
         widget=DaisyUISliderWidget(),
     )
     top = blocks.ChoiceBlock(
@@ -136,10 +130,7 @@ class MarginBlock(blocks.StructBlock):
         choices=MARGIN_CHOICES["ALL"],
         default="",
         required=False,
-        label=_("All Margins"),
-        help_text=_(
-            "Margin for all sides. Use the individual margin fields for more control."
-        ),
+        help_text=_("Margin for all sides."),
         widget=DaisyUISliderWidget(),
     )
     top = blocks.ChoiceBlock(
@@ -203,7 +194,6 @@ class BoxBlock(blocks.StructBlock):
         choices=SHADOW_CHOICES,
         default="",
         required=False,
-        label=_("Shadow"),
         widget=DaisyUISliderWidget(),
     )
 
@@ -230,9 +220,7 @@ class SpacingBlock(blocks.StructBlock):
         default="",
         required=False,
         label=_("Spacing"),
-        help_text=_(
-            "Spacing for all sides.Use the individual spacing fields for more control."
-        ),
+        help_text=_("Spacing for all sides."),
         widget=DaisyUISliderWidget(),
     )
 
@@ -240,10 +228,7 @@ class SpacingBlock(blocks.StructBlock):
         choices=GAP_CHOICES["HORIZONTAL"],
         required=False,
         label=_("Horizontal Spacing"),
-        help_text=_(
-            "Spacing for horizontal sides."
-            "Use the individual spacing fields for more control."
-        ),
+        help_text=_("Spacing for horizontal sides."),
         widget=DaisyUISliderWidget(),
     )
 
@@ -251,10 +236,7 @@ class SpacingBlock(blocks.StructBlock):
         choices=GAP_CHOICES["VERTICAL"],
         required=False,
         label=_("Vertical Spacing"),
-        help_text=_(
-            "Spacing for vertical sides."
-            "Use the individual spacing fields for more control."
-        ),
+        help_text=_("Spacing for vertical sides."),
         widget=DaisyUISliderWidget(),
     )
 

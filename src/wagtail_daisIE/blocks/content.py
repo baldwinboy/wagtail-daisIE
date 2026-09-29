@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..dynamic.blocks_data import DATA_BLOCKS
+from ..feeds.blocks_data import DATA_BLOCKS
 from .accordion import AccordionBlock
 from .blockquote import BlockQuote
 from .cards import CARD_CONTENT_BLOCKS, CONTENT_BLOCKS, INLINE_CARD_CONTENT

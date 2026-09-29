@@ -1,0 +1,12 @@
+{% load i18n %}
+<h2>{% trans "Create a menu" %}</h2>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_menus_daisyuimenu:list' %}">{% trans "Design → Menus" %}</a>.
+    </li>
+    <li>{% trans "Add a menu and choose a layout: navbar, megamenu, footer, sidebar, horizontal, vertical or dock." %}</li>
+    <li>{% trans "Add items, and a logo or wordmark under Branding." %}</li>
+    <li>{% trans "Set the menu and item design to control the container and its links." %}</li>
+</ol>
+<p>{% trans "The search box, theme toggle and context bindings are enabled per menu." %}</p>

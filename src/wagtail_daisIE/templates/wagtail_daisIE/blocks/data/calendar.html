@@ -1,7 +1,7 @@
 {% load static %}
 {% if audience_allowed %}
   <div
-    class="{% if block_css %}{{ block_css }}{% endif %}"
+    class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
     data-daisie-calendar
     data-initial-date="{{ initial_iso }}"
   >

@@ -1,0 +1,14 @@
+{% load i18n %}
+<p>{% trans "If django-allauth is installed, its account screens can use the design system." %}</p>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_allauth_ui_allauthpageoverride:list' %}">{% trans "Allauth pages" %}</a>.
+    </li>
+    <li>{% trans "Choose a screen, then design it with the same blocks and design panels used on pages." %}</li>
+    <li>
+        {% trans "Use" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_allauth_emails_allauthemailoverride:list' %}">{% trans "Allauth emails" %}</a>
+        {% trans "to choose the template sent for each account email." %}
+    </li>
+</ol>

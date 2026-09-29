@@ -1,0 +1,5 @@
+{% if audience_allowed %}
+  <span class="countdown {{ value.size }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <span style="--value:{{ value.value }};" aria-live="polite" aria-label="{{ value.value }}">{{ value.value }}</span>
+  </span>
+{% endif %}

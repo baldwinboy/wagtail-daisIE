@@ -1,0 +1,4 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <div class="divider {{ value.color }} {{ value.position }} {{ value.orientation }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>{% if value.text %}{% daisie_markup value.text %}{% endif %}</div>
+{% endif %}

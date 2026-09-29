@@ -1,0 +1,57 @@
+{% load i18n wagtailadmin_tags %}
+<fieldset>
+    <div class="help-block help-info" data-daisie-feed-help data-model-key="{{ feed_model.key }}">
+        {% icon name="help" %}
+        <h3>{% trans "Model properties" %}</h3>
+        {% if feed_model.key %}
+            <p data-daisie-feed-help-intro>
+                {% blocktrans trimmed with label=feed_model.label model=feed_model.model key=feed_model.key %}
+                    Items reference an instance of <strong>{{ label }}</strong>
+                    (<code>{{ model }}</code>) through the
+                    <code>{{ key }}</code> variable.
+                {% endblocktrans %}
+            </p>
+            <details style="margin-bottom: 1rem;" data-daisie-feed-help-body>
+                <summary style="display: list-item;">{% trans "Available properties" %}</summary>
+                {% if feed_model.examples %}
+                    <p>{% trans "Common expressions:" %}</p>
+                    <ul>
+                        {% for example in feed_model.examples %}
+                            <li><code>{{ example }}</code></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if feed_model.fields %}
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Property" %}</th>
+                                <th>{% trans "Label" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in feed_model.fields %}
+                                <tr>
+                                    <td><code>{{ feed_model.key }}.{{ field.name }}</code></td>
+                                    <td>{{ field.label }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>{% trans "This model exposes no fields." %}</p>
+                {% endif %}
+                {% if feed_model.filters %}
+                    <h4>{% trans "Filter keys" %}</h4>
+                    <p>
+                        {% for filter_key in feed_model.filters %}
+                            <code>{{ feed_model.key }}:{{ filter_key }}</code>{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                {% endif %}
+            </details>
+        {% else %}
+            <p>{% trans "Choose a model to see the properties items can reference." %}</p>
+        {% endif %}
+    </div>
+</fieldset>

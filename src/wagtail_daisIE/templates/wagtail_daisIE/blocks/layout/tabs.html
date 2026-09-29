@@ -1,0 +1,11 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="tabs {{ value.style }} {{ value.size }} {{ value.placement }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for tab in value.tabs %}
+      <input type="radio" name="daisie-tabs-{{ block.id }}" class="tab" aria-label="{{ tab.label }}"{% if forloop.first %} checked{% endif %} />
+      <div class="tab-content rounded-box border border-base-300 bg-base-100 p-6">
+        {% for child in tab.content %}{% include_block child %}{% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

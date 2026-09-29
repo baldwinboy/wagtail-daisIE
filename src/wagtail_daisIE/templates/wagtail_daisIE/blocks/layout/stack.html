@@ -1,0 +1,6 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="stack {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for child in value.content %}{% include_block child %}{% endfor %}
+  </div>
+{% endif %}

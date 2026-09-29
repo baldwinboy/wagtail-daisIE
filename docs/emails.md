@@ -6,24 +6,27 @@ compiled to responsive HTML.
 
 ## Layout
 
+Email now lives in the `wagtail_daisIE.notifications` app (installed via the
+`[notifications]` extra), alongside audiences and campaigns:
+
 ```
-src/wagtail_daisIE/emails/
-├── mjml.py       # component registry: hierarchy, ending tags, attributes
-├── rendering.py  # theme/category defaults + two-pass MJML rendering
-├── models.py     # EmailTemplate
-├── view_sets.py  # Wagtail admin snippet group
-└── blocks/       # email block subclasses (base, leaves, layout, content)
+src/wagtail_daisIE/notifications/
+├── mjml.py            # component registry: hierarchy, ending tags, attributes
+├── email_rendering.py # theme/category defaults + two-pass MJML rendering
+├── models.py          # EmailTemplate
+├── view_sets.py       # Wagtail admin snippet group
+└── email_blocks/      # email block subclasses (base, leaves, layout, content)
 ```
 
 ## How MJML is produced
 
-1. `EmailTemplate.get_mjml()` calls `rendering.render_mjml`.
+1. `EmailTemplate.get_mjml()` calls `email_rendering.render_mjml`.
 2. Pass one renders `emails/blocks/body_body.html` (`{% include_block content %}`).
    Every themed block resolves its `design` value through
    `base_blocks.mjml.build_design_style`, which returns literal CSS
    declarations (colours resolved from the active theme, because email clients
    do not support CSS custom properties). The declarations are split against the
-   target component's attribute map (`emails.mjml.ATTR_MAPS`):
+   target component's attribute map (`notifications.mjml.ATTR_MAPS`):
    - accepted attributes become inline MJML attributes,
    - everything else (shadow, margin, …) becomes a `.daisie-<hash>` rule in the
      shared style registry.
@@ -54,10 +57,11 @@ class, per MJML's precedence (inline > `mj-class` > component defaults >
 
 ## Hierarchy and ending tags
 
-`emails/blocks/content.py` only exposes body-level components
-(`EmailSectionBlock` → `mj-section`, `EmailRawBlock` → `mj-raw`); the section
-template wraps its column-level content in an `mj-column`. The full model lives
-in `emails/mjml.py`:
+`notifications/email_blocks/content.py` exposes the body-level components — **Section**,
+**Wrapper**, **Hero** and **Raw HTML**. A section defaults to a single implicit
+`mj-column` for the common case, but it also accepts explicit **Column** and
+**Group** blocks for multi-column layouts. The full model lives in
+`emails/mjml.py`:
 
 - `MJML_CHILDREN` / `MJML_PARENTS` — what may contain what;
 - `ENDING_TAGS` — components that hold text/HTML only (`mj-text`, `mj-button`,
@@ -67,11 +71,44 @@ in `emails/mjml.py`:
   `container-background-color` (e.g. `mj-accordion`, `mj-text`) are handled
   automatically.
 
+Available column-level components: header, text, rich text, button, link, image,
+divider, spacer, **accordion**, **carousel**, **navbar**, **social** and
+**table**.
+
+## Backgrounds
+
+Backgrounds are mapped per component by
+`notifications.mjml.build_background_attrs(value, tag, theme)`, which emits only the
+attributes a component supports and **drops gradients** (no MJML component
+supports them):
+
+| Component(s) | Solid colour | Image |
+|---|---|---|
+| `mj-section`, `mj-wrapper` | `background-color` | `background-url`, `background-size`, `background-repeat`, `background-position` |
+| `mj-hero` | `background-color` | `background-url`, `background-position`, `background-width`/`-height` (derived from the image) |
+| `mj-column`, `mj-group`, `mj-button` | `background-color` | ✗ |
+| `mj-text`, `mj-image`, `mj-divider`, `mj-spacer`, `mj-table`, `mj-carousel`, `mj-accordion`, `mj-social` | `container-background-color` | ✗ |
+| `mj-accordion-*`, `mj-social-element` | `background-color` | ✗ |
+| `mj-navbar`, `mj-navbar-link` | ✗ | ✗ |
+
+The email design composites in `notifications/email_blocks/design.py` enforce this in the
+editor: section/wrapper/hero use `BackgroundStreamBlock(allowed_types=("solid",
+"image"))`, every other block uses `TextBackgroundBlock` (solid only), and the
+navbar omits the background field. The hero image therefore comes from the
+design background stream (`background-url`), not a separate field.
+
+## Icons in email
+
+Email clients cannot render inline SVG or `currentColor`, so the **Button**
+block's icon is rendered as an inline data-URI `<img>` (`{% daisyui_email_icon %}`)
+with explicit pixel dimensions and a resolved colour. The size follows the
+button's `font-size` and the colour follows the button's text colour.
+
 ## Adding a component
 
 1. Add or pick the component in `emails/mjml.py` (it already covers every
    documented component).
-2. Subclass the matching web block in `emails/blocks/leaves.py`, set
+2. Subclass the matching web block in `notifications/email_blocks/leaves.py`, set
    `email_mjml_tag` and `Meta.template` (a fresh `Meta`; Wagtail strips the
    inherited one) and add a template under
    `templates/wagtail_daisIE/emails/blocks/`.
@@ -125,5 +162,6 @@ rendered.text  # plain-text fallback
 
 MJML has no equivalent for `box-shadow`, margins, `gap`, hover/active button
 states or Tailwind's responsive/layout utilities. Those are emitted as scoped
-`mj-style` CSS where possible and otherwise dropped. See the plan/PR notes for
-the deferred component subset (table, accordion, social, navbar, carousel).
+`mj-style` CSS where possible and otherwise dropped. The component set mirrors
+the [MJML documentation](https://documentation.mjml.io); new components only
+need a block, a template and a registration entry.

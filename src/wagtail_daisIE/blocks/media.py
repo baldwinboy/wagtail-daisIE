@@ -1,10 +1,24 @@
+from django import forms
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
+from wagtail.admin.telepath import register
+from wagtail.blocks.struct_block import StructBlockAdapter
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 from wagtail.images.models import Image
 
+from ..choicelist import ChoiceList
 from ..dynamic.resolvers import resolve_object, url_for_object
 from .base import ThemedMediaBlock
+
+
+IMAGE_SOURCE_CHOICES = ChoiceList(
+    [
+        ("static", _("Static image")),
+        ("dynamic", _("From context")),
+    ],
+    "IMAGE_SOURCE_CHOICES",
+)
 
 
 def _image_alt(value):
@@ -24,18 +38,13 @@ class ImageBlock(ThemedMediaBlock):
         help_text=_("Image to display (when the source is a static image)."),
     )
     image_source = blocks.ChoiceBlock(
-        choices=[
-            ("static", _("Static image")),
-            ("dynamic", _("From context")),
-        ],
+        choices=IMAGE_SOURCE_CHOICES,
         default="static",
         required=False,
-        label=_("Image source"),
     )
     image_expression = blocks.CharBlock(
         required=False,
         blank=True,
-        label=_("Image expression"),
         help_text=_("e.g. {{ user.profile.image }}"),
     )
     caption = blocks.CharBlock(
@@ -120,3 +129,21 @@ class EmbedBlock(ThemedMediaBlock):
             children=["url"],
             settings=["design", "audience"],
         )
+
+
+class ImageBlockAdapter(StructBlockAdapter):
+    js_constructor = "wagtail_daisIE.blocks.media.ImageBlock"
+
+    @cached_property
+    def media(self):
+        structblock_media = super().media
+        return forms.Media(
+            js=[
+                *structblock_media._js,
+                "wagtail_daisIE/js/image_block.js",
+            ],
+            css=structblock_media._css,
+        )
+
+
+register(ImageBlockAdapter(), ImageBlock)

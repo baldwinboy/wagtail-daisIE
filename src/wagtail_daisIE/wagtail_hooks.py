@@ -1,13 +1,15 @@
 import json
 
+from django.apps import apps
 from django.conf import settings
 from django.templatetags.static import static
-from django.urls import include, path
+from django.urls import include, path, reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.views.i18n import JavaScriptCatalog
 from wagtail import hooks
+from wagtail.admin.menu import MenuItem
 from wagtail.snippets.models import register_snippet
 
 from .context import (
@@ -17,19 +19,15 @@ from .context import (
     theme_from_instance,
 )
 from .dynamic.views import object_options
-from .emails.view_sets import EmailViewSetGroup
 from .errors.view_sets import ErrorViewSetGroup
+from .help import GuideIndexView, GuidePageView
 from .icons.providers.iconify import ICONIFY_ICON_SCRIPT
 from .icons.views import icon_search
-from .notifications.view_sets import (
-    AllauthEmailOverrideViewSet,
-    AudienceViewSet,
-    EmailCampaignViewSet,
-)
 from .view_sets import DaisyUIViewSetGroup
 
 
 # Register the design view set group.
+# -- START --
 @hooks.register("register_icons")
 def register_icons(icons):
     return icons + [
@@ -38,23 +36,57 @@ def register_icons(icons):
 
 
 register_snippet(DaisyUIViewSetGroup)
+# -- END --
 
-# Register the email snippet view set group.
-register_snippet(EmailViewSetGroup)
+# Register the email snippet view set group (optional notifications app).
+if apps.is_installed("wagtail_daisIE.notifications"):
+    from .notifications.view_sets import EmailViewSetGroup
+
+    register_snippet(EmailViewSetGroup)
+
+
+@hooks.register("register_admin_viewset")
+def register_allauth_page_viewset():
+    if not apps.is_installed("wagtail_daisIE.allauth_ui"):
+        return []
+    from .allauth_ui.view_sets import AllauthPageOverrideViewSet
+
+    return AllauthPageOverrideViewSet()
+
+
+@hooks.register("register_admin_viewset")
+def register_email_template_viewset():
+    if not apps.is_installed("wagtail_daisIE.notifications"):
+        return []
+    from .notifications.view_sets import EmailTemplateViewSet
+
+    return EmailTemplateViewSet()
 
 
 @hooks.register("register_admin_viewset")
 def register_audience_viewset():
+    if not apps.is_installed("wagtail_daisIE.notifications"):
+        return []
+    from .notifications.view_sets import AudienceViewSet
+
     return AudienceViewSet()
 
 
 @hooks.register("register_admin_viewset")
 def register_email_campaign_viewset():
+    if not apps.is_installed("wagtail_daisIE.notifications"):
+        return []
+    from .notifications.view_sets import EmailCampaignViewSet
+
     return EmailCampaignViewSet()
 
 
 @hooks.register("register_admin_viewset")
 def register_allauth_email_viewset():
+    if not apps.is_installed("wagtail_daisIE.allauth_emails"):
+        return []
+    from .allauth_emails.view_sets import AllauthEmailOverrideViewSet
+
     return AllauthEmailOverrideViewSet()
 
 
@@ -63,6 +95,7 @@ register_snippet(ErrorViewSetGroup)
 
 
 # Set the current theme for the page/menu being created/edited.
+# -- START --
 @hooks.register("before_create_page")
 def _set_theme_before_create_page(request, page):
     set_current_theme(theme_from_instance(page))
@@ -83,9 +116,32 @@ def _set_theme_before_edit_snippet(request, instance):
     set_current_theme(theme_from_instance(instance))
 
 
+# -- END --
+
+
+# Register the coloris script and CSS.
+# -- START --
+@hooks.register("insert_global_admin_css")
+def register_coloris_css():
+    coloris_css = "colorfield/coloris/coloris.css"
+    if not settings.DEBUG:
+        coloris_css = "colorfield/coloris/coloris.min.css"
+    return format_html('<link rel="stylesheet" href="{}">', static(coloris_css))
+
+
+@hooks.register("insert_global_admin_js")
+def register_coloris_js():
+    coloris_js = "colorfield/coloris/coloris.js"
+    if not settings.DEBUG:
+        coloris_js = "colorfield/coloris/coloris.min.js"
+    return format_html('<script src="{}"></script>', static(coloris_js))
+
+
+# -- END --
+
+
 # Offer the page's form fields as choices for the ``form_field`` body block.
-
-
+# -- START --
 def _form_page_fields(page):
     from .forms.models import DaisieFormPage
 
@@ -108,6 +164,9 @@ def _set_form_fields_before_edit_page(request, page):
     set_current_form_fields(_form_page_fields(page))
 
 
+# -- END --
+
+
 # Register admin views
 
 
@@ -125,6 +184,12 @@ def register_admin_urls():
             object_options,
             name="dynamic_object_options",
         ),
+        path("guide/", GuideIndexView.as_view(), name="guide"),
+        path(
+            "guide/<slug:slug>/",
+            GuidePageView.as_view(),
+            name="guide-page",
+        ),
         # Add other package-scoped URLs here so they are access-restricted to the admin.
     ]
 
@@ -137,6 +202,17 @@ def register_admin_urls():
             ),
         )
     ]
+
+
+@hooks.register("register_help_menu_item")
+def register_help_menu_item():
+    return MenuItem(
+        _("DaisyUI Editor Guide"),
+        reverse("wagtail_daisIE:guide"),
+        name="daisyui-editor-guide",
+        icon_name="help",
+        order=1200,
+    )
 
 
 # Register the audience rules JS.
@@ -164,7 +240,7 @@ def register_background_layer_admin_js():
     )
 
 
-# Register the block settings script and CSS.
+# Register the block settings script.
 
 
 @hooks.register("insert_global_admin_js")
@@ -175,9 +251,19 @@ def register_block_settings_js():
     )
 
 
+# Register the feed model help script.
+
+
+@hooks.register("insert_global_admin_js")
+def register_feed_help_js():
+    return format_html(
+        '<script src="{}"></script>',
+        static("wagtail_daisIE/js/feed_help.js"),
+    )
+
+
 # Register the dynamic context-model metadata for the binding block.
-
-
+# -- START --
 @hooks.register("insert_global_admin_js")
 def register_context_models_js():
     from .dynamic.registry import get_context_models_state
@@ -222,6 +308,9 @@ def register_block_settings_css():
     )
 
 
+# -- END --
+
+
 # Register the context binding styles.
 
 
@@ -234,8 +323,7 @@ def register_context_binding_css():
 
 
 # Register the icon chooser script and CSS.
-
-
+# -- START --
 @hooks.register("insert_global_admin_css")
 def register_icon_chooser_css():
     return format_html(
@@ -253,28 +341,11 @@ def register_icon_chooser_js():
     )
 
 
-# Register the coloris script and CSS.
-
-
-@hooks.register("insert_global_admin_css")
-def register_coloris_css():
-    coloris_css = "colorfield/coloris/coloris.css"
-    if not settings.DEBUG:
-        coloris_css = "colorfield/coloris/coloris.min.css"
-    return format_html('<link rel="stylesheet" href="{}">', static(coloris_css))
-
-
-@hooks.register("insert_global_admin_js")
-def register_coloris_js():
-    coloris_js = "colorfield/coloris/coloris.js"
-    if not settings.DEBUG:
-        coloris_js = "colorfield/coloris/coloris.min.js"
-    return format_html('<script src="{}"></script>', static(coloris_js))
+# -- END --
 
 
 # Detail page admin shortcuts: jump between a page and its source record.
-
-
+# -- START --
 @hooks.register("register_page_listing_more_buttons")
 def detail_page_listing_buttons(page, user, next_url=None):
     from django.contrib.admin.utils import quote
@@ -314,3 +385,6 @@ def detail_snippet_listing_buttons(snippet, user, next_url=None):
     if page is None or not page.live:
         return
     yield MenuItem(_("View detail page"), page.url, icon_name="doc-empty", priority=90)
+
+
+# -- END --

@@ -1,6 +1,7 @@
+{% load notifications %}
 {% if audience_allowed %}
-  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
-    <label class="fieldset-legend" for="daisie-{{ block.id }}">{{ value.label }}</label>
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <label class="fieldset-legend" for="daisie-{{ block.id }}">{% daisie_markup value.label %}</label>
     <select
       id="daisie-{{ block.id }}"
       {% if value.name %}name="{{ value.name }}"{% endif %}
@@ -10,7 +11,7 @@
       {% if value.placeholder %}<option value="">{{ value.placeholder }}</option>{% endif %}
       {% for option in select_options %}<option value="{{ option }}">{{ option }}</option>{% endfor %}
     </select>
-    {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{{ value.helper_text }}</p>{% endif %}
-    {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{{ value.error_text }}</p>{% endif %}
+    {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{% daisie_markup value.helper_text %}</p>{% endif %}
+    {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{% daisie_markup value.error_text %}</p>{% endif %}
   </fieldset>
 {% endif %}

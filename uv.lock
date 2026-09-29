@@ -1260,6 +1260,9 @@ dependencies = [
 allauth = [
     { name = "django-allauth" },
 ]
+allauth-emails = [
+    { name = "django-allauth" },
+]
 blocks = [
     { name = "draftail-text-utils" },
 ]
@@ -1286,8 +1289,9 @@ requires-dist = [
     { name = "lxml", specifier = ">=6.1.3" },
     { name = "mjml-python", specifier = ">=1.4.2" },
     { name = "wagtail", specifier = ">=7.3.2" },
+    { name = "wagtail-daisie", extras = ["notifications", "allauth"], marker = "extra == 'allauth-emails'" },
 ]
-provides-extras = ["allauth", "blocks"]
+provides-extras = ["allauth", "allauth-emails", "notifications", "blocks"]
 
 [package.metadata.requires-dev]
 dev = [

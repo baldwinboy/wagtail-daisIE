@@ -1,42 +1,15 @@
-from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import ObjectList, TabbedInterface
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
-from .dynamic.view_sets import FeedViewSet
-from .models import DaisyUIFavicon, DaisyUIIconSource, DaisyUIMenu, DaisyUITheme
+from .assets.view_sets import DaisyUIFaviconViewSet, DaisyUIIconSourceViewSet
+from .feeds.view_sets import FeedViewSet
+from .menus.view_sets import DaisyUIMenuViewSet
+from .models import DaisyUITheme
 
 
 class DaisyUIThemeViewSet(SnippetViewSet):
     icon = "cogs"
     menu_label = "Themes"
     model = DaisyUITheme
-
-
-class DaisyUIMenuViewSet(SnippetViewSet):
-    icon = "list-ul"
-    menu_label = "Menus"
-    model = DaisyUIMenu
-
-    edit_handler = TabbedInterface(
-        [
-            ObjectList(DaisyUIMenu.panels, heading=_("Content")),
-            ObjectList(DaisyUIMenu.styling_panels, heading=_("Settings")),
-        ]
-    )
-
-
-class DaisyUIIconSourceViewSet(SnippetViewSet):
-    icon = "image"
-    menu_label = "Icon Sources"
-    model = DaisyUIIconSource
-
-
-class DaisyUIFaviconViewSet(SnippetViewSet):
-    icon = "site"
-    menu_label = "Favicon"
-    model = DaisyUIFavicon
-    list_display = ["site", "app_name", "theme_color"]
-    search_fields = ["app_name", "short_name"]
 
 
 class DaisyUIViewSetGroup(SnippetViewSetGroup):

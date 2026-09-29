@@ -1,0 +1,17 @@
+{% load wagtail_daisIE_tags allauth_ui %}
+<!DOCTYPE html>
+<html lang="en"{% if override.theme %} data-theme="{{ override.theme.name }}"{% endif %}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{{ override }}</title>
+        {% daisyui_styles %}
+        {% daisyui_theme_full_css override.theme %}
+        {% daisyui_theme_script %}
+        {% daisyui_icon_assets %}
+        {% daisyui_favicon %}
+    </head>
+    <body class="bg-base-100 text-base-content p-6">
+        {% daisie_allauth_page override=override form=form %}
+    </body>
+</html>

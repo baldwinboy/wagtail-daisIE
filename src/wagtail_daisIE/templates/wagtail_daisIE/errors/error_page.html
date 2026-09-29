@@ -5,12 +5,12 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{{ error_page.title|default:status_code }}</title>
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_styles %}
         {% daisyui_theme_full_css daisyui_theme %}
         {% daisyui_favicon %}
     </head>
     <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
-        <main id="main-content" class="mx-auto flex w-full max-w-3xl grow flex-col items-center justify-center px-4 py-16 text-center">
+        <main id="main-content"{% daisyui_main_attrs daisyui_theme %}>
             {% if error_page %}
                 {% if error_page.title %}
                     <h1 class="mb-6 text-4xl font-bold">{{ error_page.title }}</h1>

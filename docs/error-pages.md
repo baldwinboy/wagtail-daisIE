@@ -4,6 +4,8 @@
 one page per supported HTTP status under **Errors → Error pages**; projects opt
 in to Django's error handlers from their root URL configuration.
 
+Provided by the required `wagtail_daisIE.errors` app.
+
 ## Create an error page
 
 1. Open **Errors → Error pages** in the Wagtail admin.

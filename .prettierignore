@@ -1,6 +1,6 @@
 demo
 **/migrations
-**/global.css
+**/daisie.css
 htmlcov
 .release-please-manifest.json
 release-please-config.json

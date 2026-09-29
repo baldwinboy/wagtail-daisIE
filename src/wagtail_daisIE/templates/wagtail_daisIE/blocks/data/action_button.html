@@ -1,15 +1,18 @@
-{% load notifications %}
+{% load notifications wagtailcore_tags %}
 {% if audience_allowed and action_url %}
   <form
     method="post"
     action="{{ action_url }}"
-    class="inline-block{% if block_css %} {{ block_css }}{% endif %}"
-    {% if value.confirm %}onsubmit="return confirm('{{ value.confirm|escapejs }}');"{% endif %}
+    class="inline-block{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
   >
     {% csrf_token %}
     {% if value.target_expression %}
       <input type="hidden" name="target" value="{% daisie_expr value.target_expression %}" />
     {% endif %}
-    <button type="submit" class="{{ value.button_class|default:'btn btn-primary' }}">{{ value.label }}</button>
+    <input type="hidden" name="daisie_message" value="{{ message_text }}" />
+    <input type="hidden" name="daisie_message_icon" value="{{ message_icon }}" />
+    <input type="hidden" name="daisie_message_tags" value="{{ message_tags }}" />
+    <input type="hidden" name="daisie_message_level" value="{{ message_level }}" />
+    {% include_block value.button %}
   </form>
 {% endif %}

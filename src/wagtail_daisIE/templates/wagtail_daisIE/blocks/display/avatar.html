@@ -1,0 +1,10 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed %}
+  <div class="avatar {{ value.status }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <div class="{{ value.size }} {{ value.shape }}">
+      {% if value.image %}
+        {% image value.image fill-200x200 as img %}<img src="{{ img.url }}" alt="{{ value.image.title }}" />
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

@@ -10,6 +10,8 @@ class BackgroundLayerBlockDefinition
 {
   render(placeholder, prefix, initialState, initialError) {
     const block = super.render(placeholder, prefix, initialState, initialError);
+    const root =
+      (block.container && block.container[0]) || block.element || document;
 
     const fieldsByType = {
       solid: ['color'],
@@ -17,23 +19,22 @@ class BackgroundLayerBlockDefinition
       gradient: ['gradient_shape', 'gradient_angle', 'gradient_stops'],
     };
 
-    const layerTypeField = document.getElementById(prefix + '-layer_type');
-    const layerType = layerTypeField.value;
-    const notLayerTypes = Object.keys(fieldsByType).filter(
-      (type) => type !== layerType,
+    const typeField = root.querySelector(
+      '[data-contentpath="layer_type"] select, [data-contentpath="layer_type"] input',
     );
-
-    for (const fieldName of notLayerTypes) {
-      for (const field of fieldsByType[fieldName]) {
-        const fieldElement = document.getElementById(prefix + '-' + field);
-        fieldElement.style.display = 'block';
-      }
+    if (!typeField) {
+      return block;
     }
 
-    for (const fieldName of notLayerTypes) {
-      for (const field of fieldsByType[fieldName]) {
-        const fieldElement = document.getElementById(prefix + '-' + field);
-        fieldElement.style.display = 'none';
+    const hiddenTypes = Object.keys(fieldsByType).filter(
+      (type) => type !== typeField.value,
+    );
+    for (const type of hiddenTypes) {
+      for (const field of fieldsByType[type]) {
+        const wrapper = root.querySelector(`[data-contentpath="${field}"]`);
+        if (wrapper) {
+          wrapper.style.display = 'none';
+        }
       }
     }
 

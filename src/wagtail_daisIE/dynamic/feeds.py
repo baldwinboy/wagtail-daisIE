@@ -17,7 +17,9 @@ from django.db import models as django_models
 from django.db.models import Q
 from django.middleware.csrf import get_token
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext_lazy as _
 
+from ..choices.utils import ChoiceList
 from .context import context_model_keys
 from .registry import get_context_model
 
@@ -305,7 +307,6 @@ def build_filters(feed, config, params, request=None, page=None):
 # --- Layout -----------------------------------------------------------------
 
 #: Literal strings so Tailwind's scanner picks up every class.
-LAYOUT_LABELS = {"grid": "Grid", "row": "Row", "list": "List"}
 GRID_COLUMNS = {
     1: "grid-cols-1",
     2: "grid-cols-1 sm:grid-cols-2",
@@ -314,11 +315,76 @@ GRID_COLUMNS = {
     5: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5",
     6: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6",
 }
+
+#: The two layouts a toggle switches between, keyed by the stored choice.
 TOGGLE_PAIRS = {
     "grid_list": ("grid", "list"),
     "grid_row": ("grid", "row"),
     "row_list": ("row", "list"),
 }
+
+# --- Layout choices ---------------------------------------------------------
+#
+# These are the single source of truth: the ``Feed`` model fields, the
+# ``FeedLayoutOverrideBlock`` block and :func:`resolve_layout` all read them.
+# They live here rather than on the model because ``blocks_data`` needs them
+# and ``models`` imports ``blocks_data``.
+
+LAYOUT_CHOICES = ChoiceList(
+    [
+        ("grid", _("Grid")),
+        ("row", _("Row")),
+        ("list", _("List")),
+    ],
+    "LAYOUT_CHOICES",
+)
+ROW_MODE_CHOICES = ChoiceList(
+    [
+        ("wrap", _("Wrap onto new lines")),
+        ("scroll", _("Scroll horizontally")),
+    ],
+    "ROW_MODE_CHOICES",
+)
+GAP_CHOICES = ChoiceList(
+    [
+        ("gap-1", "1"),
+        ("gap-2", "2"),
+        ("gap-3", "3"),
+        ("gap-4", "4"),
+        ("gap-6", "6"),
+        ("gap-8", "8"),
+    ],
+    "GAP_CHOICES",
+)
+TOGGLE_LABELS = {
+    "grid_list": _("Grid / List"),
+    "grid_row": _("Grid / Row"),
+    "row_list": _("Row / List"),
+}
+TOGGLE_CHOICES = ChoiceList(
+    [(key, TOGGLE_LABELS[key]) for key in TOGGLE_PAIRS], "TOGGLE_CHOICES"
+)
+
+#: Layout key -> translated label, for the visitor toggle.
+LAYOUT_LABELS = dict(LAYOUT_CHOICES)
+
+
+# Plain accessors so model fields (which Django materialises from iterables)
+# serialize as short function references instead of the full choice lists.
+def layout_choices():
+    return LAYOUT_CHOICES
+
+
+def gap_choices():
+    return GAP_CHOICES
+
+
+def row_mode_choices():
+    return ROW_MODE_CHOICES
+
+
+def toggle_choices():
+    return TOGGLE_CHOICES
 
 
 def layout_class_map(feed, override=None):

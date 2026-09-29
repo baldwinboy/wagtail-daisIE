@@ -7,8 +7,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{% block title %}{% block head_title %}{% endblock %}{% endblock %}{% wagtail_site as current_site %}{% if current_site and current_site.site_name %} | {{ current_site.site_name }}{% endif %}</title>
 
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_styles %}
         {% daisyui_theme_full_css daisie_theme %}
+        {% daisyui_theme_script %}
         {% daisyui_icon_assets %}
         {% daisyui_favicon %}
         {% block extra_head %}{% endblock %}
@@ -16,14 +17,8 @@
     <body class="flex min-h-screen flex-col bg-base-100 text-base-content {% block body_class %}template-allauth{% endblock %}">
         {% block header %}{% daisyui_menu header_menu_name %}{% endblock %}
 
-        <main id="main-content" class="mx-auto flex w-full max-w-6xl grow flex-col px-4 py-8">
-            {% if messages %}
-                <div class="mb-4 space-y-2" aria-live="polite">
-                    {% for message in messages %}
-                        <div role="status" class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+        <main id="main-content"{% daisyui_main_attrs daisie_theme %}>
+            {% daisie_messages %}
 
             <div class="mx-auto w-full max-w-xl">
                 {% block content %}{% endblock %}

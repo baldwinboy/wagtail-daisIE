@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-from .utils import make_choices
+from .utils import ChoiceList, make_choices
 
 
 _ROUNDED_SIZES = [
@@ -15,4 +15,6 @@ _ROUNDED_SIZES = [
     ("full", _("Full")),
 ]
 
-ROUNDED_CHOICES = make_choices("rounded-", _ROUNDED_SIZES)
+ROUNDED_CHOICES = ChoiceList(
+    make_choices("rounded-", _ROUNDED_SIZES), "ROUNDED_CHOICES"
+)

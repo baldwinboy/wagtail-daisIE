@@ -1,0 +1,20 @@
+{% load i18n wagtailcore_tags notifications %}
+<div class="daisyui-menu megamenu megamenu-full {{ megamenu_extra|default:'' }} {{ menu_design_css }} {{ menu_css }}" id="daisie-megamenu-{{ menu.pk }}"{% if megamenu_popover %} popover{% endif %}{% if menu_design_style %} style="{{ menu_design_style }}"{% endif %}>
+  <span class="megamenu-active"></span>
+  {% for item in menu_items %}
+    {% if item.block_type == "link_list" %}
+      <button popovertarget="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}">{% daisie_markup item.value.heading.text %}</button>
+      <div id="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}" popover>
+        <ul class="menu w-full md:menu-horizontal">
+          {% for link in item.value.content %}
+            <li>{% include_block link %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% elif item.block_type == "header" %}
+      <span class="menu-title px-2 py-1 text-sm">{% daisie_markup item.value.text %}</span>
+    {% else %}
+      {% include_block item %}
+    {% endif %}
+  {% endfor %}
+</div>

@@ -1,14 +1,15 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks import InlineMarkupBlock
 from .base import ThemedBlock
 
 
 class BlockQuote(ThemedBlock):
-    text = blocks.TextBlock(
+    text = InlineMarkupBlock(
         help_text=_("Quote text content."),
     )
-    attribute_name = blocks.CharBlock(
+    attribute_name = InlineMarkupBlock(
         blank=True,
         required=False,
         help_text=_("Attribution name, e.g. 'Mary Berry'."),

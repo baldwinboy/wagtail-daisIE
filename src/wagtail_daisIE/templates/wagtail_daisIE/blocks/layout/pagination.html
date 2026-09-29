@@ -1,0 +1,11 @@
+{% if audience_allowed and pages %}
+  <div class="join {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for page in pages %}
+      {% if page.url %}
+        <a class="join-item btn{% if page.active %} btn-active{% endif %}" href="{{ page.url }}">{{ page.label }}</a>
+      {% else %}
+        <span class="join-item btn{% if page.active %} btn-active{% endif %}">{{ page.label }}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

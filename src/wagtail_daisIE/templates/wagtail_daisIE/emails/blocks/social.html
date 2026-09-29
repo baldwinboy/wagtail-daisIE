@@ -1,0 +1,2 @@
+{% load mjml %}
+{% if audience_allowed %}<mj-social {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% for element in value.elements %}<mj-social-element name="{{ element.name }}" href="{{ element.href }}"></mj-social-element>{% endfor %}</mj-social>{% endif %}

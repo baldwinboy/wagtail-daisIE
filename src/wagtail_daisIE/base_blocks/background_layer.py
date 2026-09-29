@@ -8,6 +8,7 @@ from wagtail.blocks.struct_block import StructBlockAdapter
 from wagtail.images.blocks import ImageChooserBlock
 
 from wagtail_daisIE.choices import DAISYUI_BG_COLOR_CHOICES
+from wagtail_daisIE.choices.utils import ChoiceList
 from wagtail_daisIE.widgets import (
     DaisyUIIntegerBlock,
     DaisyUINumberSliderWidget,
@@ -32,6 +33,22 @@ class BlockGradientShape(models.TextChoices):
     REPEATING_CONIC = "repeating-conic", _("Repeating Conic")
 
 
+BACKGROUND_LAYER_TYPE_CHOICES = ChoiceList(
+    list(BlockBackgroundLayerType.choices), "BACKGROUND_LAYER_TYPE_CHOICES"
+)
+GRADIENT_SHAPE_CHOICES = ChoiceList(
+    list(BlockGradientShape.choices), "GRADIENT_SHAPE_CHOICES"
+)
+BACKGROUND_SIZE_CHOICES = ChoiceList(
+    [
+        ("auto", _("Auto")),
+        ("cover", _("Cover")),
+        ("contain", _("Contain")),
+    ],
+    "BACKGROUND_SIZE_CHOICES",
+)
+
+
 class GradientStopBlock(blocks.StructBlock):
     bg_color = ColorChoiceBlock(
         choices=DAISYUI_BG_COLOR_CHOICES,
@@ -42,7 +59,7 @@ class GradientStopBlock(blocks.StructBlock):
     )
     position = DaisyUIIntegerBlock(
         default=0,
-        blank=True,
+        required=False,
         verbose_name=_("Position"),
         help_text=_("e.g. '0%' or '100%'"),
         min_value=0,
@@ -59,9 +76,38 @@ class GradientStopBlock(blocks.StructBlock):
 
 
 class BackgroundLayerBlock(blocks.StructBlock):
+    def __init__(self, *args, allowed_types=None, **kwargs):
+        """Optionally restrict the selectable layer types.
+
+        Email components only support a subset (solid or image, never
+        gradient), so the email design composites construct the block with
+        ``allowed_types``. The restricted ``layer_type`` choice is injected as
+        a local block, leaving the shared class definition untouched.
+        """
+        local_blocks = list(kwargs.pop("local_blocks", None) or [])
+        if allowed_types is not None:
+            choices = [
+                choice
+                for choice in BACKGROUND_LAYER_TYPE_CHOICES
+                if choice[0] in allowed_types
+            ]
+            local_blocks.append(
+                (
+                    "layer_type",
+                    blocks.ChoiceBlock(
+                        max_length=10,
+                        choices=choices,
+                        default=choices[0][0] if choices else "",
+                        verbose_name=_("Layer type"),
+                        classname="background-layer-form",
+                    ),
+                )
+            )
+        super().__init__(*args, local_blocks=local_blocks, **kwargs)
+
     layer_type = blocks.ChoiceBlock(
         max_length=10,
-        choices=BlockBackgroundLayerType.choices,
+        choices=BACKGROUND_LAYER_TYPE_CHOICES,
         default=BlockBackgroundLayerType.SOLID,
         verbose_name=_("Layer type"),
         classname="background-layer-form",
@@ -74,40 +120,32 @@ class BackgroundLayerBlock(blocks.StructBlock):
         widget=DaisyUIRawSwatchWidget(prefix="bg"),
         classname="layer-solid",
     )
-    image = ImageChooserBlock(required=False, label=_("Image"), classname="layer-image")
+    image = ImageChooserBlock(required=False, classname="layer-image")
     position = blocks.CharBlock(
         max_length=64,
         default="center",
-        blank=True,
+        required=False,
         verbose_name=_("Position"),
-        help_text=_(
-            "CSS background-position value"
-            " (e.g. 'center', 'top', 'bottom', 'left', 'right')"
-            " or a percentage (e.g. '50%')"
-            " or a length (e.g. '10px'). See:"
-            " https://developer.mozilla.org/en-US/docs/Web/CSS/background-position"
-        ),
+        help_text=_("CSS background-position, e.g. center, 50%, 10px."),
         classname="layer-image",
     )
     size = blocks.ChoiceBlock(
         max_length=64,
-        choices=[
-            ("auto", _("Auto")),
-            ("cover", _("Cover")),
-            ("contain", _("Contain")),
-        ],
+        choices=BACKGROUND_SIZE_CHOICES,
         default="cover",
         verbose_name=_("Size"),
         classname="layer-image",
     )
     repeat = blocks.BooleanBlock(
         default=False,
+        required=False,
         verbose_name=_("Repeat"),
         classname="layer-image",
     )
     gradient_shape = blocks.ChoiceBlock(
         max_length=64,
-        blank=True,
+        required=False,
+        choices=GRADIENT_SHAPE_CHOICES,
         default=BlockGradientShape.LINEAR,
         verbose_name=_("Gradient shape"),
         help_text=_("e.g. 'linear', 'radial', 'conic'"),
@@ -115,7 +153,7 @@ class BackgroundLayerBlock(blocks.StructBlock):
     )
     gradient_angle = DaisyUIIntegerBlock(
         default=0,
-        blank=True,
+        required=False,
         verbose_name=_("Gradient angle"),
         help_text=_("e.g. 0, 90, 180, 270"),
         min_value=0,
@@ -128,7 +166,6 @@ class BackgroundLayerBlock(blocks.StructBlock):
     gradient_stops = blocks.ListBlock(
         GradientStopBlock(),
         required=False,
-        label=_("Gradient stops"),
         form_classname="layer-gradient",
     )
 
@@ -173,9 +210,9 @@ class BackgroundLayerBlock(blocks.StructBlock):
             stops = (value or {}).get("gradient_stops") or []
             if stops:
                 stops_css = ", ".join(
-                    f"{stop.get('bg_color')} {stop.get('position')}" for stop in stops
+                    f"{stop.get('bg_color')} {stop.get('position')}%" for stop in stops
                 )
-                return f"{gradient_shape}({gradient_direction}, {stops_css})"
+                return f"{gradient_shape}-gradient({gradient_direction}, {stops_css})"
             return ""
         return ""
 
@@ -193,6 +230,16 @@ class BackgroundLayerBlock(blocks.StructBlock):
 
 class BackgroundStreamBlock(blocks.StreamBlock):
     layer = BackgroundLayerBlock()
+
+    def __init__(self, *args, allowed_types=None, required=False, **kwargs):
+        kwargs.setdefault("required", required)
+        if allowed_types is not None:
+            local_blocks = list(kwargs.pop("local_blocks", None) or [])
+            local_blocks.append(
+                ("layer", BackgroundLayerBlock(allowed_types=allowed_types))
+            )
+            kwargs["local_blocks"] = local_blocks
+        super().__init__(*args, **kwargs)
 
     class Meta:
         icon = "pick"

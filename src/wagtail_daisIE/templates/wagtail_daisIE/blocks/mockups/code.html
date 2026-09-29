@@ -1,0 +1,7 @@
+{% if audience_allowed %}
+  <div class="mockup-code {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for line in value.lines %}
+      <pre data-prefix="{{ line.prefix }}"><code>{{ line.code }}</code></pre>
+    {% endfor %}
+  </div>
+{% endif %}

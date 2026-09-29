@@ -7,6 +7,8 @@ both by the individual design blocks (in their :meth:`get_context`) and by
 the ``block_css`` template variable.
 """
 
+from wagtail_daisIE.choices import MAIN_LAYOUT_CLASSES
+
 from .utils import build_border_width, build_class
 
 
@@ -125,6 +127,25 @@ def build_box_css(value):
     )
 
 
+def build_typography_state_css(value, variant=""):
+    """Colour/decoration classes for one interaction state (``hover``/``active``)."""
+    if not value:
+        return ""
+    prefix = f"{variant}:" if variant else ""
+    return build_class(
+        *(
+            f"{prefix}{token}"
+            for token in (
+                value.get("text_color", ""),
+                value.get("text_decoration", ""),
+                value.get("decoration_color", ""),
+                value.get("decoration_thickness", ""),
+            )
+            if token
+        )
+    )
+
+
 def build_typography_css(value):
     if not value:
         return ""
@@ -139,6 +160,11 @@ def build_typography_css(value):
         value.get("text_align", ""),
         value.get("line_height", ""),
         value.get("letter_spacing", ""),
+        value.get("text_decoration", ""),
+        value.get("decoration_color", ""),
+        value.get("decoration_thickness", ""),
+        build_typography_state_css(value.get("hover"), "hover"),
+        build_typography_state_css(value.get("active"), "active"),
     )
 
 
@@ -206,10 +232,15 @@ def build_table_css(value):
     )
 
 
+def build_layout_css(value):
+    if not value:
+        return ""
+    return MAIN_LAYOUT_CLASSES.get(value, "")
+
+
 _DESIGN_BUILDERS = {
     "size": build_size_css,
     "spacing": build_spacing_css,
-    "background": build_background_css,
     "border": build_border_css,
     "padding": build_padding_css,
     "margin": build_margin_css,
@@ -217,6 +248,7 @@ _DESIGN_BUILDERS = {
     "typography": build_typography_css,
     "button_appearance": build_button_css,
     "table_appearance": build_table_css,
+    "layout": build_layout_css,
 }
 
 

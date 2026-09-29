@@ -1,0 +1,4 @@
+{% load allauth_ui %}
+{% if bound_field %}
+  {% daisie_form_field bound_field input_class=input_css label_class=label_css form_id=form_id presentation=presentation otp_size=otp_size otp_color=otp_color otp_joined=otp_joined %}
+{% endif %}

@@ -108,11 +108,7 @@ class AudienceBlock(blocks.StructBlock):
         choices=get_audience_choices,
         default=[],
         required=False,
-        label=_("Audience"),
-        help_text=_(
-            "Select the audiences that can see this content."
-            "Leave empty to show to all audiences."
-        ),
+        help_text=_("Who can see this content (empty = everyone)."),
     )
 
     class Meta:

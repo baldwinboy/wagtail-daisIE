@@ -8,16 +8,24 @@ from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.fields import StreamField
 
 from ..blocks.content import ContentBlock
+from ..choices.utils import ChoiceList
 
 
-ERROR_STATUS_CHOICES = [
-    (400, _("400 Bad request")),
-    (401, _("401 Unauthorized")),
-    (403, _("403 Forbidden")),
-    (404, _("404 Not found")),
-    (429, _("429 Too many requests")),
-    (500, _("500 Server error")),
-]
+ERROR_STATUS_CHOICES = ChoiceList(
+    [
+        (400, _("400 Bad request")),
+        (401, _("401 Unauthorized")),
+        (403, _("403 Forbidden")),
+        (404, _("404 Not found")),
+        (429, _("429 Too many requests")),
+        (500, _("500 Server error")),
+    ],
+    "ERROR_STATUS_CHOICES",
+)
+
+
+def error_status_choices():
+    return ERROR_STATUS_CHOICES
 
 
 class ErrorPage(models.Model):
@@ -25,7 +33,7 @@ class ErrorPage(models.Model):
 
     status_code = models.PositiveSmallIntegerField(
         unique=True,
-        choices=ERROR_STATUS_CHOICES,
+        choices=error_status_choices,
         verbose_name=_("Status code"),
         help_text=_("The HTTP status this page is shown for."),
     )

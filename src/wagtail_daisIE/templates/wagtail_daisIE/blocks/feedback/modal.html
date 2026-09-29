@@ -1,6 +1,6 @@
 {% load i18n notifications %}
 {% if audience_allowed %}
-  <div{% if block_css %} class="{{ block_css }}"{% endif %}>
+  <div{% if block_css %} class="{{ block_css }}"{% endif %}{% if block_style %} style="{{ block_style }}"{% endif %}>
     <a href="#daisie-modal-{{ block.id }}" class="btn">{{ value.trigger_label }}</a>
     <div
       class="modal {{ value.placement }}"

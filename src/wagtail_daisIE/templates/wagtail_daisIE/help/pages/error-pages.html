@@ -1,0 +1,10 @@
+{% load i18n %}
+<p>{% trans "Error pages are designed like any other page." %}</p>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_errors_errorpage:list' %}">{% trans "Design → Errors" %}</a>.
+    </li>
+    <li>{% trans "Create a page for a status code (403, 404, 500 and others)." %}</li>
+    <li>{% trans "Add a title, theme and body blocks, then mark it active." %}</li>
+</ol>

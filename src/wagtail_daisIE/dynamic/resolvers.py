@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from django.core.exceptions import FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.db.models import Q
 from django.utils.module_loading import import_string
 
@@ -336,10 +336,32 @@ def _resolve_url(config, binding, request, page=None):
     value = _clean_lookup_value(config, name, source.get(name), binding)
     if value is None:
         return None
+    # A misconfigured binding (e.g. a lookup field the model does not have)
+    # should degrade to "unresolved" rather than raise on every render. ``pk``
+    # is Django's alias for the primary key, and names containing ``__`` may be
+    # relation lookups, so both are left for Django to resolve.
+    if name != "pk" and "__" not in name:
+        try:
+            model._meta.get_field(name)
+        except FieldDoesNotExist:
+            logger.warning(
+                "Context model %r has no lookup field %r; ignoring the binding.",
+                config.key,
+                name,
+            )
+            return None
     queryset = _base_queryset(model, config, request, page)
     if queryset is None:
         return None
-    return queryset.filter(**{name: value}).first()
+    try:
+        return queryset.filter(**{name: value}).first()
+    except FieldError:
+        logger.warning(
+            "Could not apply lookup field %r to context model %r.",
+            name,
+            config.key,
+        )
+        return None
 
 
 def _resolve_source(config, request, page):

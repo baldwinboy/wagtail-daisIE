@@ -1,0 +1,6 @@
+{% load i18n wagtailcore_tags %}
+<div class="daisyui-menu dock {{ menu_design_css }} {{ menu_css }}"{% if menu_design_style %} style="{{ menu_design_style }}"{% endif %}>
+  {% for item in menu_items %}
+    {% include_block item %}
+  {% endfor %}
+</div>

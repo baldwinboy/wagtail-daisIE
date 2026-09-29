@@ -5,13 +5,13 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{{ page.seo_title|default:page.title }}</title>
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_styles %}
         {% daisyui_theme_full_css daisyui_theme %}
         {% daisyui_favicon %}
         {{ form.media }}
     </head>
     <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
-        <main id="main-content" class="mx-auto w-full max-w-2xl grow px-4 py-12">
+        <main id="main-content"{% daisyui_main_attrs daisyui_theme %}>
             {% if page.title %}<h1 class="mb-6 text-4xl font-bold">{{ page.title }}</h1>{% endif %}
 
             {% if form_has_errors and page.error_body %}

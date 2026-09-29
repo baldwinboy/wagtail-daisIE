@@ -1,0 +1,9 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="mockup-phone {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <div class="mockup-phone-camera"></div>
+    <div class="mockup-phone-display">
+      {% for child in value.content %}{% include_block child %}{% endfor %}
+    </div>
+  </div>
+{% endif %}

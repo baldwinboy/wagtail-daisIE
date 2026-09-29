@@ -1,5 +1,5 @@
 {% if audience_allowed %}
-  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     <label class="fieldset-legend" for="daisie-{{ block.id }}">{{ value.label }}</label>
     <input
       id="daisie-{{ block.id }}"

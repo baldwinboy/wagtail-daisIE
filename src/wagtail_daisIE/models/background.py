@@ -31,6 +31,18 @@ class DaisyUIThemeBackgroundLayerGradientShape(models.TextChoices):
     REPEATING_CONIC = "repeating-conic-gradient", _("Repeating Conic")
 
 
+def layer_type_choices():
+    return DaisyUIThemeBackgroundLayerType.choices
+
+
+def background_size_choices():
+    return [
+        ("auto", _("Auto")),
+        ("cover", _("Cover")),
+        ("contain", _("Contain")),
+    ]
+
+
 class DaisyUIThemeBackground(ClusterableModel, Orderable):
     theme = ParentalKey(
         "wagtail_daisIE.DaisyUITheme",
@@ -69,7 +81,7 @@ class DaisyUIThemeBackgroundLayer(ClusterableModel, Orderable):
     )
     layer_type = models.CharField(
         max_length=10,
-        choices=DaisyUIThemeBackgroundLayerType.choices,
+        choices=layer_type_choices,
         default=DaisyUIThemeBackgroundLayerType.SOLID,
         verbose_name=_("Layer type"),
     )
@@ -109,21 +121,11 @@ class DaisyUIThemeBackgroundLayer(ClusterableModel, Orderable):
         default="center",
         blank=True,
         verbose_name=_("Position"),
-        help_text=_(
-            "CSS background-position value"
-            " (e.g. 'center', 'top', 'bottom', 'left', 'right')"
-            " or a percentage (e.g. '50%')"
-            " or a length (e.g. '10px'). See:"
-            " https://developer.mozilla.org/en-US/docs/Web/CSS/background-position"
-        ),
+        help_text=_("CSS background-position, e.g. center, 50%, 10px."),
     )
     size = models.CharField(
         max_length=64,
-        choices=[
-            ("auto", _("Auto")),
-            ("cover", _("Cover")),
-            ("contain", _("Contain")),
-        ],
+        choices=background_size_choices,
         default="cover",
         verbose_name=_("Size"),
     )

@@ -3,9 +3,11 @@
     {% if menu_theme and menu_theme != daisyui_theme %}
         {% daisyui_theme_css menu_theme %}
     {% endif %}
-    {% with block_css=menu_item_css menu_default_css=menu_item_css %}
+    {% with menu_default_css=menu_item_css menu_default_style=menu_item_style %}
         {% if menu.layout == "navbar" %}
             {% include "wagtail_daisIE/blocks/navbar.html" %}
+        {% elif menu.layout == "megamenu" %}
+            {% include "wagtail_daisIE/blocks/megamenu_layout.html" %}
         {% elif menu.layout == "footer" %}
             {% include "wagtail_daisIE/blocks/footer.html" %}
         {% elif menu.layout == "sidebar" %}
@@ -14,6 +16,8 @@
             {% include "wagtail_daisIE/blocks/horizontal_menu.html" %}
         {% elif menu.layout == "vertical" %}
             {% include "wagtail_daisIE/blocks/vertical_menu.html" %}
+        {% elif menu.layout == "dock" %}
+            {% include "wagtail_daisIE/blocks/dock.html" %}
         {% endif %}
     {% endwith %}
 {% endif %}

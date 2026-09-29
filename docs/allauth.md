@@ -12,8 +12,11 @@ uv add "wagtail-daisIE[allauth]"
 pip install "wagtail-daisIE[allauth]"
 ```
 
-Nothing in this page is required unless you use allauth; the templates and the
-adapter mixin are opt-in.
+The account **pages** are provided by the opt-in `wagtail_daisIE.allauth_ui`
+app; the admin-editable **emails** by `wagtail_daisIE.allauth_emails` (extra
+`allauth_emails`, which pulls in `notifications` and `allauth`). Nothing in this
+page is required unless you use allauth; the templates and the adapter mixin are
+opt-in.
 
 ## 1. Project setup
 
@@ -181,6 +184,14 @@ Because this is done through the template engine's `DIRS`, it only applies when
 the flag is on, and any project template with the same name takes precedence —
 so you can override individual pages.
 
+### Designing account pages in Wagtail
+
+Beyond the default layout, editors can redesign each account page (theme,
+background, page defaults, body content and field presentation) with
+`AllauthPageOverride` snippets under **Design → Allauth pages**. See
+[allauth-pages.md](allauth-pages.md). This is look-only: allauth always owns the
+fields and validation.
+
 ### Custom signup fields
 
 Custom fields on your signup form (for example `name`, `date_of_birth`,
@@ -193,6 +204,11 @@ configuration is required.
 The layouts use the project's **default `DaisyUITheme`**, so the account pages
 match the rest of your site automatically. If you have no default theme, the
 pages render with DaisyUI defaults.
+
+The visitor's chosen theme is persisted in a `daisie_theme` cookie by
+`{% daisyui_theme_script %}`; the `allauth_theme` context processor reads it so
+allauth pages render with the selected theme (no flash of the default). Add the
+script tag to your base template's `<head>`.
 
 ### Page parity with the rest of the site
 

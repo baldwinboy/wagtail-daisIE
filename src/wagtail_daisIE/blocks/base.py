@@ -1,5 +1,4 @@
 from ..base_blocks import (
-    BackgroundBlock,
     BackgroundLayerBlock,
     BackgroundStreamBlock,
     BorderBlock,
@@ -20,7 +19,6 @@ from ..base_blocks import (
 
 
 __all__ = [
-    "BackgroundBlock",
     "BackgroundLayerBlock",
     "BackgroundStreamBlock",
     "BorderBlock",

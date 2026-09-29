@@ -5,11 +5,17 @@ Registered in ``WAGTAIL_DAISIE_ACTIONS`` and used by the demo's action buttons.
 
 from django.shortcuts import redirect
 
+
 SESSION_KEY = "bread_basket"
 
 
 def _basket_ids(request):
-    return list(request.session.get(SESSION_KEY, []))
+    # The asset publisher renders pages with a session-less request, so guard
+    # against a missing session rather than raising during context resolution.
+    session = getattr(request, "session", None)
+    if session is None:
+        return []
+    return list(session.get(SESSION_KEY, []))
 
 
 def _back(request, flag=""):

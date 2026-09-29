@@ -1,0 +1,12 @@
+{% load i18n %}
+<p>{% trans "Content lives on pages; site-wide settings live under the Design menu." %}</p>
+<h2>{% trans "The page editor" %}</h2>
+<p>{% trans "Open Pages, then a page. The Body field is where content blocks go; the gear icon on a block opens its settings." %}</p>
+<h2>{% trans "The Design menu" %}</h2>
+<ul>
+    <li>{% trans "Themes — colours, fonts and effects." %}</li>
+    <li>{% trans "Menus — the site navigation." %}</li>
+    <li>{% trans "Feeds — data-driven lists." %}</li>
+    <li>{% trans "Icon Sources and Favicon." %}</li>
+</ul>
+<p><a href="{% url 'wagtailadmin_explore_root' %}">{% trans "Go to Pages" %}</a></p>

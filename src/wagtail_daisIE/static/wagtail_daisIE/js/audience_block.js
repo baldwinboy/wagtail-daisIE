@@ -7,19 +7,17 @@ class AudienceBlockDefinition
 {
   render(placeholder, prefix, initialState, initialError) {
     const block = super.render(placeholder, prefix, initialState, initialError);
-    const audienceRules = window.WAGTAIL_DAISIE_AUDIENCE_RULES;
-    const audienceBlock = document
-      .getElementById(`block_group-${prefix}-section`)
-      .closest('[data-contentpath]');
-    const hasAudienceRules =
-      audienceRules &&
-      typeof audienceRules === 'object' &&
-      Object.values(audienceRules).length > 0;
-    if (!hasAudienceRules) {
-      audienceBlock.style.display = 'none';
-    } else {
-      audienceBlock.style.display = 'block';
+    const root =
+      (block.container && block.container[0]) || block.element || document;
+    const audienceBlock = root.querySelector('[data-contentpath="audience"]');
+    if (!audienceBlock) {
+      return block;
     }
+
+    const rules = window.WAGTAIL_DAISIE_AUDIENCE_RULES;
+    const hasRules =
+      rules && typeof rules === 'object' && Object.values(rules).length > 0;
+    audienceBlock.style.display = hasRules ? '' : 'none';
 
     return block;
   }

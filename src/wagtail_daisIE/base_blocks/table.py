@@ -64,20 +64,22 @@ class TableAppearanceBlock(blocks.StructBlock):
         choices=TABLE_BORDER_CHOICES,
         default="",
         required=False,
-        label=_("Table border style"),
     )
     table_zebra_rows = blocks.BooleanBlock(
         default=False,
+        required=False,
         label=_("Zebra rows"),
         help_text=_("Alternate row background colors"),
     )
     table_pin_rows = blocks.BooleanBlock(
         default=False,
+        required=False,
         label=_("Pin rows"),
         help_text=_("Rows in table headers and footers are always visible"),
     )
     table_pin_columns = blocks.BooleanBlock(
         default=False,
+        required=False,
         label=_("Pin columns"),
         help_text=_("Columns in table headers and footers are always visible"),
     )

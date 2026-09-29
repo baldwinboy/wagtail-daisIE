@@ -1,0 +1,25 @@
+{% load i18n allauth_ui %}
+<form id="{{ form_id }}" method="post" action="" class="space-y-4" data-daisie-form>
+  {% csrf_token %}
+  {{ redirect_field }}
+  {% for field in hidden_fields %}{{ field }}{% endfor %}
+  {% for field in visible_fields %}{% daisie_form_field field form_id=form_id %}{% endfor %}
+  <button type="submit" class="btn btn-primary w-full">
+    <span class="loading loading-spinner hidden" data-daisie-submit-spinner aria-hidden="true"></span>
+    {% if submit_label %}{{ submit_label }}{% else %}{% trans "Continue" %}{% endif %}
+  </button>
+</form>
+<script>
+  (function () {
+    var form = document.getElementById("{{ form_id }}");
+    if (!form || form.dataset.daisieSubmitBound) return;
+    form.dataset.daisieSubmitBound = "1";
+    form.addEventListener("submit", function () {
+      var button = form.querySelector("button[type='submit']");
+      if (!button) return;
+      button.disabled = true;
+      var spinner = button.querySelector("[data-daisie-submit-spinner]");
+      if (spinner) spinner.classList.remove("hidden");
+    });
+  })();
+</script>

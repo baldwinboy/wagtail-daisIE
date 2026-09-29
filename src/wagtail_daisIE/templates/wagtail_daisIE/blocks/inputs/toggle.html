@@ -1,5 +1,6 @@
+{% load notifications %}
 {% if audience_allowed %}
-  <div class="{% if block_css %}{{ block_css }}{% endif %}">
+  <div class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     <label class="label cursor-pointer justify-start gap-3">
       <input
         type="checkbox"
@@ -8,8 +9,8 @@
         class="toggle {{ value.color }} {{ value.size }}"
         {% if value.checked %}checked{% endif %}
       />
-      <span class="label-text">{{ value.label }}</span>
+      <span class="label-text">{% daisie_markup value.label %}</span>
     </label>
-    {% if value.helper_text %}<p class="label">{{ value.helper_text }}</p>{% endif %}
+    {% if value.helper_text %}<p class="label">{% daisie_markup value.helper_text %}</p>{% endif %}
   </div>
 {% endif %}

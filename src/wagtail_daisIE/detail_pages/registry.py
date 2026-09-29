@@ -7,7 +7,7 @@ Projects declare which context models get a dedicated Wagtail page::
             "label": _("Bread"),
             "model": "blog.Bread",
             "page_type": "blog.BreadDetailPage",
-            "parent": "blog.BreadDetailTemplate",
+            "parent": "blog.BreadIndexPage",
             "template_page": "blog.BreadDetailTemplate",
             "lookup_field": "slug",
             "lookup_in": "path",

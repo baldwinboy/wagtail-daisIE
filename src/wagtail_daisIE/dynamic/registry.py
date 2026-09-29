@@ -160,12 +160,15 @@ class ContextModel:
             }.get(attribute, _("From the current request."))
         return _("Resolved automatically.")
 
-    def field_docs(self, limit=20):
+    def field_docs(self, limit=None):
         model = self.model
         if model is None:
             return []
         docs = []
-        for model_field in list(model._meta.fields)[:limit]:
+        model_fields = list(model._meta.fields)
+        if limit:
+            model_fields = model_fields[:limit]
+        for model_field in model_fields:
             label = getattr(model_field, "verbose_name", None) or model_field.name
             docs.append({"name": model_field.name, "label": str(label)})
         return docs

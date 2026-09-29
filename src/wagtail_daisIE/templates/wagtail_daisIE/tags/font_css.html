@@ -6,13 +6,19 @@
   {% with font_families=fonts.font_families.all %}
     {% if font_families %}
       {% for family in font_families %}
-        --font-{{ family }}: {{ family.css_value }};
+        --font-{{ family }}: {{ family.css_value|safe }};
       {% endfor %}
     {% endif %}
   {% endwith %}
   --font-size-base: {{ fonts.base_font_size }};
   --line-height: {{ fonts.line_height }};
 }
+
+{% with font_families=fonts.font_families.all %}
+{% for family in font_families %}
+.font-{{ family }} { font-family: var(--font-{{ family }}); }
+{% endfor %}
+{% endwith %}
 </style>
 {% endif %}
 {% endwith %}

@@ -1,7 +1,8 @@
+{% load notifications %}
 {% if audience_allowed %}
-  <div class="{% if block_css %}{{ block_css }}{% endif %}">
-    {% if value.heading %}<h3 class="text-xl font-semibold">{{ value.heading }}</h3>{% endif %}
-    {% if value.description %}<p class="mt-1 text-base-content/80">{{ value.description }}</p>{% endif %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% if value.heading %}<h3 class="text-xl font-semibold">{% daisie_markup value.heading %}</h3>{% endif %}
+    {% if value.description %}<p class="mt-1 text-base-content/80">{% daisie_markup value.description %}</p>{% endif %}
 
     <form
       method="post"
@@ -21,7 +22,7 @@
         required
         class="input join-item w-full"
       />
-      <button type="submit" class="btn btn-primary join-item">{{ value.button_label }}</button>
+      <button type="submit" class="btn btn-primary join-item">{% daisie_markup value.button_label allow_links=False %}</button>
     </form>
 
     {% if request.GET.subscribed and value.success_message %}

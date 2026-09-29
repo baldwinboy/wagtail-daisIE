@@ -1,0 +1,10 @@
+{% load i18n %}
+<h2>{% trans "Make a value available" %}</h2>
+<ol>
+    <li>{% trans "Open the page's Context bindings field." %}</li>
+    <li>{% trans "Choose the value, and where it comes from: automatically, from the URL, or a specific record." %}</li>
+</ol>
+<h2>{% trans "Use a value" %}</h2>
+<ol>
+    <li>{% trans "In any text field, type the value in double braces, for example" %} <code>{% verbatim %}{{ bread.name }}{% endverbatim %}</code>.</li>
+</ol>

@@ -40,6 +40,10 @@ def _template_page(config):
 
 
 def _parent_page(config):
+    template = _template_page(config)
+    chosen = getattr(template, "parent_page", None) if template is not None else None
+    if chosen is not None:
+        return chosen
     model = config.parent_model
     if model is not None:
         page = model.objects.live().first() or model.objects.first()

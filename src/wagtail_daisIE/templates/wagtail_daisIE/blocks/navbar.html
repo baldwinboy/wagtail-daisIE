@@ -1,6 +1,6 @@
 {% load i18n wagtailcore_tags wagtail_daisIE_tags %}
 <header class="daisyui-navbar">
-  <nav class="navbar mx-auto w-full max-w-6xl px-4 {{ block_css }} {{ menu_css }}{% if menu.sticky %} sticky top-0 z-50{% endif %}"
+  <nav class="daisyui-menu navbar mx-auto w-full max-w-6xl px-4 {{ menu_design_css }} {{ menu_css }}{% if menu.sticky %} sticky top-0 z-50{% endif %}"{% if menu_design_style %} style="{{ menu_design_style }}"{% endif %}
        {% if menu_theme %}data-theme="{{ menu_theme.name }}"{% endif %}
        aria-label="{{ menu.name }}">
     <div class="navbar-start">
@@ -26,11 +26,7 @@
     </div>
 
     <div class="navbar-center hidden lg:flex">
-      <ul class="menu menu-horizontal px-1">
-        {% for item in menu_items %}
-          <li>{% include_block item %}</li>
-        {% endfor %}
-      </ul>
+      {% include "wagtail_daisIE/blocks/megamenu.html" %}
     </div>
 
     <div class="navbar-end gap-2">

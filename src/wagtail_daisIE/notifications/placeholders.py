@@ -114,10 +114,17 @@ def render_placeholders(text, context, *, escape_literals=True, escape_values=Tr
 
 
 def render_expression(expression, context):
-    """Evaluate a single expression such as ``payload.title`` to a string."""
+    """Evaluate a single expression such as ``payload.title`` to a string.
+
+    A surrounding ``{{ ... }}`` is accepted and stripped, so braced values
+    (e.g. an action ``target_expression`` of ``{{ bread.pk }}``) and unbraced
+    values both work.
+    """
     if expression is None:
         return ""
     expression = str(expression).strip()
+    if expression.startswith("{{") and expression.endswith("}}"):
+        expression = expression[2:-2].strip()
     if not expression:
         return ""
     return _compile("{{ " + expression + " }}").render(

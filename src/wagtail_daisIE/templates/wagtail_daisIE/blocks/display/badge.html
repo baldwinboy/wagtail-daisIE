@@ -1,0 +1,4 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <span class="badge {{ value.color }} {{ value.style }} {{ value.size }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>{% daisie_markup value.text %}</span>
+{% endif %}

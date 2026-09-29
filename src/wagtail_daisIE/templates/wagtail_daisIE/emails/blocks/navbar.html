@@ -1,0 +1,2 @@
+{% load mjml notifications %}
+{% if audience_allowed %}<mj-navbar {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% for link in value.links %}<mj-navbar-link href="{{ link.href }}">{% daisie_text link.text %}</mj-navbar-link>{% endfor %}</mj-navbar>{% endif %}

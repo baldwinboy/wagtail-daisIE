@@ -1,0 +1,9 @@
+{% load wagtailcore_tags %}
+{% if override %}
+  <div
+    class="{{ container_css }}"
+    {% if page_background_css %}style="background: {{ page_background_css }}"{% endif %}
+  >
+    {% for block in body %}{% include_block block %}{% endfor %}
+  </div>
+{% endif %}

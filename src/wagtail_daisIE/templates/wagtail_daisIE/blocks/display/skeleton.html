@@ -1,0 +1,3 @@
+{% if audience_allowed %}
+  <div class="{{ value.shape }} {{ value.width }} {{ value.height }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}></div>
+{% endif %}

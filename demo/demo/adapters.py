@@ -6,7 +6,7 @@ emails, while any other adapter behaviour can still be overridden here.
 
 from allauth.account.adapter import DefaultAccountAdapter
 
-from wagtail_daisIE.notifications.allauth import DaisyUIAccountAdapterMixin
+from wagtail_daisIE.allauth_emails.allauth import DaisyUIAccountAdapterMixin
 
 
 class AccountAdapter(DaisyUIAccountAdapterMixin, DefaultAccountAdapter):

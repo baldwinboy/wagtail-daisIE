@@ -2,7 +2,6 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from wagtail_daisIE.choices import (
-    ASPECT_RATIO_CHOICES,
     BLOCK_HEIGHT_CHOICES,
     BLOCK_MAX_HEIGHT_CHOICES,
     BLOCK_MAX_WIDTH_CHOICES,
@@ -49,21 +48,18 @@ class InlineWidthBlock(SizeContextMixin, blocks.StructBlock):
         choices=INLINE_WIDTH_CHOICES,
         default="",
         required=False,
-        label=_("Width"),
         widget=DaisyUISliderWidget(),
     )
     min_width = blocks.ChoiceBlock(
         choices=INLINE_MIN_WIDTH_CHOICES,
         default="",
         required=False,
-        label=_("Min width"),
         widget=DaisyUISliderWidget(),
     )
     max_width = blocks.ChoiceBlock(
         choices=INLINE_MAX_WIDTH_CHOICES,
         default="",
         required=False,
-        label=_("Max width"),
         widget=DaisyUISliderWidget(),
     )
 
@@ -85,21 +81,18 @@ class InlineHeightBlock(SizeContextMixin, blocks.StructBlock):
         choices=INLINE_HEIGHT_CHOICES,
         default="",
         required=False,
-        label=_("Height"),
         widget=DaisyUISliderWidget(),
     )
     min_height = blocks.ChoiceBlock(
         choices=INLINE_MIN_HEIGHT_CHOICES,
         default="",
         required=False,
-        label=_("Min height"),
         widget=DaisyUISliderWidget(),
     )
     max_height = blocks.ChoiceBlock(
         choices=INLINE_MAX_HEIGHT_CHOICES,
         default="",
         required=False,
-        label=_("Max height"),
         widget=DaisyUISliderWidget(),
     )
 
@@ -121,8 +114,7 @@ class InlineSizeBlock(SizeContextMixin, blocks.StructBlock):
         choices=INLINE_SIZE_CHOICES,
         default="",
         required=False,
-        label=_("Size"),
-        help_text=_("Size for inline elements. Use width or height for more control."),
+        help_text=_("Size for inline elements."),
         widget=DaisyUISliderWidget(),
     )
     width = InlineWidthBlock()
@@ -146,21 +138,18 @@ class BlockWidthBlock(SizeContextMixin, blocks.StructBlock):
         choices=BLOCK_WIDTH_CHOICES,
         default="",
         required=False,
-        label=_("Width"),
         widget=DaisyUISliderWidget(),
     )
     min_width = blocks.ChoiceBlock(
         choices=BLOCK_MIN_WIDTH_CHOICES,
         default="",
         required=False,
-        label=_("Min width"),
         widget=DaisyUISliderWidget(),
     )
     max_width = blocks.ChoiceBlock(
         choices=BLOCK_MAX_WIDTH_CHOICES,
         default="",
         required=False,
-        label=_("Max width"),
         widget=DaisyUISliderWidget(),
     )
 
@@ -182,21 +171,18 @@ class BlockHeightBlock(SizeContextMixin, blocks.StructBlock):
         choices=BLOCK_HEIGHT_CHOICES,
         default="",
         required=False,
-        label=_("Height"),
         widget=DaisyUISliderWidget(),
     )
     min_height = blocks.ChoiceBlock(
         choices=BLOCK_MIN_HEIGHT_CHOICES,
         default="",
         required=False,
-        label=_("Min height"),
         widget=DaisyUISliderWidget(),
     )
     max_height = blocks.ChoiceBlock(
         choices=BLOCK_MAX_HEIGHT_CHOICES,
         default="",
         required=False,
-        label=_("Max height"),
         widget=DaisyUISliderWidget(),
     )
 
@@ -218,8 +204,7 @@ class AbstractBlockSizeBlock(blocks.StructBlock):
         choices=BLOCK_SIZE_CHOICES,
         default="",
         required=False,
-        label=_("Size"),
-        help_text=_("Size for block elements. Use width or height for more control."),
+        help_text=_("Size for block elements."),
         widget=DaisyUISliderWidget(),
     )
     width = BlockWidthBlock()
@@ -256,12 +241,7 @@ class MediaSizeBlock(MediaSizeContextMixin, AbstractBlockSizeBlock):
         default="",
         required=False,
         label=_("Aspect ratio"),
-        help_text=_(
-            "Aspect ratio, must be one of:"
-            "<ul>"
-            f"{''.join([f'<li>{r}</li>' for r in ASPECT_RATIO_CHOICES])}"
-            "</ul>"
-        ),
+        help_text=_("Aspect ratio: square, video or 16:9."),
         validators=[validate_aspect],
     )
 

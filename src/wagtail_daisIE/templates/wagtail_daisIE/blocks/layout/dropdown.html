@@ -1,0 +1,9 @@
+{% load wagtailcore_tags notifications %}
+{% if audience_allowed %}
+  <div class="dropdown {{ value.position }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <div tabindex="0" role="button" class="btn">{% daisie_markup value.trigger %}</div>
+    <ul tabindex="0" class="dropdown-content menu z-50 w-52 rounded-box bg-base-100 p-2 shadow">
+      {% for child in value.content %}<li>{% include_block child %}</li>{% endfor %}
+    </ul>
+  </div>
+{% endif %}

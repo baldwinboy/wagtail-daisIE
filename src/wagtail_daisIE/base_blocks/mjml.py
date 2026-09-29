@@ -63,7 +63,7 @@ for _n in (
     _SPACING_STEPS[_suffix] = f"{_n * 0.25:g}rem"
 
 # Tailwind v4 font sizes. ``2xl``..``9xl`` are the framework defaults;
-# ``10xl``..``42xl`` are declared in the package's ``source.css`` ``@theme``.
+# ``10xl``..``42xl`` are declared in the package's ``tailwind/input.css`` ``@theme``.
 _FONT_SIZES = {
     "xs": "0.75rem",
     "sm": "0.875rem",
@@ -146,7 +146,7 @@ _BUTTON_SIZES = {
 _HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 _CLASS_HEX = re.compile(r"\[(#[0-9a-fA-F]{3,8})\]")
 
-_COLOR_PREFIXES = ("bg-", "text-", "border-")
+_COLOR_PREFIXES = ("bg-", "text-", "border-", "decoration-")
 _GENERIC_FONTS = {
     "sans-serif",
     "serif",
@@ -301,6 +301,31 @@ def _letter_spacing(raw):
     return _LETTER_SPACING.get(raw.split("-", 1)[-1])
 
 
+def _text_decoration(raw):
+    if not raw:
+        return None
+    if raw in ("underline", "overline", "line-through", "no-underline"):
+        return raw
+    return None
+
+
+_DECORATION_THICKNESS = {
+    "decoration-0": "0",
+    "decoration-1": "1px",
+    "decoration-2": "2px",
+    "decoration-4": "4px",
+    "decoration-8": "8px",
+    "decoration-auto": "auto",
+    "decoration-from-font": "from-font",
+}
+
+
+def _decoration_thickness(raw):
+    if not raw:
+        return None
+    return _DECORATION_THICKNESS.get(raw)
+
+
 def _radius(raw):
     if not raw:
         return None
@@ -345,21 +370,6 @@ def build_spacing_style(value, theme=None):
     # CSS ``gap`` has no MJML attribute; spacing is handled by the calling
     # layout block (as padding on columns) rather than here.
     return {}
-
-
-def build_background_style(value, theme=None):
-    if not value:
-        return {}
-    out = {}
-    color = resolve_color(value.get("bg_color"), theme)
-    if color:
-        out["background-color"] = color
-    mode = value.get("bg_image")
-    if mode == "bg-cover":
-        out["background-size"] = "cover"
-    elif mode == "bg-contain":
-        out["background-size"] = "contain"
-    return out
 
 
 def build_border_style(value, theme=None):
@@ -434,10 +444,19 @@ def build_typography_style(value, theme=None):
         (value.get("text_align"), "text-align", _text_align),
         (value.get("line_height"), "line-height", _line_height),
         (value.get("letter_spacing"), "letter-spacing", _letter_spacing),
+        (value.get("text_decoration"), "text-decoration", _text_decoration),
+        (
+            value.get("decoration_thickness"),
+            "text-decoration-thickness",
+            _decoration_thickness,
+        ),
     ):
         resolved = resolver(raw)
         if resolved:
             out[prop] = resolved
+    decoration_color = resolve_color(value.get("decoration_color"), theme)
+    if decoration_color:
+        out["text-decoration-color"] = decoration_color
     return out
 
 
@@ -488,7 +507,6 @@ def build_table_style(value, theme=None):
 _DESIGN_STYLE_BUILDERS = {
     "size": build_size_style,
     "spacing": build_spacing_style,
-    "background": build_background_style,
     "border": build_border_style,
     "padding": build_padding_style,
     "margin": build_margin_style,

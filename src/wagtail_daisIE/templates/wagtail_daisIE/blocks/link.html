@@ -1,7 +1,7 @@
 {% load wagtail_daisIE_tags notifications %}
 {% if audience_allowed %}
   <a href="{{ link_url }}"
-     class="link{% if block_css %} {{ block_css }}{% endif %}"{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
-    {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_text value.text %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
+     class="link link-hover{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
+    {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
   </a>
 {% endif %}

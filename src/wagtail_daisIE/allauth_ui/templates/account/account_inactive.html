@@ -1,0 +1,18 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n %}
+{% load allauth %}
+{% block head_title %}
+    {% translate "Account Inactive" %}
+{% endblock head_title %}
+{% load allauth_ui %}
+{% block content %}
+{% if daisie_allauth_page_active %}{% daisie_allauth_page %}{% else %}
+{# daisie:verbatim:start #}
+{% element h1 %}
+        {% translate "Account Inactive" %}
+    {% endelement %}
+    {% element p %}
+        {% translate "This account is inactive." %}
+    {% endelement %}
+{# daisie:verbatim:end #}
+{% endif %}{% endblock content %}

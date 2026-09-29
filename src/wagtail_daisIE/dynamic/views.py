@@ -2,14 +2,65 @@
 
 from __future__ import annotations
 
+from django.contrib import messages
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
+from django.utils.html import escape, format_html
 from django.views.decorators.http import require_GET, require_POST
 
+from ..icons import render_icon, validate_icon
+from ..icons.value import IconValueError
+from .action_blocks import ALERT_TAGS
 from .actions import run_action
 from .feeds import render_feed
 from .registry import get_context_models, resolve_model
 from .resolvers import model_options
+
+
+#: Confirmation level keyword -> Django messages level constant.
+_MESSAGE_LEVELS = {
+    "success": messages.SUCCESS,
+    "warning": messages.WARNING,
+    "error": messages.ERROR,
+    "info": messages.INFO,
+}
+
+
+def _safe_icon_html(icon):
+    """Render a validated icon value to safe HTML, or an empty string."""
+    if not icon:
+        return ""
+    try:
+        validate_icon(icon)
+    except IconValueError:
+        return ""
+    return render_icon(icon)
+
+
+def _add_confirmation(request):
+    """Add the action block's confirmation to the messages framework.
+
+    Values arrive as hidden form fields, so they are treated as untrusted:
+    the text is escaped, the icon is validated, and only allowlisted alert
+    classes are accepted.
+    """
+    text = (request.POST.get("daisie_message") or "").strip()
+    if not text:
+        return
+    tags = [
+        tag
+        for tag in (request.POST.get("daisie_message_tags") or "").split()
+        if tag in ALERT_TAGS
+    ]
+    level = _MESSAGE_LEVELS.get(
+        (request.POST.get("daisie_message_level") or "").strip(), messages.INFO
+    )
+    safe = format_html(
+        '<span aria-hidden="true">{}</span>{}',
+        _safe_icon_html(request.POST.get("daisie_message_icon")),
+        escape(text),
+    )
+    messages.add_message(request, level, safe, extra_tags=" ".join(tags))
 
 
 def _allowed_labels():
@@ -54,6 +105,7 @@ def object_options(request):
 def action(request, action_key):
     """Run a configured action and follow its response."""
     response = run_action(request, action_key)
+    _add_confirmation(request)
     if response is None:
         return redirect(request.META.get("HTTP_REFERER") or "/")
     return response
@@ -62,7 +114,7 @@ def action(request, action_key):
 @require_GET
 def feed_items(request, pk):
     """Return a rendered slice of a feed (used by filters and infinite scroll)."""
-    from ..models import Feed
+    from ..feeds.models import Feed
 
     try:
         feed = Feed.objects.get(pk=pk)

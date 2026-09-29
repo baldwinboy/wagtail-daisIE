@@ -1,0 +1,12 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed and value.before and value.after %}
+  <figure class="diff {{ value.aspect }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <div class="diff-item-1">
+      {% image value.before width-1200 as before_img %}<img src="{{ before_img.url }}" alt="" />
+    </div>
+    <div class="diff-item-2">
+      {% image value.after width-1200 as after_img %}<img src="{{ after_img.url }}" alt="" />
+    </div>
+    <div class="diff-resizer"></div>
+  </figure>
+{% endif %}

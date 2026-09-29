@@ -1,8 +1,6 @@
-from django.urls import NoReverseMatch, reverse
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
-from wagtail.images.blocks import ImageBlock as WagtailImageBlock
-from wagtail.snippets.blocks import SnippetChooserBlock
 
 from wagtail_daisIE.blocks.accordion import AccordionBlock
 from wagtail_daisIE.blocks.inline import HeaderBlock, InlineTextBlock
@@ -11,17 +9,33 @@ from wagtail_daisIE.blocks.spaced import LinkListBlock
 from ..base_blocks import (
     AbstractLinkBlock,
     PublicThemedBlock,
-    PublicThemedMediaBlock,
     ThemedBlock,
 )
+from ..base_blocks.markup import strip_inline_markup
+from ..choicelist import ChoiceList
+from ..dynamic.action_blocks import ActionBlock
 from .cards import InlineCardBlock
 from .link import ButtonBlock, LabelLinkBlock
+from .media import ImageBlock
+from .registry import menu_block_contributions, register_menu_block
 
 
-class MenuLogo(PublicThemedMediaBlock):
-    image = WagtailImageBlock(
-        help_text=_("Logo image shown next to the wordmark."),
-    )
+SEARCH_FORM_METHOD_CHOICES = ChoiceList(
+    [
+        ("get", "GET"),
+        ("post", "POST"),
+    ],
+    "SEARCH_FORM_METHOD_CHOICES",
+)
+
+
+class MenuLogo(ImageBlock):
+    """A logo image with the same fields/design as the image block.
+
+    Rendered inline (next to the wordmark) and sized through the media design
+    ``size`` (e.g. a height class) rather than a hard-coded width.
+    """
+
     alt = blocks.CharBlock(
         max_length=255,
         required=False,
@@ -33,13 +47,14 @@ class MenuLogo(PublicThemedMediaBlock):
     )
 
     class Meta:
+        abstract = False
         icon = "image"
         group = _("Branding")
         collapsed = True
         template = "wagtail_daisIE/blocks/menu_logo.html"
         form_layout = blocks.BlockGroup(
-            children=["image", "alt"],
-            settings=["design"],
+            children=["image", "image_source", "image_expression", "alt"],
+            settings=["design", "audience", "caption", "attribution"],
         )
 
 
@@ -49,7 +64,7 @@ class MenuBranding(AbstractLinkBlock, PublicThemedBlock):
     logo = MenuLogo(required=False)
     logo_after = blocks.BooleanBlock(
         default=False,
-        label=_("Logo after"),
+        required=False,
         help_text=_("Place the logo after the wordmark"),
     )
     wordmark = InlineTextBlock(required=False)
@@ -72,7 +87,9 @@ class MenuBranding(AbstractLinkBlock, PublicThemedBlock):
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
-        context["fallback_alt"] = (value.get("wordmark") or {}).get("text", "")
+        context["fallback_alt"] = strip_inline_markup(
+            (value.get("wordmark") or {}).get("text", "")
+        )
         return context
 
 
@@ -80,20 +97,17 @@ class MenuSearchBoxBlock(ThemedBlock):
     search_url = blocks.URLBlock(
         required=False,
         default="/search/",
-        label=_("Search URL"),
     )
     search_parameter = blocks.CharBlock(
         max_length=64,
         default="query",
-        label=_("Search parameter"),
     )
     search_placeholder = blocks.CharBlock(
         max_length=128,
         default=_("Search"),
-        label=_("Search placeholder"),
     )
     method = blocks.ChoiceBlock(
-        choices=[("get", "GET"), ("post", "POST")],
+        choices=SEARCH_FORM_METHOD_CHOICES,
         default="get",
         required=False,
         label=_("Form method"),
@@ -124,101 +138,6 @@ class MenuSearchBoxBlock(ThemedBlock):
         }
 
 
-class MenuNewsletterBlock(ThemedBlock):
-    mode = blocks.ChoiceBlock(
-        choices=[
-            ("external", _("External URL")),
-            ("daisie", _("Daisie audience")),
-        ],
-        default="external",
-        label=_("Mode"),
-        help_text=_("Post to an external service or to a Daisie audience."),
-    )
-    action = blocks.URLBlock(
-        required=False,
-        blank=True,
-        label=_("Form action URL"),
-        help_text=_("Used when the mode is an external URL."),
-    )
-    target_audience = SnippetChooserBlock(
-        "wagtail_daisIE.Audience",
-        required=False,
-        label=_("Audience"),
-        help_text=_("Used when the mode is a Daisie audience."),
-    )
-    method = blocks.ChoiceBlock(
-        choices=[("post", "POST"), ("get", "GET")],
-        default="post",
-        required=False,
-        label=_("Form method"),
-    )
-    email_field = blocks.CharBlock(
-        max_length=64,
-        default="email",
-        label=_("Email field name"),
-    )
-    placeholder = blocks.CharBlock(
-        max_length=128,
-        default=_("Enter your email"),
-        label=_("Placeholder"),
-    )
-    button_label = blocks.CharBlock(
-        max_length=64,
-        default=_("Subscribe"),
-        label=_("Button label"),
-    )
-    success_message = blocks.CharBlock(
-        max_length=255,
-        required=False,
-        blank=True,
-        label=_("Success message"),
-    )
-
-    def get_context(self, value, parent_context=None):
-        context = super().get_context(value, parent_context)
-        value = value or {}
-        context["newsletter_action"] = value.get("action") or ""
-        context["audience_id"] = None
-        if (value.get("mode") or "external") == "daisie":
-            try:
-                context["newsletter_action"] = reverse(
-                    "wagtail_daisIE_notifications:subscribe"
-                )
-            except NoReverseMatch:
-                context["newsletter_action"] = ""
-            context["audience_id"] = getattr(value.get("target_audience"), "pk", None)
-        return context
-
-    class Meta:
-        icon = "mail"
-        label = _("Newsletter")
-        group = _("Menu items")
-        collapsed = True
-        label_format = "Newsletter"
-        form_layout = blocks.BlockGroup(
-            children=[
-                "mode",
-                "action",
-                "target_audience",
-                "method",
-                "email_field",
-                "placeholder",
-                "button_label",
-                "success_message",
-            ],
-            settings=["design", "audience"],
-        )
-        template = "wagtail_daisIE/blocks/menu_newsletter.html"
-        preview_template = "wagtail_daisIE/blocks/menu_newsletter.html"
-        preview_value = {
-            "mode": "external",
-            "action": "/subscribe/",
-            "method": "post",
-            "placeholder": "Enter your email",
-            "button_label": "Subscribe",
-        }
-
-
 MENU_ITEM_BLOCKS = [
     ("link", LabelLinkBlock()),
     ("button", ButtonBlock()),
@@ -228,8 +147,15 @@ MENU_ITEM_BLOCKS = [
     ("link_list", LinkListBlock()),
     ("header", HeaderBlock()),
     ("text", InlineTextBlock()),
-    ("newsletter", MenuNewsletterBlock()),
+    ("action", ActionBlock()),
 ]
+
+if "wagtail_daisIE.notifications" in settings.INSTALLED_APPS:
+    from ..notifications.blocks import MenuNewsletterBlock
+
+    register_menu_block("newsletter", MenuNewsletterBlock())
+
+MENU_ITEM_BLOCKS.extend(menu_block_contributions())
 
 
 class MenuItemStreamBlock(blocks.StreamBlock):

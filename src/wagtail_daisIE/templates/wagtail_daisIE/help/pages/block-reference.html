@@ -1,0 +1,21 @@
+{% load i18n %}
+<p>{% trans "Every block available in the page body, grouped by category." %}</p>
+{% for group in block_reference %}
+    <h3>{{ group.group }}</h3>
+    <dl>
+        {% for block in group.blocks %}
+            <dt>
+                <strong>{{ block.label }}</strong>
+                <code>{{ block.name }}</code>
+            </dt>
+            <dd>{{ block.description }}</dd>
+        {% endfor %}
+    </dl>
+    {% if group.howto %}
+        <p>
+            <a href="{% url 'wagtail_daisIE:guide-page' group.howto %}">
+                {% trans "How to use these blocks" %}
+            </a>
+        </p>
+    {% endif %}
+{% endfor %}

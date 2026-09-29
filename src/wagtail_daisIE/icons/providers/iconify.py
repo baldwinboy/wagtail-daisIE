@@ -18,16 +18,51 @@ ICONIFY_ICON_SCRIPT = (
 )
 
 _SVG_TAG = re.compile(r"<svg\b[^>]*>", re.IGNORECASE)
-_SCRIPT = re.compile(r"<script\b.*?</script>", re.IGNORECASE | re.DOTALL)
-_EVENT_ATTR = re.compile(r"\son\w+\s*=\s*\"[^\"]*\"", re.IGNORECASE)
+#: ``<script>`` with a body, then any leftover opener (unterminated or
+#: self-closing) so a truncated response cannot smuggle one through.
+_SCRIPT = re.compile(
+    r"<script\b[^>]*>.*?</script\s*>|<script\b[^>]*/?>",
+    re.IGNORECASE | re.DOTALL,
+)
+#: ``on*`` handlers, in any quoting style (``"``, ``'`` or bare).
+_EVENT_ATTR = re.compile(
+    r"\son\w+\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+)",
+    re.IGNORECASE,
+)
+#: Anything that can navigate or embed: ``href``/``src``/``xlink:href``.
+_URL_ATTR = re.compile(
+    r"\s(?:xlink:)?(?:href|src)\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+)",
+    re.IGNORECASE,
+)
 _ID_ATTR = re.compile(r'\s+id="[^"]*"')
+#: SVG elements that can host script or external content. Paired forms are
+#: removed with their body first, then any leftover open/void tag.
+_FOREIGN_TAGS = "foreignObject|iframe|embed|object|use|animate|set"
+_FOREIGN_PAIRED = re.compile(
+    rf"<\s*(?:{_FOREIGN_TAGS})\b[^>]*>.*?<\s*/\s*(?:{_FOREIGN_TAGS})\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_FOREIGN_VOID = re.compile(
+    rf"<\s*/?\s*(?:{_FOREIGN_TAGS})\b[^>]*>",
+    re.IGNORECASE,
+)
 
 
 def _sanitize_svg(svg):
+    """Strip anything executable from remote SVG before it is inlined.
+
+    The markup is served straight from a third-party API, so it is treated as
+    untrusted: scripts, event handlers, external references and the elements
+    that can host them are removed rather than escaped, and the whole document
+    is discarded if it is not an SVG at all.
+    """
     if not svg or "<svg" not in svg:
         return ""
+    svg = _FOREIGN_PAIRED.sub("", svg)
+    svg = _FOREIGN_VOID.sub("", svg)
     svg = _SCRIPT.sub("", svg)
     svg = _EVENT_ATTR.sub("", svg)
+    svg = _URL_ATTR.sub("", svg)
     return svg
 
 
@@ -35,7 +70,7 @@ def _apply_attrs(svg, size=None, color=None):
     style = style_value(size, color)
     attrs = 'aria-hidden="true" focusable="false"'
     if style:
-        attrs += f' style="{style}"'
+        attrs += f' style="{escape(style)}"'
 
     def _replace(match):
         tag = _ID_ATTR.sub("", match.group(0))
@@ -101,6 +136,11 @@ class IconifyProvider(IconProvider):
         if not svg:
             return ""
         return _apply_attrs(svg, size=size, color=color)
+
+    def email_svg(self, name, color=None):
+        # Email clients cannot render the ``<iconify-icon>`` web component, so
+        # always fall back to the sanitised inline SVG.
+        return self._get_svg(name)
 
     def head_assets(self):
         if self.mode == "component":

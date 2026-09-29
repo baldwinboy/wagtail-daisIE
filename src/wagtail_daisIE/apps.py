@@ -1,34 +1,13 @@
 import logging
 
 from django.apps import AppConfig
-from django.conf import settings
-from django.db.models.signals import post_migrate
 
 
 logger = logging.getLogger(__name__)
 
 
-def _seed_icon_sources(sender, **kwargs):
-    """Ensure the default icon sources exist after migrations."""
-    from .models import DaisyUIIconSource
-
-    try:
-        DaisyUIIconSource.ensure_defaults()
-    except Exception:  # pragma: no cover - table may not be ready yet
-        logger.debug("Could not seed default icon sources", exc_info=True)
-
-
-def _seed_allauth_overrides(sender, **kwargs):
-    """Ensure an override row exists for every discovered allauth email."""
-    from .notifications.models import AllauthEmailOverride
-
-    try:
-        AllauthEmailOverride.ensure_defaults()
-    except Exception:  # pragma: no cover - table may not be ready yet
-        logger.debug("Could not seed allauth email overrides", exc_info=True)
-
-
 class WagtailDaisIEAppConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
     label = "wagtail_daisIE"
     name = "wagtail_daisIE"
     verbose_name = "Wagtail DaisyUI Interface Editor"
@@ -40,14 +19,6 @@ class WagtailDaisIEAppConfig(AppConfig):
         # Register context-model placeholder documentation for admin help.
         from .dynamic import panels  # noqa: F401
 
-        # Connect notification bridge signals from project settings.
-        try:
-            from .notifications import bridges as notification_bridges
-
-            notification_bridges.connect_signals()
-        except Exception:
-            logger.exception("Could not connect notification bridges")
-
         # Connect model detail-page bridges from project settings.
         try:
             from .detail_pages import bridges as detail_bridges
@@ -56,22 +27,12 @@ class WagtailDaisIEAppConfig(AppConfig):
         except Exception:
             logger.exception("Could not connect detail page bridges")
 
-        # Opt-in DaisyUI styling for allauth pages/forms.
-        if getattr(settings, "WAGTAIL_DAISIE_ALLAUTH_UI", False):
-            from .allauth_ui import register_template_dir
+        # Connect approval workflow callbacks from project settings.
+        try:
+            from .approval import bridges as approval_bridges
 
-            register_template_dir()
-
-        post_migrate.connect(
-            _seed_icon_sources,
-            sender=self,
-            dispatch_uid="wagtail_daisIE.seed_icon_sources",
-        )
-
-        post_migrate.connect(
-            _seed_allauth_overrides,
-            sender=self,
-            dispatch_uid="wagtail_daisIE.seed_allauth_overrides",
-        )
+            approval_bridges.connect_signals()
+        except Exception:
+            logger.exception("Could not connect approval workflow bridges")
 
         super().ready()

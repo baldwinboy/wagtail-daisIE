@@ -4,6 +4,9 @@
 (bridges), and lets admins schedule campaigns to selected audiences. Email
 templates themselves are documented in [emails.md](emails.md).
 
+Requires the opt-in `wagtail_daisIE.notifications` app and the
+`[notifications]` extra (`pip install "wagtail-daisIE[notifications]"`).
+
 Overview of the admin menu:
 
 * **Emails → Templates** — build and preview `EmailTemplate` snippets.

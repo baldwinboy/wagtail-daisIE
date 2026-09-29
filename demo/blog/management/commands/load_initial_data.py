@@ -36,15 +36,15 @@ from blog.models import (
     BlogPage,
     Bread,
     BreadDetailTemplate,
-    BreadSuggestionFormField,
+    BreadIndexPage,
     BreadSuggestionFormPage,
     Person,
 )
+from wagtail_daisIE.allauth_emails.models import AllauthEmailOverride
+from wagtail_daisIE.errors.models import ErrorPage
+from wagtail_daisIE.feeds.models import Feed
+from wagtail_daisIE.menus.models import DaisyUIMenu
 from wagtail_daisIE.models import (
-    AllauthEmailOverride,
-    Audience,
-    AudienceMember,
-    DaisyUIMenu,
     DaisyUITheme,
     DaisyUIThemeBackground,
     DaisyUIThemeColors,
@@ -54,9 +54,11 @@ from wagtail_daisIE.models import (
     DaisyUIThemeFonts,
     DaisyUIThemeRadii,
     DaisyUIThemeSizes,
+)
+from wagtail_daisIE.notifications.models import (
+    Audience,
+    AudienceMember,
     EmailTemplate,
-    ErrorPage,
-    Feed,
 )
 
 
@@ -89,9 +91,31 @@ DARK_MODE_DEFAULT_COLORS: dict[str, str] = {
     "error_content": "#ef4444",
 }
 
-GOOGLE_FONT_CDN = (
-    "https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@400;600;700&display=swap"
-)
+GOOGLE_FONT_CDN = "https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@400;600;700&display=swap"
+
+# Palette approximating the Wagtail Bakery demo (:root variables).
+BAKERY_COLORS: dict[str, str] = {
+    "primary": "#c55302",
+    "primary_content": "#ffffff",
+    "secondary": "#87744f",
+    "secondary_content": "#ffffff",
+    "accent": "#825600",
+    "accent_content": "#f5f3e9",
+    "neutral": "#333333",
+    "neutral_content": "#f5f3e9",
+    "base_100": "#ffffff",
+    "base_200": "#f5f3e9",
+    "base_300": "#e1dcd3",
+    "base_content": "#333333",
+    "info": "#00bafe",
+    "info_content": "#042e49",
+    "success": "#00d390",
+    "success_content": "#004c39",
+    "warning": "#fcb700",
+    "warning_content": "#793205",
+    "error": "#ff637d",
+    "error_content": "#4d0218",
+}
 
 
 def _hexa(value: str) -> str:
@@ -177,7 +201,9 @@ def _wagtail_image_from_spec(
     img.file.save(path.name, django_file, save=False)
     img.save()
 
-    Image.objects.filter(pk=img.pk).update(created_at=parse_datetime(spec["created_at"]))
+    Image.objects.filter(pk=img.pk).update(
+        created_at=parse_datetime(spec["created_at"])
+    )
 
     cache[cache_key] = img
     return img
@@ -259,6 +285,29 @@ def _ensure_theme(
     if created or force or not theme.background.exists():
         DaisyUIThemeBackground.objects.create(theme=theme)
 
+    if created or force or not theme.main_design:
+        theme.main_design = _as_stream_data(
+            [
+                {
+                    "type": "main",
+                    "value": {
+                        "layout": "column",
+                        "size": {
+                            "width": {"width": "w-full", "max_width": "max-w-6xl"}
+                        },
+                        "margin": {"left": "ml-auto", "right": "mr-auto"},
+                        "padding": {
+                            "top": "pt-8",
+                            "right": "pr-4",
+                            "bottom": "pb-8",
+                            "left": "pl-4",
+                        },
+                    },
+                }
+            ]
+        )
+        theme.save()
+
     if with_fonts and (created or force or not theme.fonts.exists()):
         fonts = DaisyUIThemeFonts.objects.create(theme=theme)
         DaisyUIThemeFontFamily.objects.create(
@@ -279,17 +328,25 @@ def _ensure_theme(
     return theme
 
 
-def _stream_value(model, field_name, data):
-    """Convert a list of ``{"type", "value"}`` dicts (or tuples) into a bound
-    ``StreamValue`` so nested choosers are converted eagerly before saving."""
-    if not isinstance(data, list):
-        return data
-    stream_block = model._meta.get_field(field_name).stream_block
-    tuples = [
-        (item["type"], item["value"]) if isinstance(item, dict) else item
-        for item in data
-    ]
-    return stream_block.to_python(tuples)
+def _as_stream_data(value):
+    """Recursively convert ``{"type", "value"}`` dicts to ``(type, value)`` tuples.
+
+    Wagtail's ``StreamBlock.to_python`` normalises the tuple form at every
+    nesting level, but the dict form is left as raw data for nested streams,
+    so chooser instances (pages, snippets) survive un-prepared and fail JSON
+    serialisation on save. Tuples must be recursed into as well, since some
+    callers (e.g. the navbar ``branding`` argument) hand us tuple form with
+    raw dicts nested inside.
+    """
+    if isinstance(value, dict):
+        if "type" in value and "value" in value:
+            return (value["type"], _as_stream_data(value["value"]))
+        return {key: _as_stream_data(val) for key, val in value.items()}
+    if isinstance(value, list):
+        return [_as_stream_data(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_as_stream_data(item) for item in value)
+    return value
 
 
 def _ensure_menu(
@@ -301,12 +358,14 @@ def _ensure_menu(
     **defaults: Any,
 ) -> DaisyUIMenu:
     """Create (or refresh) a demo menu snippet."""
-    menu, created = DaisyUIMenu.objects.get_or_create(name=name, defaults={"layout": layout})
+    menu, created = DaisyUIMenu.objects.get_or_create(
+        name=name, defaults={"layout": layout}
+    )
     if created or force:
         menu.layout = layout
         for field, field_value in defaults.items():
-            setattr(menu, field, _stream_value(menu, field, field_value))
-        menu.body = _stream_value(menu, "body", body)
+            setattr(menu, field, _as_stream_data(field_value))
+        menu.body = _as_stream_data(body)
         menu.save()
     return menu
 
@@ -386,7 +445,7 @@ def _ensure_error_pages():
         page, _ = ErrorPage.objects.update_or_create(
             status_code=code, defaults={"title": title, "is_active": True}
         )
-        page.body = [{"type": "rich_text", "value": {"text": text}}]
+        page.body = _as_stream_data([{"type": "rich_text", "value": {"text": text}}])
         page.save()
 
 
@@ -402,7 +461,7 @@ def _ensure_demo_page(
     if theme is not None:
         page.page_theme = theme
     home.add_child(instance=page)
-    page.body = body
+    page.body = _as_stream_data(body)
     if audience:
         page.audience = [{"type": "audience", "value": {"audience": audience}}]
     page.audience_denied = denied
@@ -443,9 +502,7 @@ def _ensure_form_page(home, *, force=False):
     page.error_body = [
         {
             "type": "rich_text",
-            "value": {
-                "text": "<p>Please fix the errors below and submit again.</p>"
-            },
+            "value": {"text": "<p>Please fix the errors below and submit again.</p>"},
         }
     ]
     page.save()
@@ -465,17 +522,17 @@ def _ensure_form_page(home, *, force=False):
     )
     # Interleave the fields with content blocks: a heading, the title field,
     # some rich text, then the description field.
-    page.body = [
-        {"type": "header", "value": {"text": "Suggest a bread"}},
-        {"type": "form_field", "value": "title"},
-        {
-            "type": "rich_text",
-            "value": {
-                "text": "<p>Tell us what bread we should bake next.</p>"
+    page.body = _as_stream_data(
+        [
+            {"type": "header", "value": {"text": "Suggest a bread"}},
+            {"type": "form_field", "value": "title"},
+            {
+                "type": "rich_text",
+                "value": {"text": "<p>Tell us what bread we should bake next.</p>"},
             },
-        },
-        {"type": "form_field", "value": "description"},
-    ]
+            {"type": "form_field", "value": "description"},
+        ]
+    )
     page.save()
     page.save_revision().publish()
     return page
@@ -494,7 +551,7 @@ def _ensure_showcase(theme, home, *, force=False):
         theme,
         "Password reset",
         "Reset your password",
-        '<p>Use this link to reset your password: '
+        "<p>Use this link to reset your password: "
         '<a href="{{ payload.password_reset_url }}">reset</a></p>',
         force=force,
     )
@@ -585,29 +642,170 @@ def _ensure_showcase(theme, home, *, force=False):
     _ensure_form_page(home, force=force)
 
 
-def _ensure_bread_detail_template(home, theme, *, force=False):
-    existing = (
-        BreadDetailTemplate.objects.child_of(home).filter(slug="our-breads").first()
+def _action_value(
+    action,
+    *,
+    text,
+    target="",
+    clickable=False,
+    color="",
+    size="",
+    style="",
+    confirm_text="",
+    confirm_icon="",
+    confirm_color="",
+    confirm_style="",
+    confirm_direction="",
+):
+    """Build an ``ActionBlock`` value (button subclass + optional confirmation)."""
+    value = {
+        "action": action,
+        "target_expression": target,
+        "button": {
+            "text": text,
+            "icon": "",
+            "icon_after": True,
+            "make_parent_clickable": clickable,
+            "design": {
+                "button_appearance": {
+                    "normal": {"color": color, "size": size, "style": style}
+                }
+            },
+            "audience": {},
+        },
+    }
+    if confirm_text:
+        value["confirmation"] = {
+            "text": confirm_text,
+            "icon": confirm_icon,
+            "color": confirm_color,
+            "style": confirm_style,
+            "direction": confirm_direction,
+        }
+    return value
+
+
+def _dynamic_image(expression):
+    return {
+        "type": "image",
+        "value": {
+            "image": None,
+            "image_source": "dynamic",
+            "image_expression": expression,
+            "design": {},
+            "audience": {},
+        },
+    }
+
+
+def _breads_feed():
+    return _ensure_feed(
+        "Breads feed",
+        "bread",
+        order_by="name",
+        page_size=6,
+        empty_message="No breads yet.",
+        item=[
+            {
+                "type": "card",
+                "value": {
+                    "content": [
+                        _dynamic_image("{{ bread.image }}"),
+                        {
+                            "type": "header",
+                            "value": {
+                                "text": "{{ bread.name }}",
+                                "design": {},
+                                "audience": {},
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "value": {
+                                "text": "{{ bread.description }}",
+                                "design": {},
+                                "audience": {},
+                            },
+                        },
+                        {
+                            "type": "action",
+                            "value": _action_value(
+                                "basket.add",
+                                text="Add to basket",
+                                target="{{ bread.pk }}",
+                                color="btn-primary",
+                                size="btn-sm",
+                                confirm_text="Added to your basket",
+                                confirm_icon="mdi:cart-plus",
+                                confirm_color="alert-success",
+                            ),
+                        },
+                    ],
+                    "design": {},
+                    "alignment": {},
+                    "audience": {},
+                },
+            }
+        ],
     )
+
+
+def _ensure_bread_index_page(home, theme, *, force=False):
+    existing = BreadIndexPage.objects.child_of(home).filter(slug="breads").first()
     if existing and not force:
         return existing
     if existing:
         existing.delete()
-    page = BreadDetailTemplate(title="Breads", slug="our-breads", detail_key="bread")
+    page = BreadIndexPage(title="Breads", slug="breads")
     home.add_child(instance=page)
     page.page_theme = theme
-    page.context_bindings = [
-        {
-            "type": "binding",
-            "value": {
-                "key": "bread",
-                "mode": "url",
-                "lookup_in": "path",
-                "lookup_field": "slug",
-                "lookup_pattern": r"[\w-]+",
-            },
-        }
-    ]
+    bread_feed = _breads_feed()
+    page.body = _as_stream_data(
+        [
+            {
+                "type": "feed",
+                "value": {
+                    "feed": bread_feed,
+                    "design": {},
+                    "audience": {},
+                    "layout": {},
+                },
+            }
+        ]
+    )
+    page.save()
+    page.save_revision().publish()
+    return page
+
+
+def _ensure_bread_detail_template(home, index, theme, *, force=False):
+    existing = (
+        BreadDetailTemplate.objects.child_of(home).filter(detail_key="bread").first()
+    )
+    if existing and not force:
+        existing.parent_page = index
+        existing.save()
+        return existing
+    if existing:
+        existing.delete()
+    page = BreadDetailTemplate(title="Bread page design", detail_key="bread")
+    home.add_child(instance=page)
+    page.page_theme = theme
+    page.parent_page = index
+    page.context_bindings = _as_stream_data(
+        [
+            {
+                "type": "binding",
+                "value": {
+                    "key": "bread",
+                    "mode": "url",
+                    "lookup_in": "path",
+                    "lookup_field": "pk",
+                    "lookup_pattern": r"[\w-]+",
+                },
+            }
+        ]
+    )
     page.save()
     page.save_revision().publish()
     return page
@@ -628,12 +826,42 @@ def _ensure_breads(load_image):
     if Bread.objects.exists():
         return
     specs = [
-        ("Seeded Harvest Loaf", "A nutty, seeded sourdough.", "seeded-harvest-loaf", "2026-02-03"),
-        ("Dark Rye Sourdough", "Dense, malty rye with a crisp crust.", "dark-rye-sourdough", "2026-02-05"),
-        ("Everyday White", "A soft, dependable white loaf.", "dark-rye-sourdough", "2026-02-09"),
-        ("Sliced Sandwich Loaf", "Even slices, perfect for lunch.", "seeded-harvest-loaf", "2026-02-12"),
-        ("Olive & Rosemary", "Fragrant herbs and briny olives.", "dark-rye-sourdough", "2026-02-16"),
-        ("Weekend Focaccia", "Dimpled, olive-oil-rich and crisp.", "seeded-harvest-loaf", "2026-02-21"),
+        (
+            "Seeded Harvest Loaf",
+            "A nutty, seeded sourdough.",
+            "seeded-harvest-loaf",
+            "2026-02-03",
+        ),
+        (
+            "Dark Rye Sourdough",
+            "Dense, malty rye with a crisp crust.",
+            "dark-rye-sourdough",
+            "2026-02-05",
+        ),
+        (
+            "Everyday White",
+            "A soft, dependable white loaf.",
+            "dark-rye-sourdough",
+            "2026-02-09",
+        ),
+        (
+            "Sliced Sandwich Loaf",
+            "Even slices, perfect for lunch.",
+            "seeded-harvest-loaf",
+            "2026-02-12",
+        ),
+        (
+            "Olive & Rosemary",
+            "Fragrant herbs and briny olives.",
+            "dark-rye-sourdough",
+            "2026-02-16",
+        ),
+        (
+            "Weekend Focaccia",
+            "Dimpled, olive-oil-rich and crisp.",
+            "seeded-harvest-loaf",
+            "2026-02-21",
+        ),
     ]
     for name, description, image_key, added_on in specs:
         try:
@@ -686,71 +914,40 @@ def _ensure_data_pages(theme, home, *, force=False):
         empty_message="Your basket is empty.",
         item=[
             {
-                "type": "header",
-                "value": {"text": "{{ basket.name }}", "design": {}, "audience": {}},
-            },
-            {
-                "type": "action",
+                "type": "card",
                 "value": {
-                    "action": "basket.remove",
-                    "label": "Remove",
-                    "button_class": "btn btn-sm btn-outline",
-                    "target_expression": "basket.pk",
-                    "confirm": "",
+                    "content": [
+                        {
+                            "type": "header",
+                            "value": {
+                                "text": "{{ basket.name }}",
+                                "design": {},
+                                "audience": {},
+                            },
+                        },
+                        {
+                            "type": "action",
+                            "value": _action_value(
+                                "basket.remove",
+                                text="Remove",
+                                target="{{ basket.pk }}",
+                                color="btn-outline",
+                                size="btn-sm",
+                            ),
+                        },
+                    ],
                     "design": {},
+                    "alignment": {},
                     "audience": {},
                 },
-            },
-        ],
-    )
-    breads_feed = _ensure_feed(
-        "Breads feed",
-        "bread",
-        order_by="name",
-        page_size=6,
-        empty_message="No breads yet.",
-        item=[
-            {
-                "type": "image",
-                "value": {
-                    "image": None,
-                    "image_source": "dynamic",
-                    "image_expression": "bread.image",
-                    "design": {},
-                    "audience": {},
-                },
-            },
-            {
-                "type": "header",
-                "value": {"text": "{{ bread.name }}", "design": {}, "audience": {}},
-            },
-            {
-                "type": "text",
-                "value": {
-                    "text": "{{ bread.description }}",
-                    "design": {},
-                    "audience": {},
-                },
-            },
-            {
-                "type": "action",
-                "value": {
-                    "action": "basket.add",
-                    "label": "Add to basket",
-                    "button_class": "btn btn-primary btn-sm",
-                    "target_expression": "bread.pk",
-                    "confirm": "",
-                    "design": {},
-                    "audience": {},
-                },
-            },
+            }
         ],
     )
 
     _ensure_demo_page(
         home,
-        "Breads and basket",
-        "breads",
+        "Basket",
+        "basket",
         [
             {
                 "type": "rich_text",
@@ -763,23 +960,19 @@ def _ensure_data_pages(theme, home, *, force=False):
             },
             {
                 "type": "feed",
-                "value": {"feed": basket_feed.pk, "design": {}, "audience": {}},
+                "value": {"feed": basket_feed, "design": {}, "audience": {}},
             },
             {
                 "type": "action",
-                "value": {
-                    "action": "basket.clear",
-                    "label": "Clear basket",
-                    "button_class": "btn btn-warning btn-sm",
-                    "target_expression": "",
-                    "confirm": "Empty your basket?",
-                    "design": {},
-                    "audience": {},
-                },
-            },
-            {
-                "type": "feed",
-                "value": {"feed": breads_feed.pk, "design": {}, "audience": {}},
+                "value": _action_value(
+                    "basket.clear",
+                    text="Clear basket",
+                    color="btn-warning",
+                    size="btn-sm",
+                    confirm_text="Your basket is now empty",
+                    confirm_icon="mdi:basket-off",
+                    confirm_color="alert-warning",
+                ),
             },
         ],
         theme=theme,
@@ -793,9 +986,7 @@ def _ensure_data_pages(theme, home, *, force=False):
         [
             {
                 "type": "rich_text",
-                "value": {
-                    "text": "<p>Pick a day to see which breads were added.</p>"
-                },
+                "value": {"text": "<p>Pick a day to see which breads were added.</p>"},
             },
             {
                 "type": "calendar",
@@ -805,7 +996,11 @@ def _ensure_data_pages(theme, home, *, force=False):
                     "event": [
                         {
                             "type": "header",
-                            "value": {"text": "{{ bread.name }}", "design": {}, "audience": {}},
+                            "value": {
+                                "text": "{{ bread.name }}",
+                                "design": {},
+                                "audience": {},
+                            },
                         },
                         {
                             "type": "text",
@@ -817,15 +1012,13 @@ def _ensure_data_pages(theme, home, *, force=False):
                         },
                         {
                             "type": "action",
-                            "value": {
-                                "action": "basket.add",
-                                "label": "Add",
-                                "button_class": "btn btn-sm btn-primary",
-                                "target_expression": "bread.pk",
-                                "confirm": "",
-                                "design": {},
-                                "audience": {},
-                            },
+                            "value": _action_value(
+                                "basket.add",
+                                text="Add",
+                                target="{{ bread.pk }}",
+                                color="btn-primary",
+                                size="btn-sm",
+                            ),
                         },
                     ],
                     "limit": 200,
@@ -838,6 +1031,118 @@ def _ensure_data_pages(theme, home, *, force=False):
         theme=theme,
         force=force,
     )
+
+
+def _home_body(data, blog_index, load_image):
+    """Compose the home body: hero card, paragraph, then the blog feed."""
+    spec = data["home"]
+    hero = spec.get("hero") or {}
+
+    hero_image = None
+    if hero.get("image"):
+        try:
+            hero_image = load_image(hero["image"])
+        except Exception:
+            hero_image = None
+
+    background = [
+        (
+            "layer",
+            {
+                "layer_type": "gradient",
+                "gradient_shape": "linear",
+                "gradient_angle": 0,
+                "gradient_stops": [
+                    {"bg_color": "#000000", "position": 0},
+                    {"bg_color": "#00000000", "position": 100},
+                ],
+            },
+        )
+    ]
+    if hero_image is not None:
+        background.append(
+            (
+                "layer",
+                {
+                    "layer_type": "image",
+                    "image": hero_image,
+                    "position": "center",
+                    "size": "cover",
+                    "repeat": False,
+                },
+            )
+        )
+
+    content = [
+        (
+            "header",
+            {
+                "text": spec.get("title", "Home"),
+                "design": {"typography": {"text_color": "text-primary-content"}},
+                "audience": {},
+            },
+        )
+    ]
+    if hero.get("lead"):
+        content.append(
+            (
+                "text",
+                {
+                    "text": hero["lead"],
+                    "design": {"typography": {"text_color": "text-primary-content"}},
+                    "audience": {},
+                },
+            )
+        )
+    if hero.get("cta_text"):
+        content.append(
+            (
+                "button",
+                {
+                    "text": hero["cta_text"],
+                    "icon": "",
+                    "icon_after": True,
+                    "make_parent_clickable": False,
+                    "destination": [("link_page", blog_index)],
+                    "open_in_new_tab": False,
+                    "design": {},
+                    "audience": {},
+                },
+            )
+        )
+
+    body = [
+        (
+            "hero",
+            {
+                "overlay": True,
+                "full_width": True,
+                "align": "left",
+                "content": content,
+                "design": {
+                    "background": background,
+                    "size": {"height": {"height": "h-96"}},
+                },
+                "alignment": {},
+                "audience": {},
+            },
+        )
+    ]
+    body += _blocks_to_stream(spec["body"], load_image=load_image)
+
+    section = spec.get("featured_section") or {}
+    if section.get("title"):
+        body.append(
+            (
+                "header",
+                {"text": section["title"], "design": {}, "audience": {}},
+            )
+        )
+
+    feed = Feed.objects.filter(name="Blog feed").first()
+    if feed is not None:
+        body.append(("feed", {"feed": feed, "design": {}, "audience": {}}))
+    return body
 
 
 class Command(BaseCommand):
@@ -858,9 +1163,7 @@ class Command(BaseCommand):
         force = options["force"]
         data = _load_content()
 
-        collection_names = {
-            int(k): v for k, v in data["collections"].items()
-        }
+        collection_names = {int(k): v for k, v in data["collections"].items()}
 
         # Themes first.
         light_theme = _ensure_theme("light", default=True, force=force)
@@ -870,6 +1173,7 @@ class Command(BaseCommand):
             colors=DARK_MODE_DEFAULT_COLORS,
             force=force,
         )
+        bakery_theme = _ensure_theme("bakery", colors=BAKERY_COLORS, force=force)
         self.stdout.write(self.style.SUCCESS("Ensured default light and dark themes."))
 
         # Seed the bridge template before posts are published so the
@@ -937,7 +1241,9 @@ class Command(BaseCommand):
                 default_user=user,
             )
 
-        existing_index = BlogIndexPage.objects.child_of(home).filter(slug="blog").first()
+        existing_index = (
+            BlogIndexPage.objects.child_of(home).filter(slug="blog").first()
+        )
         if existing_index and not force:
             blog_index = existing_index
             self.stdout.write("Blog index already exists; skipping blog tree creation.")
@@ -976,7 +1282,21 @@ class Command(BaseCommand):
                     subtitle=spec.get("subtitle", ""),
                     introduction=spec.get("introduction", ""),
                     image=load_image(spec["image"]),
-                    body=_blocks_to_stream(spec["body"], load_image=load_image),
+                    body=_as_stream_data(
+                        [
+                            (
+                                "breadcrumbs",
+                                {
+                                    "items": [],
+                                    "icon": None,
+                                    "home_icon": None,
+                                    "design": {},
+                                    "audience": {},
+                                },
+                            ),
+                            *_blocks_to_stream(spec["body"], load_image=load_image),
+                        ]
+                    ),
                     date_published=date.fromisoformat(spec["date_published"]),
                 )
                 blog_index.add_child(instance=bp)
@@ -986,7 +1306,7 @@ class Command(BaseCommand):
                     bp.tags.add(tag_name)
                 bp.save_revision().publish()
 
-            blog_index.page_theme = light_theme
+            blog_index.page_theme = bakery_theme
             blog_feed = _ensure_feed(
                 "Blog feed",
                 "blog_post",
@@ -1009,7 +1329,9 @@ class Command(BaseCommand):
                     {
                         "key": "blog_post:published",
                         "input_design": {"typography": {"font_size": "text-sm"}},
-                        "label_design": {"typography": {"font_weight": "font-semibold"}},
+                        "label_design": {
+                            "typography": {"font_weight": "font-semibold"}
+                        },
                     },
                 ],
                 submit_appearance=[
@@ -1017,62 +1339,69 @@ class Command(BaseCommand):
                 ],
                 item=[
                     {
-                        "type": "image",
+                        "type": "card",
                         "value": {
-                            "image": None,
-                            "image_source": "dynamic",
-                            "image_expression": "blog_post.image",
-                            "design": {},
-                            "audience": {},
-                        },
-                    },
-                    {
-                        "type": "header",
-                        "value": {
-                            "text": "{{ blog_post.title }}",
-                            "design": {},
-                            "audience": {},
-                        },
-                    },
-                    {
-                        "type": "text",
-                        "value": {
-                            "text": "{{ blog_post.introduction }}",
-                            "design": {},
-                            "audience": {},
-                        },
-                    },
-                    {
-                        "type": "link",
-                        "value": {
-                            "text": "Read more",
-                            "destination": [
+                            "content": [
+                                _dynamic_image("{{ blog_post.image }}"),
                                 {
-                                    "type": "link_dynamic",
-                                    "value": "{{ blog_post.url }}",
-                                }
+                                    "type": "header",
+                                    "value": {
+                                        "text": "{{ blog_post.title }}",
+                                        "design": {},
+                                        "audience": {},
+                                    },
+                                },
+                                {
+                                    "type": "text",
+                                    "value": {
+                                        "text": "{{ blog_post.introduction }}",
+                                        "design": {},
+                                        "audience": {},
+                                    },
+                                },
+                                {
+                                    "type": "button",
+                                    "value": {
+                                        "text": "Read more",
+                                        "icon": "",
+                                        "icon_after": True,
+                                        "make_parent_clickable": True,
+                                        "destination": [
+                                            {
+                                                "type": "link_dynamic",
+                                                "value": "{{ blog_post.url }}",
+                                            }
+                                        ],
+                                        "open_in_new_tab": False,
+                                        "design": {},
+                                        "audience": {},
+                                    },
+                                },
                             ],
-                            "open_in_new_tab": False,
                             "design": {},
+                            "alignment": {},
                             "audience": {},
                         },
                     },
                 ],
             )
-            blog_index.body = [
-                {
-                    "type": "feed",
-                    "value": {"feed": blog_feed.pk, "design": {}, "audience": {}},
-                }
-            ]
+            blog_index.body = _as_stream_data(
+                [
+                    {
+                        "type": "feed",
+                        "value": {"feed": blog_feed, "design": {}, "audience": {}},
+                    }
+                ]
+            )
             blog_index.save_revision().publish()
 
             self.stdout.write(self.style.SUCCESS("Created blog index and posts."))
 
-        home.page_theme = light_theme
-        home.body = _stream_value(
-            home, "body", _blocks_to_stream(data["home"]["body"], load_image=load_image)
+        home.page_theme = bakery_theme
+        home.page_design = _as_stream_data(
+            [("defaults", {"text": {"typography": {"font_family": "heading"}}})]
         )
+        home.body = _as_stream_data(_home_body(data, blog_index, load_image))
         home.save_revision().publish()
 
         site.site_name = site.site_name or "Demo"
@@ -1086,19 +1415,41 @@ class Command(BaseCommand):
             "Main navigation",
             layout="navbar",
             force=force,
-            menu_theme=light_theme,
+            menu_theme=bakery_theme,
             show_search=True,
             search_url="/search/",
             item_design=[
-                ("item", {"typography": {"text_color": "text-base-content", "font_family": "body"}})
+                (
+                    "item",
+                    {
+                        "typography": {
+                            "text_color": "text-base-content",
+                        }
+                    },
+                )
             ],
             branding=[
                 (
                     "branding",
                     {
-                        "logo": {"image": logo, "alt": site.site_name},
-                        "wordmark": {"text": site.site_name},
-                        "destination": [{"type": "link_page", "value": home.pk}],
+                        "logo": {
+                            "image": logo,
+                            "alt": site.site_name,
+                            "design": {"size": {"height": {"height": "h-10"}}},
+                        },
+                        "wordmark": {
+                            "text": site.site_name,
+                            "design": {
+                                "typography": {
+                                    "font_family": "heading",
+                                    "font_size": "text-2xl",
+                                    "line_height": "leading-tight",
+                                    "font_weight": "font-normal",
+                                    "text_color": "text-base-content",
+                                }
+                            },
+                        },
+                        "destination": [{"type": "link_page", "value": home}],
                         "open_in_new_tab": False,
                     },
                 )
@@ -1107,25 +1458,9 @@ class Command(BaseCommand):
                 {
                     "type": "link",
                     "value": {
-                        "text": "Home",
-                        "destination": [{"type": "link_page", "value": home.pk}],
-                        "open_in_new_tab": False,
-                    },
-                },
-                {
-                    "type": "link",
-                    "value": {
                         "text": "Blog",
-                        "destination": [{"type": "link_page", "value": blog_index.pk}],
+                        "destination": [{"type": "link_page", "value": blog_index}],
                         "open_in_new_tab": False,
-                    },
-                },
-                {
-                    "type": "text",
-                    "value": {
-                        "text": "Hi {{ user.username|default:'guest' }}",
-                        "design": {},
-                        "audience": {},
                     },
                 },
             ],
@@ -1134,10 +1469,8 @@ class Command(BaseCommand):
             "Footer",
             layout="footer",
             force=force,
-            menu_theme=light_theme,
-            item_design=[
-                ("item", {"typography": {"text_color": "text-base-content"}})
-            ],
+            menu_theme=bakery_theme,
+            item_design=[("item", {"typography": {"text_color": "text-base-content"}})],
             body=[
                 {
                     "type": "link_list",
@@ -1146,12 +1479,16 @@ class Command(BaseCommand):
                         "content": [
                             {
                                 "text": "Home",
-                                "destination": [{"type": "link_page", "value": home.pk}],
+                                "destination": [
+                                    {"type": "link_page", "value": home}
+                                ],
                                 "open_in_new_tab": False,
                             },
                             {
                                 "text": "Blog",
-                                "destination": [{"type": "link_page", "value": blog_index.pk}],
+                                "destination": [
+                                    {"type": "link_page", "value": blog_index}
+                                ],
                                 "open_in_new_tab": False,
                             },
                         ],
@@ -1177,7 +1514,8 @@ class Command(BaseCommand):
         )
 
         _ensure_showcase(light_theme, home, force=force)
-        _ensure_bread_detail_template(home, light_theme, force=force)
+        index = _ensure_bread_index_page(home, light_theme, force=force)
+        _ensure_bread_detail_template(home, index, light_theme, force=force)
         _ensure_breads(load_image)
         _sync_bread_detail_pages()
         _ensure_data_pages(light_theme, home, force=force)

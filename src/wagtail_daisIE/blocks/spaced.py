@@ -1,6 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..choicelist import ChoiceList
 from .cards import CONTENT_BLOCKS
 from .icons import IconChooserBlock
 from .inline import HeaderBlock
@@ -8,10 +9,18 @@ from .link import InlineLinkBlock
 from .section import SectionBlock
 
 
+LIST_ORDERING_CHOICES = ChoiceList(
+    [
+        ("list-none", _("Unordered")),
+        ("list-decimal", _("Ordered")),
+    ],
+    "LIST_ORDERING_CHOICES",
+)
+
+
 class SpacedBlock(SectionBlock):
     content = blocks.StreamBlock(
         CONTENT_BLOCKS,
-        label=_("Content"),
     )
 
     class Meta:
@@ -25,10 +34,7 @@ class SpacedBlock(SectionBlock):
 class ListBlock(SpacedBlock):
     heading = HeaderBlock(required=False)
     ordering = blocks.ChoiceBlock(
-        choices=[
-            ("list-none", _("Unordered")),
-            ("list-decimal", _("Ordered")),
-        ],
+        choices=LIST_ORDERING_CHOICES,
         default="list-none",
         help_text=_("Whether the list is ordered or unordered."),
     )
@@ -70,7 +76,6 @@ LIST_CONTENT_BLOCKS = [
 class SpacedBlockWithList(SpacedBlock):
     content = blocks.StreamBlock(
         LIST_CONTENT_BLOCKS,
-        label=_("Content"),
     )
 
     class Meta:

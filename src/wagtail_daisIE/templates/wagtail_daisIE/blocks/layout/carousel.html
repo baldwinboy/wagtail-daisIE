@@ -1,0 +1,12 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed and value.slides %}
+  <div class="carousel {{ value.orientation }} w-full {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for slide in value.slides %}
+      <div id="daisie-slide-{{ block.id }}-{{ forloop.counter }}" class="carousel-item w-full">
+        {% image slide.image width-1000 as img %}
+        <img src="{{ img.url }}" alt="{{ slide.image.title }}" class="w-full" />
+        {% if slide.caption %}<span class="mt-2 text-sm text-base-content/70">{{ slide.caption }}</span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

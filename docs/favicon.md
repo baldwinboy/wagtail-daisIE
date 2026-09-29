@@ -4,6 +4,9 @@ Admins set a favicon and web-app metadata under **Design → Favicon**. Template
 render whichever favicon is configured, using the PWA technique (icon set plus a
 `manifest.json`, `browserconfig.xml` and theme colour).
 
+Provided by the required `wagtail_daisIE.assets` app (alongside
+`DaisyUIIconSource`).
+
 ## Configuration
 
 Open **Design → Favicon**. One global row covers every site; add a row with a

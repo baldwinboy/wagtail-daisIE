@@ -1,0 +1,12 @@
+{% load i18n %}
+<h2>{% trans "Create a feed" %}</h2>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_feeds_feed:list' %}">{% trans "Design → Feeds" %}</a>.
+    </li>
+    <li>{% trans "Choose the model to list, the order and the page size." %}</li>
+    <li>{% trans "Design each item with the same blocks used on a page." %}</li>
+    <li>{% trans "Add filters and style their buttons." %}</li>
+</ol>
+<p>{% trans "Place a Feed block on a page to show it. Turn on infinite loading to append items as the visitor scrolls." %}</p>

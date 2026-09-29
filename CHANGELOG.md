@@ -16,16 +16,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Rudimentary inline markup**: user-visible single-line text now renders
+  `**bold**`, `_italic_`, `__underline__`, `~~strikethrough~~` and
+  `[text](url)` (scheme allow-list) via `InlineMarkupBlock` and the
+  `{% daisie_markup %}` tag; use the `daisie_strip_markup` filter for HTML
+  attributes. See `docs/design-system.md`.
+- **Admin-controlled `<main>` design**: `MainDesignBlock` on the theme
+  (`DaisyUITheme.main_design`) and page (`StyledPageMixin.main_design`) sets the
+  main container's layout (`column`/`row`/`grid`), spacing and background; the
+  page value wins, and templates use `{% daisyui_main_attrs %}`.
+- **Approval workflows**: settings-driven `WAGTAIL_DAISIE_APPROVAL_WORKFLOWS`
+  converts a record once an editor flips its approval field, with an optional
+  FK recording the result. See `docs/approval.md`.
+- **Allauth page overrides**: `AllauthPageOverride` snippets let editors design
+  allauth **account** pages (theme, background, page defaults, body with
+  `auth_form`/`auth_field` blocks). Look-only; allauth owns fields and
+  validation. See `docs/allauth-pages.md`.
+- **`check_allauth_templates`** management command to detect/regenerate drift in
+  the bundled allauth account template overrides.
+- **Feed model properties help panel**: a `<details>` panel on the Feed editor
+  listing the available properties and filters for the selected model.
+- **Committed Tailwind + daisyUI stylesheet**: `daisie.css` is prebuilt from
+  `tailwind/input.css` plus a generated safelist and served through staticfiles;
+  `{% daisyui_styles %}` emits the render-blocking link and
+  `ArbitraryCSSMiddleware` covers arbitrary colour utilities. Regenerate with
+  `just build-css`. See `docs/assets.md`.
+- **Background layers**: design backgrounds use `BackgroundStreamBlock`
+  (solid/image/gradient) and render as an inline `block_style`; `TextBackgroundBlock`
+  is retained for email components that only accept a colour.
+- **Typography underline + states**: `underlines` (`text_decoration`), colour,
+  thickness, and configurable `hover`/`active` states on every typography block.
+- **Breadcrumbs block**: a placeable `BreadcrumbsBlock` (auto page trail or a
+  manual list of crumbs with links/icons) for pages, form pages and allauth.
+- **Menu design split + responsive menus**: `menu_design` styles the menu
+  container independently of `item_design`; navbar renders a daisyUI
+  **megamenu** on desktop, plus new `megamenu` and `dock` layouts.
+- **MJML backgrounds per component**: backgrounds map only to the attributes a
+  component supports (`background-color`/`container-background-color`/`inner-…`,
+  images only on section/wrapper/hero); gradients are dropped.
+- **allauth OTP + validator**: one-time-code fields render the daisyUI `otp`
+  component and form fields carry `validator` states.
+- **Component catalog**: new blocks for avatar, badge, kbd, divider, stat,
+  countdown, skeleton, text-rotate, chat, timeline, diff, hover-gallery,
+  hover-3d, stack, aura, indicator, mask, dropdown, swap, tabs, carousel,
+  pagination, FAB, drawer, hero, filter, join and the four mockups.
+- **Action** blocks are now a struct of a normal button subclass and an optional
+  confirmation **alert**; the confirmation is added to Django messages and
+  rendered by `{% daisie_messages %}`. Actions are available in pages, menus,
+  feeds, calendars and cards.
+- **Clickable cards**: a button or action inside a card can set *Make the parent
+  card clickable* to stretch itself over the card.
+- **MJML components**: accordion, carousel, column, group, hero, navbar, social
+  and table, plus email-safe icons (`{% daisyui_email_icon %}`).
+- **Theme persistence** (`{% daisyui_theme_script %}`) and cookie-aware
+  django-allauth theming.
+- **Email preview sample values**: previews now show a sample recipient,
+  synthesised `payload.*` values and stubbed context models.
 - **Form field** body block on `DaisieFormPage`, letting editors interleave
   form inputs with content blocks in any order. Inputs rendered outside the
   `<form>` are associated with it via `form="daisie-form"`.
 - `payload.submission` in the form page landing context, exposing the stored
   `FormSubmission` data to `success_body` placeholders.
+- **DaisyUI Editor Guide**: a multi-page guide in the admin help menu
+  (Getting started, Concepts, How-to, Reference), covering themes, page blocks
+  and design, menus, feeds, forms, notifications, icons, error pages and
+  allauth. The block reference is generated from the registered blocks so it
+  cannot drift.
 
 ### Changed
 
+- **Split into per-feature apps** — `assets`, `menus`, `feeds`, `errors`,
+  `notifications` (email + notifications), `allauth_ui` and `allauth_emails` —
+  each with its own migrations/label. `notifications`, `allauth_ui` and
+  `allauth_emails` are opt-in. Email moved from `emails/` into
+  `notifications/`; `Feed` moved from `dynamic/` into `feeds/`. See the README
+  for the app list and extras.
+- Icons inherit the size and colour of their parent button.
+- The image block hides `image`/`image_expression` based on the chosen source;
+  image expressions use the canonical `{{ bread.image }}` form.
+- The theme preview (`DaisyUITheme`) now loads the configured values.
 - Form page bodies now accept form fields; any field not placed in the body is
   still rendered above the submit button, so existing pages are unaffected.
+- Static choice lists are wrapped in `choicelist.ChoiceList`, so migrations
+  store a short registry reference instead of every option; redundant `label`
+  copy and long `help_text` were trimmed, and package and demo migrations were
+  regenerated (~15% smaller, ~70% smaller than before choice compaction).
+  Editing a choice list no longer produces a schema-only `AlterField`
+  migration.
+- The Bread chooser is hidden on the **Bread suggestions** snippet; the linked
+  Bread is still set automatically by the approval workflow.
+
+### Fixed
+
+- Page/snippet designs with no background layer can be saved again
+  (`BackgroundStreamBlock` is no longer required inside design composites).
+- The image block's **Static image** / **From context** fields toggle as
+  intended (added the missing Telepath adapter for `ImageBlock`).
+- Page save/preview no longer fails with
+  `MultiValueDictKeyError: 'body-count'`: `image_block.js` is now loaded through
+  the `ImageBlock` adapter's media (after Wagtail's telepath runtime) instead of
+  globally, so a script-order error can no longer leave the body StreamField
+  widget uninitialised.
+- Background-layer and audience block adapters no longer throw while rendering
+  (`Cannot read properties of null (reading 'style')`); a thrown render aborted
+  the StreamField child and dropped blocks when saving.
+- Save-blocking field validation is fixed: `BooleanBlock`s are now optional
+  (background layer *Repeat*, table zebra/pin rows and columns, link/button
+  *Icon after*, menu *Logo after*), and fields that relied on the no-op
+  `blank=True` (background position and gradient options, link/button/marquee/
+  copyright/inline text) are now genuinely optional via `required=False`.
+- Action buttons no longer raise
+  `MultiValueDictKeyError: '…-destination-count'` when saving
+  (`ActionButtonBlock` removes the inherited, unrendered destination stream).
+- Approving a bread suggestion now creates the `Bread` (and its generated
+  detail page) via an approval workflow.
+- Gradient-shape choices render and the demo hero no longer collapses.
+- Removed Django 7.0 `RemovedInDjango70Warning`s by configuring `MAILERS`.
+
+### Removed
+
+- **`LazyStreamField`** (and `src/wagtail_daisIE/fields.py`); model
+  `StreamField`s are plain `wagtail.fields.StreamField` frozen into the owning
+  app's migration.
+- The precompiled `global.css`, the `npm run compile-global-css` step and the
+  Tailwind `@source inline(...)` safelists (CSS is now compiled JIT).
+
+### Breaking
+
+- Add the new apps to `INSTALLED_APPS` (core, `assets`, `menus`, `feeds`,
+  `errors`, plus the opt-in `notifications`/`allauth_ui`/`allauth_emails`) and
+  run the regenerated migrations: moved models get new app labels and table
+  names.
+- `<main>` no longer ships hardcoded container classes; set
+  `DaisyUITheme.main_design` (and optionally `StyledPageMixin.main_design`) or
+  the container renders unstyled.
 
 ### Validation
 

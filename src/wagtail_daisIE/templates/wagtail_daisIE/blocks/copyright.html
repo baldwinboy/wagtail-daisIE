@@ -1,6 +1,6 @@
 {% load notifications %}
 {% if audience_allowed %}
-  <div class="{% if block_css %}{{ block_css }}{% endif %}">
-    &copy; {% now "Y" %} {% daisie_text value.text %}
+  <div class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    &copy; {% now "Y" %} {% daisie_markup value.text %}
   </div>
 {% endif %}

@@ -1,0 +1,4 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <kbd class="kbd {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>{% daisie_markup value.text %}</kbd>
+{% endif %}

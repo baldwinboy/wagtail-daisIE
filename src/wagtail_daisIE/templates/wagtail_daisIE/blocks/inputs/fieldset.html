@@ -1,8 +1,8 @@
-{% load wagtailcore_tags %}
+{% load wagtailcore_tags notifications %}
 {% if audience_allowed %}
-  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
-    <legend class="fieldset-legend">{{ value.legend }}</legend>
-    {% if value.description %}<p class="label">{{ value.description }}</p>{% endif %}
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <legend class="fieldset-legend">{% daisie_markup value.legend %}</legend>
+    {% if value.description %}<p class="label">{% daisie_markup value.description %}</p>{% endif %}
     {% for child in value.content %}
       {% include_block child %}
     {% endfor %}

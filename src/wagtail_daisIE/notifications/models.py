@@ -1,4 +1,4 @@
-"""Models for notification integrations."""
+"""Models for notification integrations and MJML email templates."""
 
 from __future__ import annotations
 
@@ -16,72 +16,229 @@ from ..base_blocks.audience import (
     get_audience_rule_choices,
     resolve_audience_queryset,
 )
-from .allauth_catalogue import get_allauth_email_choices, get_allauth_emails
+from ..base_blocks.design import PageDesignBlock
 from .blocks import EmailVariableBlock
+from .context import build_context
+from .email_blocks import EmailContentBlock
+from .email_rendering import (
+    body_background_color,
+    category_classes,
+    font_urls,
+    render_mjml,
+    theme_attributes,
+)
+from .panels import EmailPlaceholdersHelpPanel
+from .placeholders import render_placeholders
 
 
-class AllauthEmailOverride(models.Model):
-    """Bind an allauth email prefix to a DaisyUI email template."""
+def audience_kind_choices():
+    return Audience.Kind.choices
 
-    template_prefix = models.CharField(
+
+def campaign_status_choices():
+    return EmailCampaign.Status.choices
+
+
+def campaign_send_mode_choices():
+    return [
+        ("manual", _("Manual")),
+        ("scheduled", _("Scheduled")),
+    ]
+
+
+def campaign_recurrence_choices():
+    return EmailCampaign.Recurrence.choices
+
+
+def campaign_log_status_choices():
+    return CampaignRecipientLog.Status.choices
+
+
+class EmailTemplate(
+    LockableMixin,
+    RevisionMixin,
+    PreviewableMixin,
+    ClusterableModel,
+):
+    """An MJML email document built from the package's design primitives."""
+
+    name = models.CharField(
         max_length=255,
         unique=True,
-        choices=get_allauth_email_choices,
-        verbose_name=_("Allauth email"),
-        help_text=_("The allauth email event to override."),
+        verbose_name=_("Name"),
+        help_text=_(
+            'A unique name used to identify this template, e.g. "Welcome email".'
+        ),
     )
-    email_template = models.ForeignKey(
-        "wagtail_daisIE.EmailTemplate",
+    template_key = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name=_("Template key"),
+        help_text=_(
+            "Optional stable key used to bind this template to a bridge or "
+            "integration (e.g. an allauth email prefix)."
+        ),
+    )
+    subject = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Subject"),
+        help_text=_("Stored as the MJML title, e.g. for the email subject line."),
+    )
+    preheader = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Preheader"),
+        help_text=_("Short preview text shown by email clients after the subject."),
+    )
+    email_theme = models.ForeignKey(
+        "wagtail_daisIE.DaisyUITheme",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="+",
-        verbose_name=_("Email template"),
-        help_text=_("Leave empty to use allauth's default templates."),
+        verbose_name=_("Email theme"),
+        help_text=_("Theme applied to this email. Falls back to the default theme."),
     )
-    is_active = models.BooleanField(
-        default=False,
-        verbose_name=_("Active"),
-        help_text=_("Only active overrides are used."),
+    design = StreamField(
+        [("defaults", PageDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Default design"),
+        help_text=_(
+            "Default container, text, button and media styles applied to every "
+            "block in this email. Per-block settings are applied on top."
+        ),
+    )
+    content = StreamField(
+        EmailContentBlock(),
+        blank=True,
+        use_json_field=True,
+        verbose_name=_("Email content"),
+        help_text=_("Add MJML components to build the email body."),
+    )
+
+    revisions = GenericRelation(
+        "wagtailcore.Revision",
+        content_type_field="base_content_type",
+        object_id_field="object_id",
+        related_query_name="email_template",
+        for_concrete_model=False,
     )
 
     panels = [
-        FieldPanel("template_prefix"),
-        FieldPanel("email_template"),
-        FieldPanel("is_active"),
+        EmailPlaceholdersHelpPanel(),
+        FieldPanel("name"),
+        FieldPanel("template_key"),
+        FieldPanel("subject"),
+        FieldPanel("preheader"),
+        FieldPanel("content"),
+    ]
+
+    styling_panels = [
+        FieldPanel("email_theme"),
+        FieldPanel("design"),
     ]
 
     class Meta:
-        verbose_name = _("Allauth email override")
-        verbose_name_plural = _("Allauth email overrides")
-        ordering = ["template_prefix"]
+        verbose_name = _("Email template")
+        verbose_name_plural = _("Email templates")
 
     def __str__(self):
-        try:
-            label = self.get_template_prefix_display()
-        except Exception:  # pragma: no cover - defensive
-            label = self.template_prefix
-        return str(label or self.template_prefix)
+        return self.name
 
-    @classmethod
-    def ensure_defaults(cls):
-        """Create a row for every discovered allauth email prefix."""
-        created = 0
-        for email in get_allauth_emails():
-            _row, was_created = cls.objects.get_or_create(template_prefix=email.prefix)
-            created += int(was_created)
-        return created
+    def get_theme(self):
+        """Return this email's theme, falling back to the default theme."""
+        if self.email_theme_id:
+            return self.email_theme
+        from ..models import DaisyUITheme
 
-    @classmethod
-    def get_active(cls, template_prefix):
-        return (
-            cls.objects.select_related("email_template")
-            .filter(
-                template_prefix=template_prefix,
-                is_active=True,
-                email_template__isnull=False,
+        return DaisyUITheme.objects.filter(default=True).first()
+
+    def get_preview_template(self, request, mode_name):
+        return "wagtail_daisIE/emails/blocks/preview.html"
+
+    def get_preview_context(self, request, mode_name):
+        from .preview import build_preview_context
+
+        context = super().get_preview_context(request, mode_name)
+        context["mjml_source"] = self.get_mjml(
+            context=build_preview_context(
+                request=request,
+                subject=self.subject,
+                preheader=self.preheader,
+                content=str(self.content),
             )
-            .first()
+        )
+        return context
+
+    def get_design_value(self):
+        return self.design[0].value if self.design else None
+
+    def get_mjml_context(self, *, payload=None, recipient=None, context=None):
+        render_context = (
+            dict(context)
+            if context is not None
+            else build_context(payload=payload, recipient=recipient)
+        )
+        theme = self.get_theme()
+        render_context.update(
+            {
+                "email_theme": theme,
+                "content": self.content,
+                "subject": render_placeholders(
+                    self.subject,
+                    render_context,
+                    escape_literals=False,
+                    escape_values=False,
+                ),
+                "preheader": render_placeholders(
+                    self.preheader,
+                    render_context,
+                    escape_literals=False,
+                    escape_values=False,
+                ),
+                "theme_attributes": theme_attributes(theme),
+                "font_urls": font_urls(theme),
+                "mj_classes": category_classes(self.get_design_value(), theme),
+                "body_background_color": body_background_color(theme),
+            }
+        )
+        return render_context
+
+    def get_mjml(self, *, payload=None, recipient=None, context=None):
+        """Return the raw MJML document (not yet compiled to HTML)."""
+        return render_mjml(
+            self,
+            payload=payload,
+            recipient=recipient,
+            context=context,
+        )
+
+    def render(
+        self,
+        *,
+        payload=None,
+        recipient=None,
+        request=None,
+        site=None,
+        from_email=None,
+    ):
+        """Render to a subject/HTML/text bundle for the given context."""
+        from .rendering import render_email_template
+
+        return render_email_template(
+            self,
+            payload=payload,
+            recipient=recipient,
+            request=request,
+            site=site,
+            from_email=from_email,
         )
 
 
@@ -100,7 +257,7 @@ class Audience(ClusterableModel):
     description = models.TextField(blank=True, verbose_name=_("Description"))
     kind = models.CharField(
         max_length=10,
-        choices=Kind.choices,
+        choices=audience_kind_choices,
         default=Kind.MANUAL,
         verbose_name=_("Type"),
     )
@@ -231,7 +388,7 @@ class EmailCampaign(
 
     name = models.CharField(max_length=255, unique=True, verbose_name=_("Name"))
     template = models.ForeignKey(
-        "wagtail_daisIE.EmailTemplate",
+        "EmailTemplate",
         on_delete=models.PROTECT,
         related_name="+",
         verbose_name=_("Email template"),
@@ -244,13 +401,13 @@ class EmailCampaign(
     )
     status = models.CharField(
         max_length=16,
-        choices=Status.choices,
+        choices=campaign_status_choices,
         default=Status.DRAFT,
         verbose_name=_("Status"),
     )
     send_mode = models.CharField(
         max_length=10,
-        choices=[("manual", _("Manual")), ("scheduled", _("Scheduled"))],
+        choices=campaign_send_mode_choices,
         default="manual",
         verbose_name=_("Send mode"),
     )
@@ -262,7 +419,7 @@ class EmailCampaign(
     )
     recurrence = models.CharField(
         max_length=10,
-        choices=Recurrence.choices,
+        choices=campaign_recurrence_choices,
         default=Recurrence.NONE,
         verbose_name=_("Repeat"),
     )
@@ -327,17 +484,21 @@ class EmailCampaign(
     def get_preview_template(self, request, mode_name):
         if self.template_id:
             return self.template.get_preview_template(request, mode_name)
-        from ..emails.models import EmailTemplate
-
         return EmailTemplate.get_preview_template(self, request, mode_name)
 
     def get_preview_context(self, request, mode_name):
         context = super().get_preview_context(request, mode_name)
         if self.template_id:
-            from .context import build_context
+            from .preview import build_preview_context
 
             context["mjml_source"] = self.template.get_mjml(
-                context=build_context(request=request, payload=self.get_payload())
+                context=build_preview_context(
+                    request=request,
+                    subject=self.template.subject,
+                    preheader=self.template.preheader,
+                    content=str(self.template.content),
+                    payload=self.get_payload(),
+                )
             )
         return context
 
@@ -357,7 +518,7 @@ class CampaignRecipientLog(models.Model):
     )
     recipient_email = models.EmailField()
     status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.SENT
+        max_length=10, choices=campaign_log_status_choices, default=Status.SENT
     )
     error = models.TextField(blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)

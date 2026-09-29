@@ -1,0 +1,5 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed and value.image %}
+  {% image value.image width-800 as img %}
+  <img src="{{ img.url }}" alt="{{ value.image.title }}" class="mask {{ value.shape }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %} />
+{% endif %}

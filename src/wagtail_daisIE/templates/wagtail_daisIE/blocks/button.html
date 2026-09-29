@@ -1,7 +1,13 @@
-{% load wagtail_daisIE_tags notifications %}
+{% load i18n wagtail_daisIE_tags notifications %}
 {% if audience_allowed %}
-  <a href="{{ link_url }}"
-     class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}"{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
-    {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_text value.text %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
-  </a>
+  {% if stretch_to_parent %}
+    <a href="{{ link_url }}"
+       class="absolute inset-0 block"
+       aria-label="{% if value.text %}{{ value.text|daisie_strip_markup }}{% else %}{% trans 'Open' %}{% endif %}"{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}></a>
+  {% else %}
+    <a href="{{ link_url }}"
+       class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}{% if link_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>
+      {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
+    </a>
+  {% endif %}
 {% endif %}

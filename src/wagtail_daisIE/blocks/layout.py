@@ -1,10 +1,24 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from wagtail_daisIE.choicelist import ChoiceList
 from wagtail_daisIE.choices import ALIGNMENT_CHOICES, JUSTIFY_CHOICES
 from wagtail_daisIE.widgets import DaisyUIIntegerBlock, DaisyUINumberSliderWidget
 
 from .spaced import SpacedBlockWithList
+
+
+GRID_GAP_CHOICES = ChoiceList(
+    [
+        ("gap-1", "1"),
+        ("gap-2", "2"),
+        ("gap-3", "3"),
+        ("gap-4", "4"),
+        ("gap-6", "6"),
+        ("gap-8", "8"),
+    ],
+    "GRID_GAP_CHOICES",
+)
 
 
 def _layout_form_layout(children, extra_settings):
@@ -85,14 +99,7 @@ class GridBlock(SpacedBlockWithList):
         widget=DaisyUINumberSliderWidget(min_value=1, max_value=6, step=1),
     )
     gap = blocks.ChoiceBlock(
-        choices=[
-            ("gap-1", "1"),
-            ("gap-2", "2"),
-            ("gap-3", "3"),
-            ("gap-4", "4"),
-            ("gap-6", "6"),
-            ("gap-8", "8"),
-        ],
+        choices=GRID_GAP_CHOICES,
         default="gap-4",
         required=False,
         label=_("Grid gap"),

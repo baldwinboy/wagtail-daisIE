@@ -45,6 +45,12 @@ class WagtailIconProvider(IconProvider):
         svg = render_to_string(template)
         return _prepare_svg(svg, size=size, color=color)
 
+    def email_svg(self, name, color=None):
+        template = self._icons().get(name)
+        if not template:
+            return ""
+        return _prepare_svg(render_to_string(template))
+
     def choice_label(self, name):
         return name.replace("-", " ").title()
 

@@ -33,6 +33,13 @@ ALLOWED_HOSTS = ["localhost", "testserver"]
 
 INSTALLED_APPS = [
     "wagtail_daisIE",
+    "wagtail_daisIE.assets",
+    "wagtail_daisIE.menus",
+    "wagtail_daisIE.feeds",
+    "wagtail_daisIE.errors",
+    "wagtail_daisIE.notifications",
+    "wagtail_daisIE.allauth_ui",
+    "wagtail_daisIE.allauth_emails",
     "wagtail_daisIE.test",
     "colorfield",
     "wagtail.contrib.search_promotions",
@@ -162,3 +169,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "test-media")
 # Wagtail settings
 
 WAGTAIL_SITE_NAME = "Wagtail DaisyUI Interface Editor test site"
+
+
+# Email
+
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.locmem.EmailBackend",
+    },
+}

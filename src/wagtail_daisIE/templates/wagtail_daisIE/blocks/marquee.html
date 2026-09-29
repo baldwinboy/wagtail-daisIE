@@ -1,8 +1,9 @@
+{% load notifications %}
 {% if audience_allowed %}
-  <div class="overflow-hidden {{ block_css|default:"bg-base-200 p-4" }}">
+  <div class="overflow-hidden {{ block_css|default:"bg-base-200 p-4" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     <div class="flex {{ value.direction|default:"flex-row" }} {{ value.speed|default:"animate-[marquee_20s_linear_infinite]" }} whitespace-nowrap">
-      <span class="px-8">{{ value.text }}</span>
-      <span class="px-8" aria-hidden="true">{{ value.text }}</span>
+      <span class="px-8">{% daisie_markup value.text %}</span>
+      <span class="px-8" aria-hidden="true">{% daisie_markup value.text %}</span>
     </div>
   </div>
 {% endif %}

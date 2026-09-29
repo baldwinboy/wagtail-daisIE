@@ -2,9 +2,10 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from wagtail_daisIE.base_blocks.button import ButtonAppearanceBlock
+from wagtail_daisIE.choices import MAIN_LAYOUT_CHOICES
 
 from .audience import AudienceBlock, evaluate_audience
-from .background import BackgroundBlock, TextBackgroundBlock
+from .background_layer import BackgroundStreamBlock
 from .box import BorderBlock, BoxBlock, MarginBlock, PaddingBlock, SpacingBlock
 from .css import build_design_css
 from .mjml import build_design_style
@@ -45,7 +46,7 @@ class BaseDesignBlock(blocks.StructBlock):
 
 
 class TypographyDesignBlock(BaseDesignBlock):
-    background = TextBackgroundBlock()
+    background = BackgroundStreamBlock()
     size = InlineSizeBlock()
     typography = TypographyBlock()
 
@@ -62,7 +63,7 @@ class TypographyDesignBlock(BaseDesignBlock):
 
 
 class InlineDesignBlock(BaseDesignBlock):
-    background = BackgroundBlock()
+    background = BackgroundStreamBlock()
     size = InlineSizeBlock()
 
     class Meta:
@@ -102,7 +103,7 @@ class ButtonDesignBlock(InlineSpacedDesignBlock):
 
 
 class DesignBlock(BaseDesignBlock):
-    background = BackgroundBlock()
+    background = BackgroundStreamBlock()
     size = BlockSizeBlock()
 
     class Meta:
@@ -142,6 +143,22 @@ class SpacedDesignBlock(DesignBlock):
         form_layout = blocks.BlockGroup(
             children=_SPACED_CHILDREN,
             heading=_("Design"),
+        )
+
+
+class MainDesignBlock(SpacedDesignBlock):
+    layout = blocks.ChoiceBlock(
+        choices=MAIN_LAYOUT_CHOICES,
+        default="column",
+    )
+
+    class Meta:
+        icon = "sliders"
+        label = _("Main design")
+        collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=["layout", *_SPACED_CHILDREN],
+            heading=_("Main design"),
         )
 
 
@@ -233,6 +250,18 @@ class ThemedBlock(blocks.StructBlock):
             own,
         )
         context[key] = build_class(channel, own)
+        # Background layers become a literal ``style`` value, not utility
+        # classes. ``TextBackgroundBlock`` (email solid-only) stores a plain
+        # dict, so it is skipped here.
+        background = (value.get("design") or {}).get("background")
+        block_style = ""
+        if background and not isinstance(background, dict):
+            background_css = BackgroundStreamBlock().get_css(background)
+            if background_css:
+                block_style = f"background: {background_css}"
+        context["block_style"] = block_style or parent_context.get(
+            "menu_default_style", ""
+        )
         audience_keys = (value.get("audience") or {}).get("audience") or []
         request = parent_context.get("request")
         context["audience_allowed"] = evaluate_audience(audience_keys, request)

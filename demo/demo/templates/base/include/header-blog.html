@@ -2,18 +2,20 @@
 
 <header class="mb-8">
     {% if page.image %}
-        <figure class="mb-6 overflow-hidden rounded-box">
-            {% picture page.image format-{avif,webp,jpeg} fill-{800x500,1600x600} preserve-svg sizes="100vw" class="h-full w-full object-cover" alt="" %}
-        </figure>
+        <div class="relative left-1/2 mb-6 h-[320px] w-screen max-w-none -translate-x-1/2 overflow-hidden md:h-[420px]">
+            {% picture page.image format-{avif,webp,jpeg} fill-{800x650,1920x600} preserve-svg sizes="100vw" class="h-full w-full object-cover" alt="" %}
+        </div>
     {% endif %}
-    <h1 class="text-4xl font-bold">{{ page.title }}</h1>
-    {% if page.subtitle %}
-        <p class="mt-2 text-lg text-base-content/80">{{ page.subtitle }}</p>
-    {% endif %}
-    {% if page.introduction %}
-        <p class="mt-2">{{ page.introduction }}</p>
-    {% endif %}
-    {% if page.date_published %}
-        <p class="mt-2 text-sm text-base-content/60">{{ page.date_published }}</p>
-    {% endif %}
+    <div class="mx-auto w-full max-w-6xl px-4">
+        <h1 class="font-heading text-4xl font-bold">{{ page.title }}</h1>
+        {% if page.subtitle %}
+            <p class="mt-2 text-lg text-base-content/80">{{ page.subtitle }}</p>
+        {% endif %}
+        {% if page.introduction %}
+            <p class="mt-2">{{ page.introduction }}</p>
+        {% endif %}
+        {% if page.date_published %}
+            <p class="mt-2 text-sm text-base-content/60">{{ page.date_published }}</p>
+        {% endif %}
+    </div>
 </header>

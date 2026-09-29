@@ -8,7 +8,7 @@ from wagtail_daisIE.widgets import (
 
 from .alignment import ContentAlignmentBlock
 from .audience import AudienceBlock
-from .background import BackgroundBlock, TextBackgroundBlock
+from .background import TextBackgroundBlock
 from .background_layer import (
     BackgroundLayerBlock,
     BackgroundStreamBlock,
@@ -21,6 +21,7 @@ from .design import (
     DesignBlock,
     InlineDesignBlock,
     InlineSpacedDesignBlock,
+    MainDesignBlock,
     MenuItemDesignBlock,
     PageDesignBlock,
     PublicThemedBlock,
@@ -36,6 +37,7 @@ from .design import (
 )
 from .fields import ColorChoiceBlock
 from .link import AbstractLinkBlock, LinkDestinationBlock
+from .markup import InlineMarkupBlock
 from .size import BlockSizeBlock, InlineSizeBlock
 from .typography import TypographyBlock
 
@@ -43,7 +45,6 @@ from .typography import TypographyBlock
 __all__ = [
     "AbstractLinkBlock",
     "AudienceBlock",
-    "BackgroundBlock",
     "BackgroundLayerBlock",
     "BackgroundStreamBlock",
     "BaseDesignBlock",
@@ -56,9 +57,11 @@ __all__ = [
     "DesignBlock",
     "GradientStopBlock",
     "InlineDesignBlock",
+    "InlineMarkupBlock",
     "InlineSizeBlock",
     "InlineSpacedDesignBlock",
     "LinkDestinationBlock",
+    "MainDesignBlock",
     "MarginBlock",
     "MenuItemDesignBlock",
     "PaddingBlock",

@@ -27,6 +27,13 @@ BASE_DIR = PROJECT_DIR.parent
 
 INSTALLED_APPS = [
     "wagtail_daisIE",
+    "wagtail_daisIE.assets",
+    "wagtail_daisIE.menus",
+    "wagtail_daisIE.feeds",
+    "wagtail_daisIE.errors",
+    "wagtail_daisIE.notifications",
+    "wagtail_daisIE.allauth_ui",
+    "wagtail_daisIE.allauth_emails",
     "blog",
     "home",
     "search",
@@ -68,6 +75,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
 ]
 
 ROOT_URLCONF = "demo.urls"
@@ -276,13 +284,24 @@ WAGTAIL_DAISIE_DETAIL_PAGES = {
         "label": "Bread",
         "model": "blog.Bread",
         "page_type": "blog.BreadDetailPage",
-        "parent": "blog.BreadDetailTemplate",
+        "parent": "blog.BreadIndexPage",
         "template_page": "blog.BreadDetailTemplate",
-        "lookup_field": "slug",
+        "lookup_field": "pk",
         "lookup_in": "path",
         "publish_field": "is_available",
         "title_source": "name",
         "slug_source": "name",
+    },
+}
+
+# Approval workflows: approving a suggestion creates the matching bread.
+WAGTAIL_DAISIE_APPROVAL_WORKFLOWS = {
+    "bread_suggestion": {
+        "label": "Bread suggestion",
+        "model": "blog.BreadSuggestion",
+        "approval_field": "is_approved",
+        "handler": "blog.workflows.approve_bread_suggestion",
+        "converted_field": "bread",
     },
 }
 
@@ -337,6 +356,10 @@ WAGTAIL_DAISIE_ALLAUTH_UI = True
 # Render allauth pages with the same chrome as standard pages.
 WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
 
+# Tailwind + DaisyUI is a committed, precompiled stylesheet served through
+# staticfiles (see `wagtail_daisIE.static.wagtail_daisIE.css.daisie.css`).
+# Regenerate it with `just build-css` after changing classes.
+
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
@@ -349,3 +372,9 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_LOGOUT_ON_GET = True
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
+
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.locmem.EmailBackend",
+    },
+}

@@ -17,6 +17,14 @@ from ..choices import FONT_FAMILY_ROLE_CHOICES, GENERIC_FONT_FAMILY_CHOICES
 from .fields import DaisyUISizeField
 
 
+def font_family_role_choices():
+    return FONT_FAMILY_ROLE_CHOICES
+
+
+def generic_font_family_choices():
+    return GENERIC_FONT_FAMILY_CHOICES
+
+
 class DaisyUIThemeFontCDN(Orderable):
     theme = ParentalKey(
         "wagtail_daisIE.DaisyUITheme",
@@ -78,7 +86,7 @@ class DaisyUIThemeFontFamily(ClusterableModel, Orderable):
     )
     role = models.CharField(
         max_length=16,
-        choices=FONT_FAMILY_ROLE_CHOICES,
+        choices=font_family_role_choices,
         default="body",
         verbose_name=_("Role"),
         help_text=_(
@@ -110,7 +118,7 @@ class DaisyUIThemeFontFamily(ClusterableModel, Orderable):
             "if none of the fonts above are available."
         ),
         default="sans-serif",
-        choices=GENERIC_FONT_FAMILY_CHOICES,
+        choices=generic_font_family_choices,
     )
     url = models.URLField(
         blank=True,

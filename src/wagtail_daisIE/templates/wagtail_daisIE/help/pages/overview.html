@@ -1,0 +1,10 @@
+{% load i18n %}
+<p>{% trans "The DaisyUI Editor adds a design system to Wagtail: reusable themes, a library of styled blocks, menus, data components, forms and emails." %}</p>
+<h2>{% trans "Where settings live" %}</h2>
+<ul>
+    <li>{% trans "Pages — the content and layout of each page." %}</li>
+    <li>{% trans "Design — themes, menus, feeds, icon sources and favicon." %}</li>
+    <li>{% trans "Forms — form pages that collect submissions and can create records." %}</li>
+</ul>
+<p><a href="{% url 'wagtailadmin_explore_root' %}">{% trans "Go to Pages" %}</a></p>
+<p>{% trans "New to the editor? Start with" %} <a href="{% url 'wagtail_daisIE:guide-page' 'build-a-page' %}">{% trans "Build a page" %}</a>.</p>

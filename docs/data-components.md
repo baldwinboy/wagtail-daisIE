@@ -1,12 +1,16 @@
 # Data-driven components
 
 Components let editors render project data and trigger actions without custom
-templates: **Feeds** (filterable, AJAX-paginated lists), **Action buttons** and
+templates: **Feeds** (filterable, AJAX-paginated lists), **Actions** and
 **Calendars**. They use the context models declared in
 `WAGTAIL_DAISIE_CONTEXT_MODELS` (see [context-models.md](context-models.md)) and
 developer-defined actions.
 
 Feeds, calendars and actions are content blocks, available in any page body.
+
+The `Feed` snippet comes from the required `wagtail_daisIE.feeds` app; the Feed
+and Calendar blocks live in `feeds/blocks_data.py`. Actions are code-only
+(`dynamic/action_blocks.py`).
 
 ## Action buttons
 
@@ -38,9 +42,15 @@ def add_to_basket(request, data):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 ```
 
-The **Action button** block has **Action**, **Label**, **Button classes**, an
-optional **Target expression** (resolved against the current item, e.g.
-`bread.pk`) and **Confirmation text**.
+The **Action** block is a struct of:
+
+- **Action** — a key from `WAGTAIL_DAISIE_ACTIONS`.
+- **Target expression** — an optional expression resolved against the current
+  item and sent as `target`, e.g. `{{ bread.pk }}`.
+- **Button** — a normal button block (same appearance/design logic), with an
+  extra **Make the parent card clickable** option.
+- **Confirmation** — an optional DaisyUI **alert** (text, icon, colour, style,
+  direction) added to Django messages when the action runs.
 
 Action buttons post with CSRF protection to the configured endpoint. Include the
 Daisie URLs in your project:
@@ -49,6 +59,30 @@ Daisie URLs in your project:
 # urls.py
 (path("daisie/", include("wagtail_daisIE.dynamic.urls")),)
 ```
+
+### Confirmation alerts
+
+When an action's **Confirmation** is set, the action view adds its text (and
+icon) to `django.contrib.messages` after the handler runs, so the message
+survives the POST redirect. Render it as a DaisyUI alert in your base template:
+
+```django
+{% load wagtail_daisIE_tags %}
+{% daisie_messages %}
+```
+
+Each message uses the alert colour/style/direction configured on the action
+block via `message.extra_tags`; other messages fall back to `alert-<level>`.
+The submitted values are treated as untrusted: text is escaped, the icon is
+validated and only allowlisted alert classes are accepted.
+
+### Clickable cards
+
+Inside a **Card**, a button or action button can set **Make the parent card
+clickable**. The control then renders as a bare `absolute! inset-0!` overlay
+that covers the card (the card gets `relative overflow-hidden cursor-pointer`),
+so the whole card is the click target while the rest of the content still
+renders. Outside a card the option is ignored and the button renders normally.
 
 ## Feeds
 
@@ -65,7 +99,10 @@ Feed fields:
 * **Filters** — select and order the filters declared on the model (below).
 * **Item design** — the blocks used for each item. This is the **same set as a
   page body** (sections, grids, cards, accordions, images, feedback, inputs,
-  newsletter…) plus **Action buttons**, so items can use any Daisie block.
+  newsletter…) plus **Action** blocks, so items can use any Daisie block.
+  Wrapping each item in a **Card** is the recommended pattern; a card may contain
+  an action, and the action (or a plain button) can make the whole card
+  clickable (see [Clickable cards](#clickable-cards)).
 
 Inside the item blocks the instance is available under the model key, e.g.
 `{{ bread.name }}`, `{{ bread.image }}` (with an image block in *From context*
@@ -182,14 +219,17 @@ scrolls (IntersectionObserver); otherwise a **Load more** button is shown.
 
 The demo's blog index renders a feed bound to `blog_post` whose `queryset`
 (`blog.feed.live_posts`) returns live posts scoped to the current index, with
-`tag` (single) and `author` filters and a date-range filter. The item card uses a
-dynamic image, title, introduction and a dynamic link.
+`tag` (single) and `author` filters and a date-range filter. The item is a
+**Card** containing a dynamic image, title, introduction and a **Button** whose
+destination is `{{ blog_post.url }}` with **Make the parent card clickable** set,
+so the whole card links to the post.
 
 ### Example: a cart-style basket
 
 A feed bound to a session-derived context model acts as a cart (`bread`/`basket`
-in the demo); its items include an **Add to basket** / **Remove** action, with a
-separate **Clear basket** action button on the page.
+in the demo); its item cards include an **Add to basket** / **Remove** action,
+with a separate **Clear basket** action on the page whose confirmation alert is
+shown after the basket is emptied.
 
 ## Calendar
 

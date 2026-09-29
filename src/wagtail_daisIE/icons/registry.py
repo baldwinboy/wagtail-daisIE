@@ -3,6 +3,7 @@ import logging
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
+from .providers.base import normalize_icon_svg
 from .value import split_icon
 
 
@@ -95,7 +96,7 @@ def _load_db_providers():
         return
     _db_loaded = True
     try:
-        from ..models import DaisyUIIconSource
+        from ..assets.models import DaisyUIIconSource
     except Exception:  # pragma: no cover - models unavailable pre-migration
         _register_default_iconify_providers()
         return
@@ -152,6 +153,8 @@ def render_icon(value, size=None, color=None, label=None):
             if provider is None:
                 return ""
             inner = provider.render(name, size=size, color=color)
+            # Normalise sizing/colour so the icon follows its parent button.
+            inner = normalize_icon_svg(inner, size=size, color=color)
     except Exception:
         logger.exception("Failed to render icon %r", value)
         return ""

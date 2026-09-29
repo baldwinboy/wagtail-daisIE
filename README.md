@@ -12,11 +12,13 @@ them to pages, and build navigation menus from the same block components.
 ## Links
 
 - [Documentation](https://github.com/baldwinboy/wagtail-daisIE/blob/main/README.md)
-- [Developer docs](docs/architecture.md)
+- [Developer docs](docs/architecture.md) · [CSS pipeline](docs/assets.md)
 - [Emails](docs/emails.md) · [Context models](docs/context-models.md) ·
   [Error pages](docs/error-pages.md) · [Forms](docs/forms.md) ·
+  [Approval workflows](docs/approval.md) ·
   [Data components](docs/data-components.md) ·
-  [Notifications](docs/notifications.md) · [django-allauth](docs/allauth.md)
+  [Notifications](docs/notifications.md) · [django-allauth](docs/allauth.md) ·
+  [Allauth pages](docs/allauth-pages.md)
 - [Changelog](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CHANGELOG.md)
 - [Contributing](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CONTRIBUTING.md)
 
@@ -32,12 +34,31 @@ poetry add wagtail-daisIE
 pip install wagtail-daisIE
 ```
 
+Install every optional feature with extras:
+
+```bash
+uv add "wagtail-daisIE[notifications,allauth,allauth_emails,blocks]"
+# or: pip install "wagtail-daisIE[notifications,allauth,allauth_emails,blocks]"
+```
+
 ### 1. Add to `INSTALLED_APPS`
+
+The core apps are required; `notifications`, `allauth_ui` and `allauth_emails`
+are opt-in and need their extras (see below).
 
 ```python
 # myproject/settings.py
 INSTALLED_APPS = [
+    # Required.
     "wagtail_daisIE",
+    "wagtail_daisIE.assets",
+    "wagtail_daisIE.menus",
+    "wagtail_daisIE.feeds",
+    "wagtail_daisIE.errors",
+    # Optional (each requires its extra).
+    "wagtail_daisIE.notifications",
+    "wagtail_daisIE.allauth_ui",
+    "wagtail_daisIE.allauth_emails",
     # ...
     "wagtail",
     # ...
@@ -47,20 +68,44 @@ INSTALLED_APPS = [
 ]
 ```
 
+Extras: `notifications` (emails, audiences, campaigns), `allauth`
+(django-allauth pages/emails) and `blocks` (`draftail-text-utils`).
+`allauth_emails` pulls in both `notifications` and `allauth`.
+
 ### 2. Run migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 3. Build the global stylesheet
+### 3. Serve the DaisyUI stylesheet
 
-The package ships a compiled Tailwind v4 + DaisyUI stylesheet. If you change
-`source.css`, rebuild it:
+The package ships a committed, precompiled Tailwind + daisyUI stylesheet; no
+Node.js or CLI is required in production.
+
+```python
+# settings.py
+MIDDLEWARE += [
+    # Covers arbitrary colour utilities (bg-[#0080ff] and friends).
+    "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
+]
+```
+
+Add the render-blocking link to your base template's `<head>`:
+
+```django
+{% load wagtail_daisIE_tags %}
+{% daisyui_styles %}
+```
+
+Regenerate `wagtail_daisIE/static/wagtail_daisIE/css/daisie.css` after changing
+any class choices:
 
 ```bash
-npm run compile-global-css
+just build-css   # regenerates the safelist, then runs the Tailwind CLI
 ```
+
+See [docs/assets.md](docs/assets.md) for the full pipeline and production notes.
 
 ## Quick start
 
@@ -111,21 +156,23 @@ This mixin adds:
 <!DOCTYPE html>
 <html{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
     <head>
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
         {% daisyui_theme_full_css daisyui_theme %}
+        {% daisyui_theme_script %}
         {% daisyui_icon_assets %}
     </head>
     <body{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
+        {% daisie_messages %}
         {% block content %}{% endblock %}
     </body>
 </html>
 ```
 
-`{% daisyui_global_css %}` returns the URL of the bundled Tailwind/DaisyUI
-stylesheet; remove conflicting stylesheets (Bootstrap, other Tailwind builds).
-
-`{% daisyui_theme_full_css theme %}` emits the theme's color, radius, size,
-effect, background, font, and font-CDN CSS. Finer-grained tags are listed below.
+The Tailwind/DaisyUI stylesheet is a committed static file; add
+`{% daisyui_styles %}` to `<head>` (render-blocking, no FOUC).
+`{% daisyui_theme_full_css theme %}` emits the
+theme's color, radius, size, effect, background, font, and font-CDN CSS, and
+`{% daisyui_theme_script %}` persists the visitor's theme choice.
+`{% daisie_messages %}` renders action confirmations as DaisyUI alerts.
 
 ## Menus
 
@@ -222,8 +269,9 @@ Render project data and trigger actions with reusable components:
 - **Feeds** — a snippet (Design → Feeds) that lists a context model with
   admin-designed item cards, typed filters (choice/multi, boolean, date, date
   range, price range, search), AJAX filtering and optional infinite scroll.
-- **Action button** — posts to a developer-defined action
-  (`WAGTAIL_DAISIE_ACTIONS`), e.g. *Add to basket*.
+- **Action** — a struct of a themed button and an optional confirmation alert
+  that posts to a developer-defined action (`WAGTAIL_DAISIE_ACTIONS`), e.g.
+  *Add to basket*. Inside a card it can make the whole card clickable.
 - **Calendar** — a [Cally](https://cally.dev) date picker showing each day's
   events as designed cards.
 
@@ -309,7 +357,6 @@ def register_icon_providers(providers):
 
 | Tag | Type | Output |
 |-----|------|--------|
-| `{% daisyui_global_css %}` | Simple | URL of the bundled Tailwind/DaisyUI stylesheet |
 | `{% daisyui_theme_css theme %}` | Inclusion | Inline `<style>` with color/radius/size/effect variables |
 | `{% daisyui_theme_inline_css theme %}` | Simple | Raw theme CSS string |
 | `{% daisyui_theme_background_css theme %}` | Inclusion | Inline `<style>` for background layers |
@@ -318,14 +365,19 @@ def register_icon_providers(providers):
 | `{% daisyui_theme_font_cdns theme %}` | Inclusion | `<link>` tags for font CDNs |
 | `{% daisyui_theme_full_css theme %}` | Inclusion | Font CDNs + colors + background + fonts |
 | `{% daisyui_theme_full_inline_css theme %}` | Simple | Raw combined CSS string |
+| `{% daisyui_theme_script %}` | Simple | Script tag that persists the theme choice |
+| `{% daisie_messages %}` | Inclusion | Renders Django messages as DaisyUI alerts |
 | `{% daisyui_menu "Name" %}` | Inclusion | Renders a `DaisyUIMenu` snippet |
 | `{% daisyui_icon value %}` | Simple | Renders a stored icon value |
+| `{% daisyui_email_icon value %}` | Simple | Rendering-safe data-URI icon image for email |
 | `{% daisyui_icon_assets %}` | Inclusion | Provider scripts/styles for `<head>` |
 | `{{ item\|is_active:request }}` | Filter | Whether a menu item points at the current path |
 
 ## Settings
 
-No Django settings are required. The following are optional:
+Styling needs only `{% daisyui_styles %}` plus the default
+`ArbitraryCSSMiddleware` (see [Installation](#3-serve-the-daisyui-stylesheet)).
+Everything else is optional:
 
 ```python
 # settings.py
@@ -392,7 +444,9 @@ features:
 - **Members only** page — audience-gated with a
   [designed 403 error page](docs/error-pages.md#audience-gated-pages).
 - **Suggest a bread** — a `DaisieFormPage` that creates an unapproved
-  `BreadSuggestion` for review.
+  `BreadSuggestion` for review; approving it runs an
+  [approval workflow](docs/approval.md) that creates the `Bread` (and its
+  generated detail page).
 - **Newsletter** in the footer — posts to the Daisie subscribe endpoint and
   populates the *Newsletter* audience.
 - **Breads and basket** — a `Model list` of the `Bread` model with an

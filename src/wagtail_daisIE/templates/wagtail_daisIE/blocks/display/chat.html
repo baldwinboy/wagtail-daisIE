@@ -1,0 +1,18 @@
+{% load wagtailimages_tags notifications %}
+{% if audience_allowed %}
+  <div class="flex flex-col {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for message in value.messages %}
+      <div class="chat {{ message.position }}">
+        {% if message.avatar %}
+          <div class="chat-image avatar">
+            {% image message.avatar fill-80x80 as img %}<img src="{{ img.url }}" alt="{{ message.name|daisie_strip_markup }}" class="w-10 rounded-full" />
+          </div>
+        {% endif %}
+        {% if message.name or message.time %}
+          <div class="chat-header">{% daisie_markup message.name %}{% if message.time %} <time class="text-xs opacity-50">{% daisie_markup message.time %}</time>{% endif %}</div>
+        {% endif %}
+        <div class="chat-bubble">{% daisie_markup message.text %}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

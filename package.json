@@ -8,7 +8,7 @@
     "lint:format": "prettier --check \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\"",
     "lint:css": "stylelint --allow-empty-input \"**/?(.)*.{css,scss}\"",
     "format": "prettier --write \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\"",
-    "compile-global-css": "npx @tailwindcss/cli -i src/wagtail_daisIE/static/wagtail_daisIE/css/source.css -o src/wagtail_daisIE/static/wagtail_daisIE/css/global.css --minify"
+    "build:css": "tailwindcss -i src/wagtail_daisIE/tailwind/input.css -o src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css --minify"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

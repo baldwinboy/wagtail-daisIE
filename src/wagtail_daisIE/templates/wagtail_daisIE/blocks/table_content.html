@@ -1,6 +1,6 @@
 {% load table_block_tags %}
 
-<table class="{% if block_css %}{{ block_css }}{% endif %}">
+<table class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     {% if table_caption %}
         <caption>{{ table_caption }}</caption>
     {% endif %}

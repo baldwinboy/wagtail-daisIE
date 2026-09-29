@@ -10,7 +10,8 @@ from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import ThemedBlock
+from ..base_blocks import ColorChoiceBlock, InlineMarkupBlock, ThemedBlock
+from ..choices import DAISYUI_BG_COLOR_CHOICES, MASK_SHAPE_CHOICES
 from ..choices.inputs import (
     CHOICE_COLOR_CHOICES,
     CHOICE_SIZE_CHOICES,
@@ -31,6 +32,7 @@ from ..choices.inputs import (
     TOGGLE_COLOR_CHOICES,
     TOGGLE_SIZE_CHOICES,
 )
+from ..widgets import DaisyUISwatchWidget
 
 
 def _split_options(value):
@@ -43,30 +45,22 @@ def _split_options(value):
 
 
 class InputBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
-    input_type = blocks.ChoiceBlock(
-        choices=INPUT_TYPE_CHOICES, default="text", label=_("Input type")
-    )
-    placeholder = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Placeholder")
-    )
+    input_type = blocks.ChoiceBlock(choices=INPUT_TYPE_CHOICES, default="text")
+    placeholder = blocks.CharBlock(max_length=255, required=False, blank=True)
     value = blocks.CharBlock(
         max_length=255, required=False, blank=True, label=_("Default value")
     )
     color = blocks.ChoiceBlock(
         choices=INPUT_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=INPUT_SIZE_CHOICES, required=False, label=_("Size")
-    )
-    required = blocks.BooleanBlock(default=False, required=False, label=_("Required"))
-    helper_text = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Helper text")
-    )
-    error_text = blocks.CharBlock(
+    size = blocks.ChoiceBlock(choices=INPUT_SIZE_CHOICES, required=False)
+    required = blocks.BooleanBlock(default=False, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    error_text = InlineMarkupBlock(
         max_length=255,
         required=False,
         blank=True,
@@ -97,25 +91,19 @@ class InputBlock(ThemedBlock):
 
 
 class TextareaBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
-    placeholder = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Placeholder")
-    )
-    rows = blocks.IntegerBlock(min_value=2, max_value=20, default=3, label=_("Rows"))
+    placeholder = blocks.CharBlock(max_length=255, required=False, blank=True)
+    rows = blocks.IntegerBlock(min_value=2, max_value=20, default=3)
     color = blocks.ChoiceBlock(
         choices=TEXTAREA_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=TEXTAREA_SIZE_CHOICES, required=False, label=_("Size")
-    )
-    required = blocks.BooleanBlock(default=False, required=False, label=_("Required"))
-    helper_text = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Helper text")
-    )
-    error_text = blocks.CharBlock(
+    size = blocks.ChoiceBlock(choices=TEXTAREA_SIZE_CHOICES, required=False)
+    required = blocks.BooleanBlock(default=False, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    error_text = InlineMarkupBlock(
         max_length=255, required=False, blank=True, label=_("Error message")
     )
 
@@ -141,27 +129,20 @@ class TextareaBlock(ThemedBlock):
 
 
 class SelectBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
     options = blocks.TextBlock(
-        label=_("Options"),
         help_text=_("One option per line, or comma separated."),
     )
-    placeholder = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Placeholder")
-    )
+    placeholder = blocks.CharBlock(max_length=255, required=False, blank=True)
     color = blocks.ChoiceBlock(
         choices=SELECT_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=SELECT_SIZE_CHOICES, required=False, label=_("Size")
-    )
-    helper_text = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Helper text")
-    )
-    error_text = blocks.CharBlock(
+    size = blocks.ChoiceBlock(choices=SELECT_SIZE_CHOICES, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    error_text = InlineMarkupBlock(
         max_length=255, required=False, blank=True, label=_("Error message")
     )
 
@@ -191,7 +172,7 @@ class SelectBlock(ThemedBlock):
 
 
 class CheckboxBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
@@ -201,12 +182,8 @@ class CheckboxBlock(ThemedBlock):
     color = blocks.ChoiceBlock(
         choices=CHOICE_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=CHOICE_SIZE_CHOICES, required=False, label=_("Size")
-    )
-    helper_text = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Helper text")
-    )
+    size = blocks.ChoiceBlock(choices=CHOICE_SIZE_CHOICES, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
 
     class Meta:
         icon = "tick-inverse"
@@ -220,7 +197,7 @@ class CheckboxBlock(ThemedBlock):
 
 
 class ToggleBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
@@ -230,12 +207,8 @@ class ToggleBlock(ThemedBlock):
     color = blocks.ChoiceBlock(
         choices=TOGGLE_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=TOGGLE_SIZE_CHOICES, required=False, label=_("Size")
-    )
-    helper_text = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Helper text")
-    )
+    size = blocks.ChoiceBlock(choices=TOGGLE_SIZE_CHOICES, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
 
     class Meta:
         icon = "cog"
@@ -249,20 +222,17 @@ class ToggleBlock(ThemedBlock):
 
 
 class RadioBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Group name")
     )
     options = blocks.TextBlock(
-        label=_("Options"),
         help_text=_("One option per line, or comma separated."),
     )
     color = blocks.ChoiceBlock(
         choices=RADIO_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=RADIO_SIZE_CHOICES, required=False, label=_("Size")
-    )
+    size = blocks.ChoiceBlock(choices=RADIO_SIZE_CHOICES, required=False)
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -281,20 +251,18 @@ class RadioBlock(ThemedBlock):
 
 
 class RangeBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
-    minimum = blocks.IntegerBlock(default=0, label=_("Minimum"))
-    maximum = blocks.IntegerBlock(default=100, label=_("Maximum"))
-    step = blocks.IntegerBlock(min_value=1, default=1, label=_("Step"))
-    value = blocks.IntegerBlock(default=40, label=_("Value"))
+    minimum = blocks.IntegerBlock(default=0)
+    maximum = blocks.IntegerBlock(default=100)
+    step = blocks.IntegerBlock(min_value=1, default=1)
+    value = blocks.IntegerBlock(default=40)
     color = blocks.ChoiceBlock(
         choices=RANGE_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=RANGE_SIZE_CHOICES, required=False, label=_("Size")
-    )
+    size = blocks.ChoiceBlock(choices=RANGE_SIZE_CHOICES, required=False)
 
     class Meta:
         icon = "horizontalrule"
@@ -317,24 +285,61 @@ class RangeBlock(ThemedBlock):
 
 
 class RatingBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, required=False, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255, required=False)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Group name")
     )
     maximum = blocks.IntegerBlock(
-        min_value=1, max_value=10, default=5, label=_("Stars")
+        min_value=1,
+        max_value=10,
+        default=5,
+        label=_("Number of items"),
+        help_text=_("How many selectable items, e.g. 5 for a five-star rating."),
     )
     value = blocks.IntegerBlock(default=0, label=_("Selected"))
-    size = blocks.ChoiceBlock(
-        choices=RATING_SIZE_CHOICES, required=False, label=_("Size")
+    size = blocks.ChoiceBlock(choices=RATING_SIZE_CHOICES, required=False)
+    shape = blocks.ChoiceBlock(
+        choices=MASK_SHAPE_CHOICES,
+        default="mask-star",
+        help_text=_("Mask applied to each item."),
+    )
+    color = ColorChoiceBlock(
+        choices=DAISYUI_BG_COLOR_CHOICES,
+        required=False,
+        widget=DaisyUISwatchWidget(prefix="bg"),
+    )
+    star_colors = blocks.ListBlock(
+        ColorChoiceBlock(
+            choices=DAISYUI_BG_COLOR_CHOICES,
+            required=False,
+            widget=DaisyUISwatchWidget(prefix="bg"),
+        ),
+        required=False,
+        label=_("Individual colors"),
+        help_text=_(
+            "Optional. One color per item, in order; overrides the color above."
+        ),
     )
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
         maximum = int(value.get("maximum", 5) or 5)
-        context["stars"] = range(1, maximum + 1)
-        context["selected"] = int(value.get("value", 0) or 0)
+        selected = int(value.get("value", 0) or 0)
+        base_color = value.get("color") or ""
+        star_colors = list(value.get("star_colors") or [])
+        stars = []
+        for index in range(1, maximum + 1):
+            override = star_colors[index - 1] if index - 1 < len(star_colors) else ""
+            stars.append(
+                {
+                    "value": index,
+                    "checked": index == selected,
+                    "color": override or base_color,
+                }
+            )
+        context["stars"] = stars
+        context["shape"] = value.get("shape") or "mask-star"
         return context
 
     class Meta:
@@ -343,13 +348,22 @@ class RatingBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/rating.html"
         form_layout = blocks.BlockGroup(
-            children=["label", "name", "maximum", "value", "size"],
+            children=[
+                "label",
+                "name",
+                "maximum",
+                "value",
+                "size",
+                "shape",
+                "color",
+                "star_colors",
+            ],
             settings=["design", "audience"],
         )
 
 
 class FileInputBlock(ThemedBlock):
-    label = blocks.CharBlock(max_length=255, label=_("Label"))
+    label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
@@ -359,12 +373,8 @@ class FileInputBlock(ThemedBlock):
     color = blocks.ChoiceBlock(
         choices=FILE_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=FILE_SIZE_CHOICES, required=False, label=_("Size")
-    )
-    helper_text = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Helper text")
-    )
+    size = blocks.ChoiceBlock(choices=FILE_SIZE_CHOICES, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
 
     class Meta:
         icon = "upload"
@@ -391,10 +401,8 @@ FIELD_BLOCKS = [
 
 
 class FieldsetBlock(ThemedBlock):
-    legend = blocks.CharBlock(max_length=255, label=_("Legend"))
-    description = blocks.CharBlock(
-        max_length=255, required=False, blank=True, label=_("Description")
-    )
+    legend = InlineMarkupBlock(max_length=255)
+    description = InlineMarkupBlock(max_length=255, required=False, blank=True)
     content = blocks.StreamBlock(FIELD_BLOCKS, label=_("Fields"))
 
     class Meta:

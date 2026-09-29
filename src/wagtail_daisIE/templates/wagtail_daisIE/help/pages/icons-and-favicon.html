@@ -1,0 +1,18 @@
+{% load i18n %}
+<h2>{% trans "Icons" %}</h2>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_assets_daisyuiiconsource:list' %}">{% trans "Design → Icon Sources" %}</a>
+        {% trans "and add or enable a source." %}
+    </li>
+    <li>{% trans "Use an icon field to search and pick an icon." %}</li>
+</ol>
+<h2>{% trans "Favicon" %}</h2>
+<ol>
+    <li>
+        {% trans "Open" %}
+        <a href="{% url 'wagtailsnippets_wagtail_daisIE_assets_daisyuifavicon:list' %}">{% trans "Design → Favicon" %}</a>.
+    </li>
+    <li>{% trans "A row with no site is the global fallback; a row with a site applies to that site only." %}</li>
+</ol>

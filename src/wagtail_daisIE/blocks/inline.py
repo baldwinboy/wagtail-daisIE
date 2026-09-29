@@ -1,16 +1,17 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks import InlineMarkupBlock
 from .base import (
     ThemedTypographyBlock,
 )
 
 
 class InlineTextBlock(ThemedTypographyBlock):
-    text = blocks.CharBlock(
+    text = InlineMarkupBlock(
         max_length=255,
         help_text=_("Text content for the inline block."),
-        blank=True,
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -33,7 +34,7 @@ class InlineTextBlock(ThemedTypographyBlock):
 class InlineRichTextBlock(ThemedTypographyBlock):
     text = blocks.RichTextBlock(
         help_text=_("Rich text content for the inline block."),
-        blank=True,
+        required=False,
     )
 
     class Meta:
@@ -56,13 +57,13 @@ class HeaderBlock(InlineTextBlock):
 
 
 class CopyrightBlock(InlineTextBlock):
-    text = blocks.CharBlock(
+    text = InlineMarkupBlock(
         max_length=512,
         help_text=_(
             "Copyright text. This will sit alongside the copyright symbol and "
             "current year, so should just be the name of the copyright holder."
         ),
-        blank=True,
+        required=False,
     )
 
     class Meta:

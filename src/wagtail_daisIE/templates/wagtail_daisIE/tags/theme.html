@@ -48,7 +48,7 @@
   {% with font_families=fonts.font_families.all %}
     {% if font_families %}
       {% for family in font_families %}
-        --font-{{ family }}: {{ family.css_value }};
+        --font-{{ family }}: {{ family.css_value|safe }};
       {% endfor %}
     {% endif %}
   {% endwith %}
@@ -57,4 +57,14 @@
   {% endif %}
   {% endwith %}
 }
+
+{% with fonts=theme.fonts.first %}
+{% if fonts %}
+{% with font_families=fonts.font_families.all %}
+{% for family in font_families %}
+.font-{{ family }} { font-family: var(--font-{{ family }}); }
+{% endfor %}
+{% endwith %}
+{% endif %}
+{% endwith %}
 </style>

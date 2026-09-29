@@ -9,7 +9,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        exclude: ^demo/
+        exclude: ^demo/|^src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css$
       - id: check-case-conflict
       - id: check-executables-have-shebangs
       - id: check-illegal-windows-names

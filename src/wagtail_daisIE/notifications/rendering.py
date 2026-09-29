@@ -1,4 +1,4 @@
-"""Render an :class:`~wagtail_daisIE.emails.models.EmailTemplate` to concrete
+"""Render an :class:`~wagtail_daisIE.notifications.models.EmailTemplate` to concrete
 subject/HTML/plain-text for a recipient and placeholder payload.
 
 This is the single place that turns a stored template plus a context into
@@ -60,7 +60,7 @@ def render_email_template(
 ):
     """Render ``template`` into a :class:`RenderedEmail`.
 
-    ``template`` is an :class:`~wagtail_daisIE.emails.models.EmailTemplate`.
+    ``template`` is an :class:`~wagtail_daisIE.notifications.models.EmailTemplate`.
     """
     context = build_context(
         request=request,

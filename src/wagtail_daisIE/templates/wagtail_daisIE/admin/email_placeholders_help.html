@@ -14,24 +14,26 @@
         </p>
 
         {% for group in placeholder_groups %}
-            <h4>{{ group.title }}</h4>
-            {% if group.description %}<p>{{ group.description }}</p>{% endif %}
-            <table class="listing">
-                <thead>
-                    <tr>
-                        <th>{% trans "Placeholder" %}</th>
-                        <th>{% trans "Description" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in group.items %}
+            <details style="margin-bottom: 1rem;">
+                <summary style="display: list-item;">{{ group.title }}</summary>
+                {% if group.description %}<p>{{ group.description }}</p>{% endif %}
+                <table class="listing">
+                    <thead>
                         <tr>
-                            <td><code>{{ item.token }}</code></td>
-                            <td>{{ item.description }}</td>
+                            <th>{% trans "Placeholder" %}</th>
+                            <th>{% trans "Description" %}</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for item in group.items %}
+                            <tr>
+                                <td><code>{{ item.token }}</code></td>
+                                <td>{{ item.description }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
         {% endfor %}
 
         <h4>{% trans "Formatting dates and times" %}</h4>

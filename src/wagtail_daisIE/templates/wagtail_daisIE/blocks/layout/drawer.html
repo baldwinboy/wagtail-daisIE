@@ -1,0 +1,16 @@
+{% load i18n wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="drawer lg:drawer-open {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <input id="daisie-drawer-{{ block.id }}" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content flex flex-col">
+      <label for="daisie-drawer-{{ block.id }}" class="btn btn-ghost w-fit lg:hidden">{% trans "Menu" %}</label>
+      {% for child in value.content %}{% include_block child %}{% endfor %}
+    </div>
+    <div class="drawer-side">
+      <label for="daisie-drawer-{{ block.id }}" class="drawer-overlay"></label>
+      <ul class="menu min-h-full w-80 gap-1 bg-base-100 p-4">
+        {% for child in value.side %}<li>{% include_block child %}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endif %}

@@ -1,2 +1,2 @@
 {% load wagtailcore_tags mjml %}
-{% if audience_allowed %}<mj-section {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}><mj-column>{% for child in value.content %}{% include_block child %}{% endfor %}</mj-column></mj-section>{% endif %}
+{% if audience_allowed %}<mj-section {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% if has_columns %}{% for child in value.content %}{% include_block child %}{% endfor %}{% else %}<mj-column>{% for child in value.content %}{% include_block child %}{% endfor %}</mj-column>{% endif %}</mj-section>{% endif %}

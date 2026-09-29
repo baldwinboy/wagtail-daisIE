@@ -1,0 +1,10 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed and value.image %}
+  <div class="hover-3d {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <figure class="max-w-3xl rounded-2xl">
+      {% image value.image width-1000 as img %}<img src="{{ img.url }}" alt="{{ value.caption|default:value.image.title }}" />
+      {% if value.caption %}<figcaption class="mt-2 text-sm text-base-content/70">{{ value.caption }}</figcaption>{% endif %}
+    </figure>
+    <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+  </div>
+{% endif %}

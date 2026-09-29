@@ -8,6 +8,8 @@ class HomePage(StyledPageMixin):
 
     subpage_types = [
         "blog.BlogIndexPage",
+        "blog.BreadIndexPage",
+        "blog.BreadDetailTemplate",
         "blog.BreadSuggestionFormPage",
         "home.DemoPage",
     ]

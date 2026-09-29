@@ -18,6 +18,7 @@ from django import template
 from django.utils.safestring import mark_safe
 from wagtail.templatetags.wagtailcore_tags import richtext as _richtext
 
+from ..base_blocks.markup import render_inline_markup, strip_inline_markup
 from ..notifications.context import context_from_template_context
 from ..notifications.placeholders import render_expression, render_placeholders
 
@@ -52,3 +53,19 @@ def daisie_expr(context, expression):
     """Resolve a single expression such as ``bread.pk`` against the context."""
     data = context_from_template_context(context)
     return render_expression(expression, data)
+
+
+@register.simple_tag(takes_context=True)
+def daisie_markup(context, value, allow_links=True):
+    """Substitute placeholders then render rudimentary inline markup."""
+    data = context_from_template_context(context)
+    return render_inline_markup(
+        render_placeholders(value, data, escape_literals=True),
+        allow_links=allow_links,
+    )
+
+
+@register.filter
+def daisie_strip_markup(value):
+    """Strip markup markers for use in HTML attributes."""
+    return strip_inline_markup(value)

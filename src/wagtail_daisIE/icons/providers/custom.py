@@ -67,6 +67,9 @@ class CustomIconProvider(IconProvider):
         style_attr = f' style="{style}"' if style else ""
         return svg[:4] + f' aria-hidden="true" focusable="false"{style_attr}' + svg[4:]
 
+    def email_svg(self, name, color=None):
+        return self._svg(name)
+
     def search(self, query, limit=64, start=0):
         query = (query or "").lower()
         names = [n for n in self._names() if not query or query in n.lower()]

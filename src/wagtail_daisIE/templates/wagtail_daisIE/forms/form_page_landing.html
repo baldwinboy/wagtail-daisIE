@@ -5,12 +5,12 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{{ page.title }}</title>
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_styles %}
         {% daisyui_theme_full_css daisyui_theme %}
         {% daisyui_favicon %}
     </head>
     <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
-        <main id="main-content" class="mx-auto w-full max-w-2xl grow px-4 py-12">
+        <main id="main-content"{% daisyui_main_attrs daisyui_theme %}>
             <div class="alert alert-success" role="status">
                 {% trans "Thank you — your submission was received." %}
             </div>

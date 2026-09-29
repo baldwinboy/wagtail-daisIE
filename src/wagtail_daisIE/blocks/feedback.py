@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks import ThemedBlock
+from ..choicelist import ChoiceList
 from ..choices.feedback import (
     ALERT_COLOR_CHOICES,
     ALERT_DIRECTION_CHOICES,
@@ -29,18 +30,27 @@ from ..choices.feedback import (
 from ..icons.blocks import IconChooserBlock
 
 
+MODAL_PLACEMENT_CHOICES = ChoiceList(
+    [
+        ("", "Centre"),
+        ("modal-top", "Top"),
+        ("modal-middle", "Middle"),
+        ("modal-bottom", "Bottom"),
+        ("modal-start", "Start"),
+        ("modal-end", "End"),
+    ],
+    "MODAL_PLACEMENT_CHOICES",
+)
+
+
 class AlertBlock(ThemedBlock):
     content = blocks.RichTextBlock(label=_("Message"))
     icon = IconChooserBlock(required=False)
     color = blocks.ChoiceBlock(
         choices=ALERT_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    style = blocks.ChoiceBlock(
-        choices=ALERT_STYLE_CHOICES, required=False, label=_("Style")
-    )
-    direction = blocks.ChoiceBlock(
-        choices=ALERT_DIRECTION_CHOICES, required=False, label=_("Direction")
-    )
+    style = blocks.ChoiceBlock(choices=ALERT_STYLE_CHOICES, required=False)
+    direction = blocks.ChoiceBlock(choices=ALERT_DIRECTION_CHOICES, required=False)
 
     class Meta:
         icon = "warning"
@@ -57,13 +67,10 @@ class StatusBlock(ThemedBlock):
     color = blocks.ChoiceBlock(
         choices=STATUS_COLOR_CHOICES, required=False, label=_("Colour")
     )
-    size = blocks.ChoiceBlock(
-        choices=STATUS_SIZE_CHOICES, required=False, label=_("Size")
-    )
+    size = blocks.ChoiceBlock(choices=STATUS_SIZE_CHOICES, required=False)
     label = blocks.CharBlock(
         max_length=128,
         required=False,
-        label=_("Label"),
         help_text=_("Optional text shown next to the indicator."),
     )
 
@@ -82,7 +89,7 @@ class ProgressBlock(ThemedBlock):
     value = blocks.IntegerBlock(
         min_value=0, max_value=100, default=50, label=_("Value (%)")
     )
-    maximum = blocks.IntegerBlock(min_value=1, default=100, label=_("Maximum"))
+    maximum = blocks.IntegerBlock(min_value=1, default=100)
     color = blocks.ChoiceBlock(
         choices=PROGRESS_COLOR_CHOICES, required=False, label=_("Colour")
     )
@@ -115,9 +122,7 @@ class RadialProgressBlock(ThemedBlock):
     size = blocks.IntegerBlock(
         min_value=1, max_value=20, default=5, label=_("Size (rem)")
     )
-    thickness = blocks.CharBlock(
-        default="0.25rem", required=False, label=_("Thickness")
-    )
+    thickness = blocks.CharBlock(default="0.25rem", required=False)
 
     class Meta:
         icon = "circle"
@@ -131,12 +136,8 @@ class RadialProgressBlock(ThemedBlock):
 
 
 class LoadingBlock(ThemedBlock):
-    style = blocks.ChoiceBlock(
-        choices=LOADING_STYLE_CHOICES, default="loading-spinner", label=_("Style")
-    )
-    size = blocks.ChoiceBlock(
-        choices=LOADING_SIZE_CHOICES, required=False, label=_("Size")
-    )
+    style = blocks.ChoiceBlock(choices=LOADING_STYLE_CHOICES, default="loading-spinner")
+    size = blocks.ChoiceBlock(choices=LOADING_SIZE_CHOICES, required=False)
     label = blocks.CharBlock(
         max_length=128,
         default="Loading",
@@ -158,7 +159,6 @@ class ToastBlock(ThemedBlock):
     position = blocks.ChoiceBlock(
         choices=TOAST_POSITION_CHOICES,
         default="toast-end toast-bottom",
-        label=_("Position"),
     )
     color = blocks.ChoiceBlock(
         choices=ALERT_COLOR_CHOICES, default="alert-info", label=_("Colour")
@@ -177,26 +177,14 @@ class ToastBlock(ThemedBlock):
 
 
 class ModalBlock(ThemedBlock):
-    trigger_label = blocks.CharBlock(
-        max_length=64, default="Open", label=_("Trigger label")
-    )
-    title = blocks.CharBlock(max_length=255, required=False, label=_("Title"))
-    content = blocks.RichTextBlock(required=False, label=_("Content"))
-    close_label = blocks.CharBlock(
-        max_length=64, default="Close", required=False, label=_("Close label")
-    )
+    trigger_label = blocks.CharBlock(max_length=64, default="Open")
+    title = blocks.CharBlock(max_length=255, required=False)
+    content = blocks.RichTextBlock(required=False)
+    close_label = blocks.CharBlock(max_length=64, default="Close", required=False)
     placement = blocks.ChoiceBlock(
-        choices=[
-            ("", "Centre"),
-            ("modal-top", "Top"),
-            ("modal-middle", "Middle"),
-            ("modal-bottom", "Bottom"),
-            ("modal-start", "Start"),
-            ("modal-end", "End"),
-        ],
+        choices=MODAL_PLACEMENT_CHOICES,
         default="",
         required=False,
-        label=_("Placement"),
     )
 
     class Meta:
@@ -213,9 +201,7 @@ class ModalBlock(ThemedBlock):
 class TooltipBlock(ThemedBlock):
     text = blocks.CharBlock(max_length=255, label=_("Tooltip text"))
     content = blocks.CharBlock(max_length=255, label=_("Trigger text"))
-    position = blocks.ChoiceBlock(
-        choices=TOOLTIP_POSITION_CHOICES, required=False, label=_("Position")
-    )
+    position = blocks.ChoiceBlock(choices=TOOLTIP_POSITION_CHOICES, required=False)
     color = blocks.ChoiceBlock(
         choices=TOOLTIP_COLOR_CHOICES, required=False, label=_("Colour")
     )
@@ -235,13 +221,12 @@ class StepsBlock(ThemedBlock):
     direction = blocks.ChoiceBlock(
         choices=STEPS_DIRECTION_CHOICES,
         default="steps-horizontal",
-        label=_("Direction"),
     )
     color = blocks.ChoiceBlock(
         choices=STEPS_COLOR_CHOICES, required=False, label=_("Colour")
     )
     active = blocks.IntegerBlock(min_value=0, default=1, label=_("Completed steps"))
-    steps = blocks.ListBlock(blocks.CharBlock(label=_("Step")), label=_("Steps"))
+    steps = blocks.ListBlock(blocks.CharBlock(label=_("Step")))
 
     class Meta:
         icon = "list-ul"

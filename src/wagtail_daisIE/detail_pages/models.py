@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.http import Http404
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.models import Page
@@ -14,7 +15,7 @@ from ..pages import StyledPageMixin
 
 
 class ModelDetailTemplate(StyledPageMixin):
-    """One page whose design is reused by a detail type's generated pages."""
+    """A non-navigable page holding the shared design for a detail type."""
 
     detail_key = models.CharField(
         max_length=64,
@@ -22,14 +23,42 @@ class ModelDetailTemplate(StyledPageMixin):
         verbose_name=_("Detail type"),
         help_text=_("The key from WAGTAIL_DAISIE_DETAIL_PAGES this design serves."),
     )
+    parent_page = models.ForeignKey(
+        "wagtailcore.Page",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name=_("Generated pages live under"),
+        help_text=_("Where pages generated for this detail type are added."),
+    )
 
-    content_panels = StyledPageMixin.content_panels + [FieldPanel("detail_key")]
+    content_panels = StyledPageMixin.content_panels + [
+        FieldPanel("detail_key"),
+        FieldPanel("parent_page"),
+    ]
+
+    # Hide the slug; Wagtail auto-generates it from the title
+    # (_set_core_field_defaults, wagtail/models/pages.py:700-722).
+    promote_panels = [
+        MultiFieldPanel(
+            [FieldPanel("seo_title"), FieldPanel("search_description")],
+            _("For search engines"),
+        ),
+    ]
 
     class Meta:
         abstract = True
 
     def __str__(self):
         return self.title
+
+    def get_url_parts(self, request=None):
+        """Return ``None``: the design page is never navigable."""
+        return None
+
+    def serve(self, request, *args, **kwargs):
+        raise Http404
 
 
 class ModelDetailPage(StyledPageMixin):

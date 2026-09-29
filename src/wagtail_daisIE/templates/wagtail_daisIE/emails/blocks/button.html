@@ -1,2 +1,2 @@
-{% load mjml notifications %}
-{% if audience_allowed %}<mj-button href="{{ link_url }}"{% if link_new_tab %} target="_blank"{% endif %} {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% daisie_text value.text %}</mj-button>{% endif %}
+{% load mjml notifications wagtail_daisIE_tags %}
+{% if audience_allowed %}<mj-button href="{{ link_url }}"{% if link_new_tab %} target="_blank"{% endif %} {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% if value.icon and not value.icon_after %}{% daisyui_email_icon value.icon size=email_icon_size_px color=email_icon_color %}&nbsp;{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}&nbsp;{% daisyui_email_icon value.icon size=email_icon_size_px color=email_icon_color %}{% endif %}</mj-button>{% endif %}

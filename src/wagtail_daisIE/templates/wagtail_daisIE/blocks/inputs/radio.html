@@ -1,6 +1,7 @@
+{% load notifications %}
 {% if audience_allowed %}
-  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
-    <legend class="fieldset-legend">{{ value.label }}</legend>
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <legend class="fieldset-legend">{% daisie_markup value.label %}</legend>
     {% for option in radio_options %}
       <label class="label cursor-pointer justify-start gap-3">
         <input

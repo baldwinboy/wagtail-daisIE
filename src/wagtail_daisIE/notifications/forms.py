@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from django import forms
-from django.utils.translation import gettext_lazy as _
 
 from .models import Audience
 
@@ -11,10 +10,9 @@ from .models import Audience
 class SubscribeForm(forms.Form):
     audience = forms.ModelChoiceField(
         queryset=Audience.objects.none(),
-        label=_("Audience"),
     )
-    email = forms.EmailField(label=_("Email"))
-    name = forms.CharField(max_length=255, required=False, label=_("Name"))
+    email = forms.EmailField()
+    name = forms.CharField(max_length=255, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

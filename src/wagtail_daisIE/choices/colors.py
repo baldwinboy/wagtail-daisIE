@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-from .utils import kebab_to_sentence, make_choices
+from .utils import ChoiceList, kebab_to_sentence, make_choices
 
 
 DAISYUI_COLOR_TOKENS = [
@@ -30,21 +30,30 @@ DAISYUI_COLOR_TOKENS = [
     (f"{token}", _(kebab_to_sentence(token))) for token in DAISYUI_COLOR_TOKENS
 ]
 
-DAISYUI_BG_COLOR_CHOICES = make_choices(
-    "bg-",
-    DAISYUI_COLOR_TOKENS,
-    will_inherit=True,
+DAISYUI_BG_COLOR_CHOICES = ChoiceList(
+    make_choices(
+        "bg-",
+        DAISYUI_COLOR_TOKENS,
+        will_inherit=True,
+    ),
+    "DAISYUI_BG_COLOR_CHOICES",
 )
 
 
-DAISYUI_TEXT_COLOR_CHOICES = make_choices(
-    "text-",
-    DAISYUI_COLOR_TOKENS,
-    will_inherit=True,
+DAISYUI_TEXT_COLOR_CHOICES = ChoiceList(
+    make_choices(
+        "text-",
+        DAISYUI_COLOR_TOKENS,
+        will_inherit=True,
+    ),
+    "DAISYUI_TEXT_COLOR_CHOICES",
 )
 
-DAISYUI_BORDER_COLOR_CHOICES = make_choices(
-    "border-",
-    DAISYUI_COLOR_TOKENS,
-    will_inherit=True,
+DAISYUI_BORDER_COLOR_CHOICES = ChoiceList(
+    make_choices(
+        "border-",
+        DAISYUI_COLOR_TOKENS,
+        will_inherit=True,
+    ),
+    "DAISYUI_BORDER_COLOR_CHOICES",
 )

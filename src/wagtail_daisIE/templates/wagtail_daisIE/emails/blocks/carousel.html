@@ -1,0 +1,2 @@
+{% load mjml wagtailimages_tags %}
+{% if audience_allowed %}<mj-carousel {% mj_attrs email_attributes css_class=email_css_class mj_class=email_mj_class %}>{% for slide in value.images %}{% image slide.image width-1200 as img %}<mj-carousel-image src="{{ img.url }}"{% if slide.href %} href="{{ slide.href }}"{% endif %} />{% endfor %}</mj-carousel>{% endif %}

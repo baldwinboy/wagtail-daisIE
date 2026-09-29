@@ -8,8 +8,26 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..choicelist import ChoiceList
 from .forms import DynamicInstanceField
 from .registry import get_context_model, get_context_model_choices
+
+
+BINDING_MODE_CHOICES = ChoiceList(
+    [
+        ("automatic", _("Automatic")),
+        ("url", _("From the URL")),
+        ("fixed", _("Specific instance")),
+    ],
+    "BINDING_MODE_CHOICES",
+)
+BINDING_LOOKUP_IN_CHOICES = ChoiceList(
+    [
+        ("path", _("Path parameter")),
+        ("query", _("Query parameter")),
+    ],
+    "BINDING_LOOKUP_IN_CHOICES",
+)
 
 
 class DynamicInstanceChooserBlock(blocks.FieldBlock):
@@ -32,11 +50,7 @@ class ContextBindingBlock(blocks.StructBlock):
         help_text=_("The variable content can reference, e.g. {{ meeting }}."),
     )
     mode = blocks.ChoiceBlock(
-        choices=[
-            ("automatic", _("Automatic")),
-            ("url", _("From the URL")),
-            ("fixed", _("Specific instance")),
-        ],
+        choices=BINDING_MODE_CHOICES,
         default="automatic",
         required=False,
         label=_("Source"),
@@ -49,10 +63,7 @@ class ContextBindingBlock(blocks.StructBlock):
         help_text=_("The URL parameter to look up (defaults to the model config)."),
     )
     lookup_in = blocks.ChoiceBlock(
-        choices=[
-            ("path", _("Path parameter")),
-            ("query", _("Query parameter")),
-        ],
+        choices=BINDING_LOOKUP_IN_CHOICES,
         default="path",
         required=False,
         label=_("Read from"),
@@ -71,7 +82,6 @@ class ContextBindingBlock(blocks.StructBlock):
         max_length=255,
         required=False,
         blank=True,
-        label=_("Fallback"),
         help_text=_(
             "Shown when the value cannot be resolved (e.g. no signed-in user)."
         ),

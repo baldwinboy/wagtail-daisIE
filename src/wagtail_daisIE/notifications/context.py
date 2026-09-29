@@ -123,7 +123,7 @@ def context_from_template_context(template_context):
     """Extract the placeholder context from a Django template ``Context``.
 
     Block HTML is rendered with the keys injected by
-    :meth:`wagtail_daisIE.emails.models.EmailTemplate.get_mjml_context`; this
+    :meth:`wagtail_daisIE.notifications.models.EmailTemplate.get_mjml_context`; this
     helper picks them up and fills in defaults (``now`` and, when absent, the
     current site) so the tags also work outside the email renderer.
     """

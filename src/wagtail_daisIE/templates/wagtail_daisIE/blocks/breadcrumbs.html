@@ -1,0 +1,20 @@
+{% load wagtail_daisIE_tags %}
+{% if audience_allowed and crumbs %}
+  <nav class="breadcrumbs text-sm {{ block_css|default:"" }}" aria-label="Breadcrumb"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <ul>
+      {% for crumb in crumbs %}
+        {% if crumb.url %}
+          <li>
+            <a href="{{ crumb.url }}">
+              {% if crumb.icon %}{% daisyui_icon crumb.icon %}{% endif %}{{ crumb.label }}
+            </a>
+          </li>
+        {% else %}
+          <li{% if forloop.last %} aria-current="page"{% endif %}>
+            {% if crumb.icon %}{% daisyui_icon crumb.icon %}{% endif %}{{ crumb.label }}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </nav>
+{% endif %}

@@ -5,7 +5,7 @@ from __future__ import annotations
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.template.response import TemplateResponse
 
-from ..models import DaisyUIFavicon
+from ..assets.models import DaisyUIFavicon
 
 
 def _current(request):

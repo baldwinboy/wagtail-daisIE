@@ -72,9 +72,10 @@ migrate:
     uv run ./demo/manage.py makemigrations
     uv run ./demo/manage.py migrate
 
-# Compile the global CSS for the demo site.
-compile-global-css:
-    npm run compile-global-css
+# Regenerate the Tailwind safelist and compile the committed DaisyUI stylesheet.
+build-css:
+    uv run ./demo/manage.py daisie_safelist
+    npm run build:css
 
 # Collect static assets for development server
 collectstatic:

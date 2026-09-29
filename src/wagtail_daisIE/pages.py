@@ -7,14 +7,31 @@ from wagtail.models import Page
 from wagtail_daisIE.base_blocks import (
     AudienceBlock,
     BackgroundStreamBlock,
+    MainDesignBlock,
     PageDesignBlock,
 )
+from wagtail_daisIE.base_blocks.css import build_design_css
 from wagtail_daisIE.blocks.content import ContentBlock
 from wagtail_daisIE.models import DaisyUITheme
 
 from .base_blocks.audience import PageAudienceMixin
+from .choicelist import ChoiceList
 from .dynamic.blocks import CONTEXT_BINDING_BLOCKS
 from .dynamic.mixins import DaisieContextMixin
+
+
+AUDIENCE_DENIED_CHOICES = ChoiceList(
+    [
+        ("403", _("Show a 403 page")),
+        ("404", _("Show a 404 page")),
+        ("redirect", _("Redirect to a page")),
+    ],
+    "AUDIENCE_DENIED_CHOICES",
+)
+
+
+def audience_denied_choices():
+    return AUDIENCE_DENIED_CHOICES
 
 
 def get_default_theme_id():
@@ -73,6 +90,16 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
         ),
     )
 
+    main_design = StreamField(
+        [("main", MainDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Main design"),
+        help_text=_("Design the main content container for this page."),
+        default=[],
+    )
+
     body = StreamField(
         ContentBlock(),
         blank=True,
@@ -101,11 +128,7 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
     )
     audience_denied = models.CharField(
         max_length=10,
-        choices=[
-            ("403", _("Show a 403 page")),
-            ("404", _("Show a 404 page")),
-            ("redirect", _("Redirect to a page")),
-        ],
+        choices=audience_denied_choices,
         default="403",
         verbose_name=_("When access is denied"),
     )
@@ -127,6 +150,7 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
         FieldPanel("page_theme"),
         FieldPanel("page_background"),
         FieldPanel("page_design"),
+        FieldPanel("main_design"),
         FieldPanel("audience"),
         MultiFieldPanel(
             [
@@ -156,10 +180,40 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
             return {}
         return PageDesignBlock().get_default_css(first)
 
+    def get_main_design_value(self):
+        page_value = self.main_design[0].value if self.main_design else None
+        if page_value:
+            return page_value
+        theme = self.get_daisyui_theme()
+        return theme.get_main_design_value() if theme is not None else None
+
+    def get_main_design_css(self):
+        return build_design_css(self.get_main_design_value())
+
+    def get_main_design_style(self):
+        value = self.get_main_design_value() or {}
+        background = value.get("background")
+        if background and not isinstance(background, dict):
+            css = BackgroundStreamBlock().get_css(background)
+            if css:
+                return f"background: {css}"
+        return ""
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        context["daisyui_theme"] = self.get_daisyui_theme()
+        theme = self.get_daisyui_theme()
+        # Honour the visitor's persisted theme choice (set by
+        # {% daisyui_theme_script %}) so server-rendered data-theme and theme
+        # variables match the toggle across navigations.
+        cookie_theme = getattr(request, "COOKIES", {}).get("daisie_theme")
+        if cookie_theme:
+            saved = DaisyUITheme.objects.filter(name=cookie_theme).first()
+            if saved is not None:
+                theme = saved
+        context["daisyui_theme"] = theme
         context["daisyui_page_background_css"] = self.get_page_background_css()
+        context["daisyui_main_css"] = self.get_main_design_css()
+        context["daisyui_main_style"] = self.get_main_design_style()
         context["page_audience_allowed"] = self.page_audience_allowed(request)
         for category, css in self.get_page_design_css().items():
             context[f"{category}_css"] = css

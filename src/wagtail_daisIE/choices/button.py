@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-from wagtail_daisIE.choices.utils import make_choices
+from wagtail_daisIE.choices.utils import ChoiceList, make_choices
 
 
 DAISYUI_BUTTON_COLORS = [
@@ -14,10 +14,13 @@ DAISYUI_BUTTON_COLORS = [
     ("error", _("Error")),
 ]
 
-DAISYUI_BUTTON_COLOR_CHOICES = make_choices(
-    "btn-",
-    DAISYUI_BUTTON_COLORS,
-    will_inherit=True,
+DAISYUI_BUTTON_COLOR_CHOICES = ChoiceList(
+    make_choices(
+        "btn-",
+        DAISYUI_BUTTON_COLORS,
+        will_inherit=True,
+    ),
+    "DAISYUI_BUTTON_COLOR_CHOICES",
 )
 
 DAISYUI_BUTTON_STYLES = [
@@ -28,10 +31,13 @@ DAISYUI_BUTTON_STYLES = [
     ("link", _("Link style")),
 ]
 
-DAISYUI_BUTTON_STYLE_CHOICES = make_choices(
-    "btn-",
-    DAISYUI_BUTTON_STYLES,
-    will_inherit=True,
+DAISYUI_BUTTON_STYLE_CHOICES = ChoiceList(
+    make_choices(
+        "btn-",
+        DAISYUI_BUTTON_STYLES,
+        will_inherit=True,
+    ),
+    "DAISYUI_BUTTON_STYLE_CHOICES",
 )
 
 DAISYUI_BUTTON_SIZES = [
@@ -42,10 +48,13 @@ DAISYUI_BUTTON_SIZES = [
     ("xl", _("xl")),
 ]
 
-DAISYUI_BUTTON_SIZE_CHOICES = make_choices(
-    "btn-",
-    DAISYUI_BUTTON_SIZES,
-    will_inherit=True,
+DAISYUI_BUTTON_SIZE_CHOICES = ChoiceList(
+    make_choices(
+        "btn-",
+        DAISYUI_BUTTON_SIZES,
+        will_inherit=True,
+    ),
+    "DAISYUI_BUTTON_SIZE_CHOICES",
 )
 
 DAISYUI_BUTTON_BEHAVIORS = [
@@ -53,10 +62,13 @@ DAISYUI_BUTTON_BEHAVIORS = [
     ("disabled", _("Disabled")),
 ]
 
-DAISYUI_BUTTON_BEHAVIOR_CHOICES = make_choices(
-    "btn-",
-    DAISYUI_BUTTON_BEHAVIORS,
-    will_inherit=True,
+DAISYUI_BUTTON_BEHAVIOR_CHOICES = ChoiceList(
+    make_choices(
+        "btn-",
+        DAISYUI_BUTTON_BEHAVIORS,
+        will_inherit=True,
+    ),
+    "DAISYUI_BUTTON_BEHAVIOR_CHOICES",
 )
 
 DAISYUI_BUTTON_MODIFIERS = [
@@ -66,8 +78,11 @@ DAISYUI_BUTTON_MODIFIERS = [
     ("circle", _("Circle")),
 ]
 
-DAISYUI_BUTTON_MODIFIER_CHOICES = make_choices(
-    "btn-",
-    DAISYUI_BUTTON_MODIFIERS,
-    will_inherit=True,
+DAISYUI_BUTTON_MODIFIER_CHOICES = ChoiceList(
+    make_choices(
+        "btn-",
+        DAISYUI_BUTTON_MODIFIERS,
+        will_inherit=True,
+    ),
+    "DAISYUI_BUTTON_MODIFIER_CHOICES",
 )

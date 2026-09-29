@@ -23,6 +23,8 @@ class DaisyUIColorField(ColorField):
     """
 
     def __init__(self, *args, **kwargs):
+        self.force_alpha = kwargs.pop("force_alpha", True)
+        kwargs.setdefault("format", "hex")
         super().__init__(*args, **kwargs)
         # Accept both hex (#rrggbb) and hexa (#rrggbbaa) values, since the
         # Coloris picker may hand back either depending on how a colour was
@@ -38,7 +40,11 @@ class DaisyUIColorField(ColorField):
     def formfield(self, **kwargs):
         formfield = super().formfield(**kwargs)
         formfield.validators = [color_hex_or_hexa_validator]
-        formfield.widget = DaisyUIThemeColorWidget()
+        base_format = (self.format or "hex")[:3]
+        alpha = bool(self.format) and self.format.endswith("a")
+        formfield.widget = DaisyUIThemeColorWidget(
+            format=base_format, alpha=alpha, force_alpha=self.force_alpha
+        )
         return formfield
 
 

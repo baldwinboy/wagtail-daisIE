@@ -34,7 +34,9 @@ class SwatchChoiceField(forms.ChoiceField):
     colours such as ``#0080ff`` (used by the raw swatch widgets).
     """
 
-    CUSTOM_CLASS_PATTERN = re.compile(r"(?:bg|text|border)-\[#[0-9a-fA-F]{3,8}\]")
+    CUSTOM_CLASS_PATTERN = re.compile(
+        r"(?:bg|text|border|decoration)-\[#[0-9a-fA-F]{3,8}\]"
+    )
     RAW_HEX_PATTERN = re.compile(r"#[0-9a-fA-F]{3,8}")
 
     def validate(self, value):

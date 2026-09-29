@@ -304,6 +304,15 @@ class BreadSuggestion(models.Model):
         default=False,
         help_text="Approved suggestions have been reviewed by an editor.",
     )
+    bread = models.ForeignKey(
+        "blog.Bread",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name="Bread",
+        help_text="The bread created from this suggestion once approved.",
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     panels = [
@@ -387,22 +396,25 @@ class BreadSuggestionFormPage(DaisieFormPage):
     subpage_types = []
 
 
-class BreadDetailTemplate(ModelDetailTemplate):
-    """Shared design and ``{{ bread }}`` binding for generated bread pages."""
+class BreadIndexPage(StyledPageMixin):
+    """Navigable bread listing; holds the breads Feed block."""
 
-    template = "blog/bread_detail_template.html"
+    template = "blog/bread_index_page.html"
     parent_page_types = ["home.HomePage"]
     subpage_types = ["blog.BreadDetailPage"]
 
-    def get_context(self, request, *args, **kwargs):
-        context = super().get_context(request, *args, **kwargs)
-        context["breads"] = Bread.objects.filter(is_available=True)
-        return context
+
+class BreadDetailTemplate(ModelDetailTemplate):
+    """Shared, non-navigable design for generated bread pages."""
+
+    template = "blog/bread_detail_template.html"
+    parent_page_types = ["home.HomePage"]
+    subpage_types = []
 
 
 class BreadDetailPage(ModelDetailPage):
     """Auto-generated page for one ``Bread``."""
 
     template = "blog/bread_detail_page.html"
-    parent_page_types = ["blog.BreadDetailTemplate"]
+    parent_page_types = ["blog.BreadIndexPage"]
     subpage_types = []

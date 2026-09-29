@@ -1,0 +1,25 @@
+{% extends "wagtailadmin/generic/base.html" %}
+{% load i18n %}
+
+{% block main_content %}
+    <p class="w-mb-8">
+        {% trans "Guides for everyone who edits content: how the design system works, and how to build pages, menus, feeds, forms and emails." %}
+    </p>
+
+    {% for section in sections %}
+        <section class="w-mb-10">
+            <h2 class="w-h2">{{ section.title }}</h2>
+            <ul class="w-list-none w-pl-0">
+                {% for topic in section.pages %}
+                    <li class="w-mb-3">
+                        <a href="{% url 'wagtail_daisIE:guide-page' topic.slug %}">
+                            <strong>{{ topic.title }}</strong>
+                        </a>
+                        <br />
+                        <span class="w-text-text-meta">{{ topic.summary }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endfor %}
+{% endblock %}

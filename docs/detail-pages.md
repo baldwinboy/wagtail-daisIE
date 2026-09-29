@@ -8,6 +8,14 @@ page**, so styling every record means editing one page.
 This builds on [context models](context-models.md) and uses the URL-binding
 machinery (path parameters) to view the current record.
 
+A detail type uses three pages:
+
+| Role | Page type | Purpose |
+|------|-----------|---------|
+| Feed / listing | a normal `StyledPageMixin` page (e.g. `BreadIndexPage`) | Navigable page under Home that lists records with a Feed block and links to generated pages. Also the parent of those pages, so URLs are `/breads/<slug>/`. |
+| Shared design | a `ModelDetailTemplate` subclass | Non-navigable, slug-less page under Home holding the theme, background, design, body and bindings. |
+| Generated detail | a `ModelDetailPage` subclass | One page per record, created and kept in sync automatically. |
+
 ## Declaring detail pages
 
 ```python
@@ -17,8 +25,8 @@ WAGTAIL_DAISIE_DETAIL_PAGES = {
         "label": "Bread",
         "model": "blog.Bread",
         "page_type": "blog.BreadDetailPage",  # your Page subclass
-        "parent": "blog.BreadDetailTemplate",  # where new pages are added
-        "template_page": "blog.BreadDetailTemplate",  # shared design (optional)
+        "parent": "blog.BreadIndexPage",  # where new pages are added
+        "template_page": "blog.BreadDetailTemplate",  # shared design
         "lookup_field": "slug",
         "lookup_in": "path",
         "publish_field": "is_available",
@@ -32,7 +40,7 @@ WAGTAIL_DAISIE_DETAIL_PAGES = {
 |-----|-------------|
 | `model` | `"app_label.ModelName"` or dotted path. |
 | `page_type` | The `ModelDetailPage` subclass to create. |
-| `parent` | The page (or its model) new pages are added under. |
+| `parent` | The page (or its model) new pages are added under. The design page's **Generated pages live under** chooser overrides it. |
 | `template_page` | The page whose design is inherited (defaults to `parent`). |
 | `lookup_field` / `lookup_in` | How `{{ key }}` resolves on the page (see above). |
 | `publish_field` | Publish the page only when this model field is truthy. |
@@ -43,17 +51,28 @@ WAGTAIL_DAISIE_DETAIL_PAGES = {
 
 ```python
 from wagtail_daisIE.detail_pages.models import ModelDetailPage, ModelDetailTemplate
+from wagtail_daisIE.pages import StyledPageMixin
 
 
-class BreadDetailTemplate(ModelDetailTemplate):
-    template = "blog/bread_detail_template.html"
+class BreadIndexPage(StyledPageMixin):
+    """Navigable listing: holds a Feed block and links to each record."""
+
+    template = "blog/bread_index_page.html"
     parent_page_types = ["home.HomePage"]
     subpage_types = ["blog.BreadDetailPage"]
 
 
+class BreadDetailTemplate(ModelDetailTemplate):
+    """Shared, non-navigable design for the generated pages."""
+
+    template = "blog/bread_detail_template.html"
+    parent_page_types = ["home.HomePage"]
+    subpage_types = []
+
+
 class BreadDetailPage(ModelDetailPage):
     template = "blog/bread_detail_page.html"
-    parent_page_types = ["blog.BreadDetailTemplate"]
+    parent_page_types = ["blog.BreadIndexPage"]
     subpage_types = []
 ```
 
@@ -83,13 +102,20 @@ class Bread(models.Model):
 
 ## The shared design page
 
-`ModelDetailTemplate` is a normal `StyledPageMixin` page: give it a theme,
-background, **Page default design**, body blocks and **Context bindings** (for
-example a `bread` binding with `lookup_in: path`). Every generated page inherits
-that design at request time, so editing the template restyles all instances.
+`ModelDetailTemplate` is a `StyledPageMixin` page, but it is a **design container
+only**: give it a theme, background, **Page default design**, body blocks and
+**Context bindings** (for example a `bread` binding with `lookup_in: path`).
 
-Each generated page has a **Use shared design** toggle; turn it off to give one
-page its own theme/design/bindings.
+It is deliberately **not navigable**: `get_url_parts()` returns `None` (so it has
+no URL and nothing links to it), a direct request raises `404`, and its slug is
+hidden and auto-generated from the title. Use its **Generated pages live under**
+chooser to pick the feed/listing page; generated pages are added there, so their
+URLs are the listing page's (e.g. `/breads/<slug>/`). When the chooser is empty,
+the settings `parent` is used.
+
+Every generated page inherits the template's design at request time, so editing
+the template restyles all instances. Each generated page has a **Use shared
+design** toggle; turn it off to give one page its own theme/design/bindings.
 
 ## Lifecycle
 

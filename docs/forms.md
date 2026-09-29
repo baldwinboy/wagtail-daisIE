@@ -126,7 +126,9 @@ Override them or `get_template()` / `get_landing_page_template()` as needed.
 2. `create_instance_from_submission` builds the target model from each input’s
    linked **Model field** (falling back to the field’s clean name) and saves it.
 3. If **Require approval** is on, the approval field is set to `False`, so the
-   instance is hidden from the public until an editor approves it.
+   instance is hidden from the public until an editor approves it. To convert an
+   approved instance into another record, configure an
+   [approval workflow](approval.md).
 
 Failures creating the instance are logged and do not break the submission.
 

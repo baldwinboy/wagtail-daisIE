@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-from .utils import make_choices
+from .utils import ChoiceList, make_choices
 
 
 _SHADOW_SIZES = [
@@ -13,4 +13,4 @@ _SHADOW_SIZES = [
     ("2xl", _("Largest")),
 ]
 
-SHADOW_CHOICES = make_choices("shadow-", _SHADOW_SIZES)
+SHADOW_CHOICES = ChoiceList(make_choices("shadow-", _SHADOW_SIZES), "SHADOW_CHOICES")

@@ -3,7 +3,7 @@ from django.test import override_settings
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 
-from home.models import HomePage
+from home.models import DemoPage, HomePage
 
 
 class HomeSetUpTests(WagtailPageTestCase):
@@ -77,13 +77,10 @@ class LoadInitialDataTests(WagtailPageTestCase):
         DaisyUITheme.objects.all().delete()
 
     def test_load_initial_data_seeds_content_and_is_idempotent(self):
-        from wagtail_daisIE.models import (
-            Audience,
-            DaisyUIMenu,
-            DaisyUITheme,
-            EmailTemplate,
-            ErrorPage,
-        )
+        from wagtail_daisIE.errors.models import ErrorPage
+        from wagtail_daisIE.menus.models import DaisyUIMenu
+        from wagtail_daisIE.models import DaisyUITheme
+        from wagtail_daisIE.notifications.models import Audience, EmailTemplate
 
         call_command("load_initial_data")
 
@@ -143,6 +140,33 @@ class LoadInitialDataTests(WagtailPageTestCase):
             title="Rye loaf", is_approved=False
         ).exists()
 
+    def test_approved_suggestion_becomes_bread(self):
+        from blog.models import (
+            Bread,
+            BreadDetailPage,
+            BreadSuggestion,
+            BreadSuggestionFormPage,
+        )
+
+        call_command("load_initial_data")
+
+        form_page = BreadSuggestionFormPage.objects.get(slug="suggest-a-bread")
+        self.client.post(
+            form_page.url,
+            {"title": "Rye loaf", "description": "Dark rye please"},
+        )
+        suggestion = BreadSuggestion.objects.get(title="Rye loaf")
+        suggestion.is_approved = True
+        suggestion.save()
+
+        suggestion.refresh_from_db()
+        assert suggestion.bread is not None
+        assert Bread.objects.filter(name="Rye loaf").exists()
+        bread = suggestion.bread
+        assert BreadDetailPage.objects.filter(
+            source_object_id=bread.pk, live=True
+        ).exists()
+
     def test_form_page_rejects_duplicate_field_placement(self):
         from django.core.exceptions import ValidationError
 
@@ -160,7 +184,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
         assert "title" in str(ctx.exception.message_dict["body"])
 
     def test_data_pages_and_basket(self):
-        from blog.models import Bread
+        from blog.models import Bread, BreadIndexPage
         from home.models import DemoPage
 
         call_command("load_initial_data")
@@ -168,7 +192,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
         bread = Bread.objects.first()
         assert bread is not None
 
-        breads_page = DemoPage.objects.get(slug="breads")
+        breads_page = BreadIndexPage.objects.get(slug="breads")
         response = self.client.get(breads_page.url)
         assert response.status_code == 200
         content = response.content.decode()
@@ -200,7 +224,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
 
     def test_blog_feed_date_range_filter(self):
         from blog.models import BlogPage
-        from wagtail_daisIE.models import Feed
+        from wagtail_daisIE.feeds.models import Feed
 
         call_command("load_initial_data")
         feed = Feed.objects.get(name="Blog feed")

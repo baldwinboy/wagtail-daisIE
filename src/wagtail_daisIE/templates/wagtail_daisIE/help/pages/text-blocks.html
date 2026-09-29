@@ -1,0 +1,10 @@
+{% load i18n %}
+<p>{% trans "Blocks for all kinds of text." %}</p>
+<ul>
+    <li><strong>{% trans "Header" %}</strong> — {% trans "a heading." %}</li>
+    <li><strong>{% trans "Text" %}</strong> — {% trans "a short line." %}</li>
+    <li><strong>{% trans "Rich text" %}</strong> — {% trans "formatted paragraphs." %}</li>
+    <li><strong>{% trans "Blockquote" %}</strong> — {% trans "a quotation." %}</li>
+    <li><strong>{% trans "Copyright" %}</strong> — {% trans "a copyright line." %}</li>
+</ul>
+<p>{% trans "Text fields support simple markup — see" %} <a href="{% url 'wagtail_daisIE:guide-page' 'markup-and-placeholders' %}">{% trans "Markup and placeholders" %}</a>.</p>

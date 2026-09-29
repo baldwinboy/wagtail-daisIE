@@ -134,7 +134,7 @@ def get_email_template(bridge: Bridge):
     """Return the :class:`EmailTemplate` a bridge targets, if any."""
     if not bridge.template:
         return None
-    from ..emails.models import EmailTemplate
+    from .models import EmailTemplate
 
     return (
         EmailTemplate.objects.filter(

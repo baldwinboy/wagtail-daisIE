@@ -1,0 +1,45 @@
+{% extends "wagtailadmin/generic/base.html" %}
+{% load i18n %}
+
+{% block main_content %}
+    <div class="w-flex w-flex-col lg:w-flex-row lg:w-gap-10">
+        <nav aria-label="{% trans 'Guide topics' %}" class="lg:w-64 lg:w-shrink-0">
+            {% for section in sections %}
+                <h2 class="w-h5">{{ section.title }}</h2>
+                <ul class="w-list-none w-pl-0 w-mb-5">
+                    {% for topic in section.pages %}
+                        <li>
+                            <a
+                                href="{% url 'wagtail_daisIE:guide-page' topic.slug %}"
+                                {% if topic.slug == guide_page.slug %}aria-current="page"{% endif %}
+                            >{{ topic.title }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        </nav>
+
+        <article class="w-grow w-max-w-3xl">
+            <h1 class="w-h1">{{ guide_page.title }}</h1>
+
+            {% include page_template %}
+
+            <nav
+                aria-label="{% trans 'Guide navigation' %}"
+                class="w-mt-12 w-flex w-flex-wrap w-gap-4 w-text-text-meta"
+            >
+                {% if prev_page %}
+                    <a href="{% url 'wagtail_daisIE:guide-page' prev_page.slug %}">
+                        ← {{ prev_page.title }}
+                    </a>
+                {% endif %}
+                <a href="{% url 'wagtail_daisIE:guide' %}">{% trans "Contents" %}</a>
+                {% if next_page %}
+                    <a href="{% url 'wagtail_daisIE:guide-page' next_page.slug %}">
+                        {{ next_page.title }} →
+                    </a>
+                {% endif %}
+            </nav>
+        </article>
+    </div>
+{% endblock %}

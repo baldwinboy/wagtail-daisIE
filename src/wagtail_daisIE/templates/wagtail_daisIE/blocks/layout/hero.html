@@ -1,0 +1,9 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed %}
+  <div class="hero relative overflow-hidden {% if value.full_width %}left-1/2 w-screen max-w-none -translate-x-1/2{% endif %} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% if value.overlay %}<div class="hero-overlay"></div>{% endif %}
+    <div class="hero-content w-full max-w-6xl {% if value.align == "left" %}justify-start text-left{% else %}justify-center text-center{% endif %}">
+      {% for child in value.content %}{% include_block child %}{% endfor %}
+    </div>
+  </div>
+{% endif %}

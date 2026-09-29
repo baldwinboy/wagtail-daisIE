@@ -18,10 +18,7 @@ class LinkDestinationBlock(blocks.StreamBlock):
         required=False,
         blank=True,
         label=_("Dynamic URL"),
-        help_text=_(
-            "An expression resolving to a URL at render time, "
-            "e.g. {{ meeting.url }}. Only http, https, mailto and tel are allowed."
-        ),
+        help_text=_("URL expression, e.g. {{ meeting.url }} (http/https/mailto/tel)."),
     )
     link_document = DocumentChooserBlock(required=False, label=_("Document"))
     link_email = blocks.EmailBlock(required=False, blank=True, label=_("Email"))
@@ -100,7 +97,6 @@ class AbstractLinkBlock(blocks.StructBlock):
     open_in_new_tab = blocks.BooleanBlock(
         default=False,
         required=False,
-        label=_("Open in new tab"),
     )
 
     class Meta:

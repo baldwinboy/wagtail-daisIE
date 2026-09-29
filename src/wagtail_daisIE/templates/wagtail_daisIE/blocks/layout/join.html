@@ -1,0 +1,12 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <div class="join {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for item in value.items %}
+      {% if item.type == "input" %}
+        <input class="input join-item" placeholder="{{ item.text|daisie_strip_markup }}" />
+      {% else %}
+        <button class="btn join-item">{% daisie_markup item.text %}</button>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

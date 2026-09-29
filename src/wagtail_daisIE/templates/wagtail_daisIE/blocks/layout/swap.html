@@ -1,0 +1,8 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <label class="swap {{ value.effect }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <input type="checkbox" />
+    <div class="swap-on">{% daisie_markup value.on_text %}</div>
+    <div class="swap-off">{% daisie_markup value.off_text %}</div>
+  </label>
+{% endif %}

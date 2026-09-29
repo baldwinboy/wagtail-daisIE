@@ -1,0 +1,7 @@
+{% load wagtailcore_tags notifications %}
+{% if audience_allowed %}
+  <div class="indicator {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <span class="indicator-item badge {{ value.color }} {{ value.position }}">{% daisie_markup value.item %}</span>
+    {% for child in value.content %}{% include_block child %}{% endfor %}
+  </div>
+{% endif %}

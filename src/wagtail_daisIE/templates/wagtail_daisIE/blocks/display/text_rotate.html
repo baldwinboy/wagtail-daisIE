@@ -1,0 +1,6 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <span class="text-rotate {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for line in value.texts %}<span>{% daisie_markup line %}</span>{% endfor %}
+  </span>
+{% endif %}

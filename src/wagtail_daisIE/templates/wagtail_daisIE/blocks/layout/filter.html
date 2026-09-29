@@ -1,0 +1,9 @@
+{% load i18n %}
+{% if audience_allowed %}
+  <div class="filter {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <input class="btn btn-square" type="reset" value="×" aria-label="{% trans 'Reset' %}" />
+    {% for option in value.options %}
+      <input class="btn" type="radio" name="{{ value.name|default:'daisie-filter' }}" aria-label="{{ option }}" value="{{ option }}" />
+    {% endfor %}
+  </div>
+{% endif %}

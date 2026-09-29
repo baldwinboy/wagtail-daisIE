@@ -1,0 +1,8 @@
+{% load notifications %}
+{% if audience_allowed %}
+  <div class="stat {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% if value.title %}<div class="stat-title">{% daisie_markup value.title %}</div>{% endif %}
+    <div class="stat-value {{ value.color }}">{% daisie_markup value.value %}</div>
+    {% if value.description %}<div class="stat-desc">{% daisie_markup value.description %}</div>{% endif %}
+  </div>
+{% endif %}

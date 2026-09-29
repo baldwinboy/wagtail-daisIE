@@ -528,17 +528,17 @@
     "body": [
       {
         "type": "rich_text",
-        "value": "<p><b>Bread</b> is a <a href=\"https://en.wikipedia.org/wiki/Staple_food\">staple food</a> prepared from a <a href=\"https://en.wikipedia.org/wiki/Dough\">dough</a> of <a href=\"https://en.wikipedia.org/wiki/Flour\">flour</a> and <a href=\"https://en.wikipedia.org/wiki/Water\">water</a>, usually by <a href=\"https://en.wikipedia.org/wiki/Baking\">baking</a>. Throughout recorded history it has been popular around the world and is one of the oldest artificial foods, having been of importance since the dawn of <a href=\"https://en.wikipedia.org/wiki/Agriculture#History\">agriculture</a>.</p><p>Proportions of types of flour and other ingredients vary widely, as do modes of preparation. As a result, types, shapes, sizes, and textures of breads differ around the world. Bread may be <a href=\"https://en.wikipedia.org/wiki/Leaven\">leavened</a> by processes such as reliance on naturally occurring <a href=\"https://en.wikipedia.org/wiki/Sourdough\">sourdough</a> microbes, chemicals, industrially produced yeast, or high-pressure aeration. Some bread is cooked before it can leaven, including for traditional or religious reasons. Non-cereal ingredients such as fruits, nuts and fats may be included. Commercial bread commonly contains additives to improve flavor, texture, color, shelf life, and ease of manufacturing.</p>"
-      },
-      {
-        "type": "image_block",
-        "value": {
-          "image": "dark-rye-sourdough",
-          "caption": "Fresh from the oven",
-          "attribution": ""
-        }
+        "value": "<p><b>Bread</b> is a <a href=\"https://en.wikipedia.org/wiki/Staple_food\">staple food</a> prepared from a <a href=\"https://en.wikipedia.org/wiki/Dough\">dough</a> of <a href=\"https://en.wikipedia.org/wiki/Flour\">flour</a> and <a href=\"https://en.wikipedia.org/wiki/Water\">water</a>, usually by <a href=\"https://en.wikipedia.org/wiki/Baking\">baking</a>. Throughout recorded history it has been popular around the world and is one of the oldest artificial foods, having been of importance since the dawn of <a href=\"https://en.wikipedia.org/wiki/Agriculture#History\">agriculture</a>.</p><p>Proportions of types of flour and other ingredients vary widely, as do modes of preparation. As a result, types, shapes, sizes, and textures of breads differ around the world. Bread may be <a href=\"https://en.wikipedia.org/wiki/Leaven\">leavened</a> by processes such as reliance on naturally occurring <a href=\"https://en.wikipedia.org/wiki/Sourdough\">sourdough</a> microbes, chemicals, industrially produced yeast, or high-pressure aeration. Some bread is cooked before it can leaven, including for traditional or religious reasons. Non-cereal ingredients such as fruits, nuts and fats may be included. Commercial bread commonly contains additives to improve flavor, texture, color, shelf life, and ease of manufacturing.</p>"
       }
     ],
-    "image": "dark-rye-sourdough"
+    "image": "dark-rye-sourdough",
+    "hero": {
+      "lead": "A sample demo site",
+      "cta_text": "Learn more about Wagtail",
+      "image": "dark-rye-sourdough"
+    },
+    "featured_section": {
+      "title": "Blog"
+    }
   }
 }

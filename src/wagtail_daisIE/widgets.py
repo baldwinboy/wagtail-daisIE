@@ -110,6 +110,12 @@ class DaisyUISizeWidget(forms.MultiWidget):
 
 
 class DaisyUIColorWidget(ColorWidget):
+    def __init__(self, attrs=None, format="hex", alpha=True, force_alpha=True):
+        self.format = format
+        self.alpha = alpha
+        self.force_alpha = force_alpha
+        super().__init__(attrs)
+
     @property
     def media(self):
         # Coloris is loaded once globally (see wagtail_hooks); only the
@@ -120,20 +126,31 @@ class DaisyUIColorWidget(ColorWidget):
     def get_context(self, name, value, attrs=None):
         context = super().get_context(name, value, attrs)
         options = context.get("data_coloris_options", {})
-        options["format"] = "hexa"
-        options["alpha"] = True
-        options["forceAlpha"] = True
+        options["format"] = self.format
+        options["alpha"] = self.alpha
+        options["forceAlpha"] = self.force_alpha
         context["data_coloris_options"] = options
         return context
 
 
 class DaisyUIThemeColorWidget(ColorWidget):
     """
-    Same as DaisyUIColorWidget but allows passing pre-defined swatches.
+    Same as DaisyUIColorWidget but allows pre-defined swatches and an explicit
+    alpha policy.
     """
 
-    def __init__(self, swatches=None, attrs=None):
+    def __init__(
+        self,
+        swatches=None,
+        attrs=None,
+        format="hex",
+        alpha=True,
+        force_alpha=True,
+    ):
         self.swatches = swatches or []
+        self.format = format
+        self.alpha = alpha
+        self.force_alpha = force_alpha
         super().__init__(attrs)
 
     @property
@@ -146,9 +163,9 @@ class DaisyUIThemeColorWidget(ColorWidget):
         options = context.get("data_coloris_options", {})
         options["swatches"] = self.swatches
         options["swatchesOnly"] = False  # allow picking any colour
-        options["format"] = "hexa"
-        options["alpha"] = True
-        options["forceAlpha"] = True
+        options["format"] = self.format
+        options["alpha"] = self.alpha
+        options["forceAlpha"] = self.force_alpha
         context["data_coloris_options"] = options
         return context
 
@@ -243,6 +260,7 @@ class DaisyUISwatchWidget(widgets.RadioSelect):
             color_map[f"bg-{key}"] = entry["value"]
             color_map[f"text-{key}"] = entry["value"]
             color_map[f"border-{key}"] = entry["value"]
+            color_map[f"decoration-{key}"] = entry["value"]
         return color_map
 
 

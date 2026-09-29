@@ -80,13 +80,10 @@
   font-size: var(--daisyui-icon-font-size);
 }
 
-.daisyui-icon-tile:hover {
-  background: var(--w-color-surface-menu-item-active);
-}
-
+.daisyui-icon-tile:hover,
 .daisyui-icon-tile.is-selected {
-  border-color: var(--w-color-primary);
-  background: var(--w-color-surface-menu-item-active);
+  border-color: var(--w-color-secondary);
+  background: var(--w-color-secondary-50);
 }
 
 .daisyui-icon-tile__glyph {

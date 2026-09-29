@@ -1,7 +1,7 @@
 {% load notifications %}
 {% if audience_allowed %}
   <div
-    class="toast {{ value.position }}{% if block_css %} {{ block_css }}{% endif %}"
+    class="toast {{ value.position }}{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
     role="status"
     aria-live="polite"
   >

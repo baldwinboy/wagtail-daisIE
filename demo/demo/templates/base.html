@@ -1,4 +1,4 @@
-{% load navigation_tags static wagtailcore_tags wagtailuserbar wagtail_daisIE_tags %}
+{% load static wagtailcore_tags wagtailuserbar wagtail_daisIE_tags %}
 <!DOCTYPE html>
 <html lang="en"{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
     <head>
@@ -23,8 +23,9 @@
             <base target="_blank" />
         {% endif %}
 
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_styles %}
         {% daisyui_theme_full_css daisyui_theme %}
+        {% daisyui_theme_script %}
         {% daisyui_icon_assets %}
         {% daisyui_favicon %}
         {% block extra_head %}{% endblock %}
@@ -37,13 +38,11 @@
             {% include "includes/header.html" %}
         {% endblock header %}
 
-        {% block breadcrumbs %}
-            {% breadcrumbs %}
-        {% endblock breadcrumbs %}
+        {% block breadcrumbs %}{% endblock breadcrumbs %}
 
-        <main id="main-content" class="mx-auto w-full max-w-6xl grow px-4 py-8">
+        <main id="main-content"{% daisyui_main_attrs daisyui_theme %}>
             {% block messages %}
-                {% include "includes/messages.html" %}
+                {% daisie_messages %}
             {% endblock messages %}
 
             {% block content %}

@@ -1,5 +1,6 @@
 from django import template
 from django.templatetags.static import static
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 
@@ -7,8 +8,18 @@ register = template.Library()
 
 
 @register.simple_tag
-def daisyui_global_css():
-    return static("wagtail_daisIE/css/global.css")
+def daisyui_styles():
+    """Render the render-blocking stylesheet link for the committed DaisyUI CSS.
+
+    Usage::
+
+        {% load wagtail_daisIE_tags %}
+        {% daisyui_styles %}
+    """
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("wagtail_daisIE/css/daisie.css"),
+    )
 
 
 @register.inclusion_tag("wagtail_daisIE/tags/favicon.html", takes_context=True)
@@ -16,7 +27,7 @@ def daisyui_favicon(context):
     """Render favicon/PWA ``<link>`` and ``<meta>`` tags, if configured."""
     from django.urls import NoReverseMatch, reverse
 
-    from ..models import DaisyUIFavicon
+    from ..assets.models import DaisyUIFavicon
 
     try:
         favicon = DaisyUIFavicon.for_request(context.get("request"))
@@ -114,7 +125,7 @@ def daisyui_menu(context, menu_name, css_class=""):
         {% daisyui_menu "Main Navigation" css_class="bg-base-200" %}
     """
     from ..dynamic.resolvers import parse_bindings, resolve_context_models
-    from ..models import DaisyUIMenu
+    from ..menus.models import DaisyUIMenu
     from ..notifications.context import build_context
 
     request = context.get("request")
@@ -130,10 +141,17 @@ def daisyui_menu(context, menu_name, css_class=""):
             "request": request,
             "menu_theme": None,
             "menu_item_css": "",
+            "menu_item_style": "",
+            "menu_design_css": "",
+            "menu_design_style": "",
             **values,
         }
 
-    values.update(resolve_context_models(request, bindings=parse_bindings(menu)))
+    values.update(
+        resolve_context_models(
+            request, page=context.get("page"), bindings=parse_bindings(menu)
+        )
+    )
 
     return {
         "menu": menu,
@@ -143,6 +161,9 @@ def daisyui_menu(context, menu_name, css_class=""):
         "daisyui_theme": context.get("daisyui_theme"),
         "menu_theme": menu.get_theme(),
         "menu_item_css": menu.get_item_css(),
+        "menu_item_style": menu.get_item_style(),
+        "menu_design_css": menu.get_menu_design_css(),
+        "menu_design_style": menu.get_menu_design_style(),
         **values,
     }
 
@@ -290,6 +311,23 @@ def daisyui_icon_assets():
     return {"assets": icon_assets()}
 
 
+@register.simple_tag
+def daisyui_email_icon(value, size=None, color=None):
+    """Render an icon as an email-safe data-URI image.
+
+    Usage in MJML templates::
+
+        {% daisyui_email_icon value.icon size=16 color="#111111" %}
+    """
+    from ..icons.email import render_icon_email
+
+    try:
+        size_px = int(size) if size else 16
+    except (TypeError, ValueError):
+        size_px = 16
+    return render_icon_email(value, size_px=size_px, color=color or "#000000")
+
+
 @register.filter
 def is_active(item, request):
     """Return whether a menu item points at the current request path."""
@@ -311,3 +349,52 @@ def unplaced_form_fields(page, form):
     getter = getattr(page, "get_placed_field_names", None)
     placed = set(getter()) if callable(getter) else set()
     return [form[name] for name in form.fields if name not in placed]
+
+
+# ---------------------------------------------------------------------------
+# Messages / theme persistence
+# ---------------------------------------------------------------------------
+
+
+@register.inclusion_tag("wagtail_daisIE/tags/messages.html", takes_context=True)
+def daisie_messages(context):
+    """Render Django messages as DaisyUI alerts.
+
+    Action confirmations carry their alert colour/style/direction in
+    ``message.extra_tags``; other messages fall back to their level tag.
+    """
+    return {"messages": context.get("messages")}
+
+
+@register.simple_tag
+def daisyui_theme_script():
+    """Render the theme persistence script tag.
+
+    Add it to the ``<head>`` (or just before ``</body>``) of every base
+    template so the visitor's chosen DaisyUI theme survives navigation.
+    """
+    return format_html(
+        '<script src="{}" defer></script>',
+        static("wagtail_daisIE/js/theme_persistence.js"),
+    )
+
+
+@register.simple_tag(takes_context=True)
+def daisyui_main_attrs(context, theme=None):
+    """Render ``class``/``style`` attributes for the main container."""
+    css = context.get("daisyui_main_css", "")
+    style = context.get("daisyui_main_style", "")
+    if not css and theme is not None:
+        getter = getattr(theme, "get_main_design_css", None)
+        if callable(getter):
+            css = getter()
+    if not style and theme is not None:
+        getter = getattr(theme, "get_main_design_style", None)
+        if callable(getter):
+            style = getter()
+    parts = []
+    if css:
+        parts.append(format_html(' class="{}"', css))
+    if style:
+        parts.append(format_html(' style="{}"', style))
+    return mark_safe("".join(parts))  # noqa: S308

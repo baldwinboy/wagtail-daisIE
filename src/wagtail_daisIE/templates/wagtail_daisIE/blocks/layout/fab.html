@@ -1,0 +1,13 @@
+{% load wagtail_daisIE_tags %}
+{% if audience_allowed %}
+  <div class="fab {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <div tabindex="0" role="button" class="btn btn-lg btn-circle btn-primary" aria-label="{{ value.trigger_label }}">
+      {% if value.trigger_icon %}{% daisyui_icon value.trigger_icon %}{% else %}+{% endif %}
+    </div>
+    {% for item in items %}
+      <a class="btn btn-lg btn-circle" href="{{ item.url }}" aria-label="{{ item.label }}">
+        {% if item.icon %}{% daisyui_icon item.icon %}{% else %}{{ item.label }}{% endif %}
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}

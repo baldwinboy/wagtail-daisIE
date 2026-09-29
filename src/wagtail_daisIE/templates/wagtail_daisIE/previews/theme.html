@@ -4,11 +4,12 @@
 <html {% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
     <head>
         <title>{{ object.name }}</title>
-        <link rel="stylesheet" href="{% daisyui_global_css %}" />
+        {% daisyui_styles %}
         {% daisyui_theme_full_css theme %}
         {% daisyui_favicon %}
     </head>
     <body>
+        <main id="main-content"{% daisyui_main_attrs theme %}>
         <div class="space-y-16 p-8">
   <h2 class="text-3xl font-bold">Accordion</h2>
   <div class="collapse collapse-arrow">
@@ -739,5 +740,6 @@
   </span>
 
 </div>
+        </main>
     </body>
 </html>

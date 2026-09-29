@@ -1,0 +1,8 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed and value.images %}
+  <div class="hover-gallery {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% for image in value.images %}
+      {% image image width-800 as img %}<img src="{{ img.url }}" alt="{{ image.title }}" />
+    {% endfor %}
+  </div>
+{% endif %}

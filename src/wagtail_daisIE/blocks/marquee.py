@@ -1,33 +1,42 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks import InlineMarkupBlock
+from ..choicelist import ChoiceList
 from .section import SectionBlock
 
 
-class MarqueeBlock(SectionBlock):
-    SPEED_CHOICES = [
+MARQUEE_SPEED_CHOICES = ChoiceList(
+    [
         ("animate-[marquee_30s_linear_infinite]", _("Slow")),
         ("animate-[marquee_20s_linear_infinite]", _("Medium")),
         ("animate-[marquee_10s_linear_infinite]", _("Fast")),
-    ]
+    ],
+    "MARQUEE_SPEED_CHOICES",
+)
 
-    DIRECTION_CHOICES = [
+MARQUEE_DIRECTION_CHOICES = ChoiceList(
+    [
         ("flex-row", _("Left to right")),
         ("flex-row-reverse", _("Right to left")),
-    ]
+    ],
+    "MARQUEE_DIRECTION_CHOICES",
+)
 
-    text = blocks.CharBlock(
+
+class MarqueeBlock(SectionBlock):
+    text = InlineMarkupBlock(
         max_length=255,
         help_text=_("Text content for the marquee."),
-        blank=True,
+        required=False,
     )
     speed = blocks.ChoiceBlock(
-        choices=SPEED_CHOICES,
+        choices=MARQUEE_SPEED_CHOICES,
         default="animate-[marquee_20s_linear_infinite]",
         help_text=_("Speed of the marquee animation."),
     )
     direction = blocks.ChoiceBlock(
-        choices=DIRECTION_CHOICES,
+        choices=MARQUEE_DIRECTION_CHOICES,
         default="flex-row",
         help_text=_("Direction of the marquee animation."),
     )

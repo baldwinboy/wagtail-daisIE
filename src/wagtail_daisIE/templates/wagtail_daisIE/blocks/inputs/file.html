@@ -1,6 +1,7 @@
+{% load notifications %}
 {% if audience_allowed %}
-  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}">
-    <label class="fieldset-legend" for="daisie-{{ block.id }}">{{ value.label }}</label>
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <label class="fieldset-legend" for="daisie-{{ block.id }}">{% daisie_markup value.label %}</label>
     <input
       id="daisie-{{ block.id }}"
       type="file"
@@ -8,6 +9,6 @@
       {% if value.accept %}accept="{{ value.accept }}"{% endif %}
       class="file-input {{ value.color }} {{ value.size }}"
     />
-    {% if value.helper_text %}<p class="label">{{ value.helper_text }}</p>{% endif %}
+    {% if value.helper_text %}<p class="label">{% daisie_markup value.helper_text %}</p>{% endif %}
   </fieldset>
 {% endif %}
