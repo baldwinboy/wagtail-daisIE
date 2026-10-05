@@ -22,6 +22,7 @@ __pycache__/
 /test-static
 /test-media
 
+**/.django_tailwind_cli
 demo/media
 demo/static
 demo/.env

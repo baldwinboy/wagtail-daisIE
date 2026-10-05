@@ -305,6 +305,19 @@ WAGTAIL_DAISIE_APPROVAL_WORKFLOWS = {
     },
 }
 
+# Extra form field types available to form pages. The "file" type accepts an
+# upload and hands it to the demo's handler (which chooses where it is stored).
+WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+    "file": {
+        "label": "File upload",
+        "field": "django.forms.FileField",
+        "widget": "django.forms.ClearableFileInput",
+        "css": "file-input w-full",
+        "is_upload": True,
+        "handler": "blog.uploads.store_upload",
+    },
+}
+
 # Developer-defined actions used by Action buttons.
 WAGTAIL_DAISIE_ACTIONS = {
     "basket.add": {

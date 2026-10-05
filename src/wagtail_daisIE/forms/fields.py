@@ -11,6 +11,11 @@ from wagtail.fields import StreamField
 
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
+from .registry import (
+    FIELD_TYPE_MAX_LENGTH,
+    get_form_field_type_choices,
+    is_upload_field_type,
+)
 
 
 class ModelFieldSelect(forms.Select):
@@ -36,8 +41,19 @@ class ModelFieldSelect(forms.Select):
 
 
 class DaisieFormField(AbstractFormField):
-    """A Wagtail form field that can be styled and linked to a model field."""
+    """A Wagtail form field that can be styled and linked to a model field.
 
+    The available field types are Wagtail's defaults plus every type registered
+    in ``WAGTAIL_DAISIE_FORM_FIELD_TYPES`` (see
+    :mod:`wagtail_daisIE.forms.registry`).
+    """
+
+    field_type = models.CharField(
+        verbose_name=_("field type"),
+        max_length=FIELD_TYPE_MAX_LENGTH,
+        choices=get_form_field_type_choices,
+    )
+    field_type.required_on_save = True
     model_field = models.CharField(
         max_length=128,
         blank=True,
@@ -74,6 +90,11 @@ class DaisieFormField(AbstractFormField):
 
     class Meta(AbstractFormField.Meta):
         abstract = True
+
+    @property
+    def is_upload(self):
+        """Whether this field accepts a file upload."""
+        return is_upload_field_type(self.field_type)
 
     def get_input_css(self):
         return build_design_css(

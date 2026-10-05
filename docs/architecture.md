@@ -20,7 +20,9 @@ detail_pages/   ModelDetailPage/ModelDetailTemplate + post_save/pre_delete
 approval/       Approval workflow registry + pre_save/post_save bridges
 favicon/        Public manifest.json / browser-config.xml / favicon.ico views
 notifications/  Email templates, bridges, audiences, campaigns, email_blocks/
-forms/          DaisieFormPage and the DaisyUI form builder
+forms/          DaisieFormPage, the DaisyUI form builder and the field-type
+                registry (`WAGTAIL_DAISIE_FORM_FIELD_TYPES`, uploads via a
+                handler)
 errors/         Admin-designable error pages and Django handlers
 allauth_ui/     Opt-in DaisyUI templates for allauth pages and forms
 allauth_emails/ Opt-in AllauthEmailOverride snippets (see docs/allauth.md)

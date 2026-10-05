@@ -6,19 +6,70 @@ Adds DaisyUI classes to widgets and applies each field's per-field design.
 from __future__ import annotations
 
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import gettext_lazy as _
 from wagtail.contrib.forms.forms import FormBuilder
+
+from .registry import get_form_field_type
 
 
 class DaisyUIFormBuilder(FormBuilder):
     """Adds DaisyUI classes and per-field design to Wagtail form fields."""
 
-    def _styled(self, options, widget, css_class):
+    def _styled(self, options, widget, css_class, attrs=None):
         if isinstance(widget, type):
             widget = widget()
+        if attrs:
+            widget.attrs.update(attrs)
         existing = widget.attrs.get("class", "")
         widget.attrs["class"] = f"{existing} {css_class}".strip()
         options["widget"] = widget
         return options
+
+    @staticmethod
+    def _apply_widget_attrs(widget, css_class, attrs):
+        if attrs:
+            widget.attrs.update(attrs)
+        if css_class:
+            existing = widget.attrs.get("class", "")
+            widget.attrs["class"] = f"{existing} {css_class}".strip()
+
+    def get_create_field_function(self, field_type):
+        """Return the builder for a field type.
+
+        Types registered in ``WAGTAIL_DAISIE_FORM_FIELD_TYPES`` are built from
+        their configuration; everything else falls back to Wagtail's default
+        ``create_<type>_field`` dispatch.
+        """
+        spec = get_form_field_type(field_type)
+        if spec is None:
+            return super().get_create_field_function(field_type)
+
+        def create_field(field, options):
+            options = dict(options)
+            options.update(spec.options)
+            if spec.widget is not None:
+                self._styled(options, spec.widget, spec.css, spec.widget_attrs)
+            builder = spec.field
+            if builder is None:
+                raise ImproperlyConfigured(
+                    _(
+                        "The %(type)r form field type is missing a 'field' entry "
+                        "in WAGTAIL_DAISIE_FORM_FIELD_TYPES."
+                    )
+                    % {"type": spec.key}
+                )
+            if isinstance(builder, type):
+                django_field = builder(**options)
+            else:
+                django_field = builder(field, options)
+            if spec.widget is None and (spec.css or spec.widget_attrs):
+                self._apply_widget_attrs(
+                    django_field.widget, spec.css, spec.widget_attrs
+                )
+            return self._design(field, django_field)
+
+        return create_field
 
     def _design(self, form_field, django_field):
         input_css = ""

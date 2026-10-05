@@ -132,6 +132,72 @@ Override them or `get_template()` / `get_landing_page_template()` as needed.
 
 Failures creating the instance are logged and do not break the submission.
 
+## File and image uploads
+
+Form field types are configurable. Register extra types — for example file or
+image uploads — in settings:
+
+```python
+WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+    "file": {
+        "label": _("File upload"),
+        "field": "django.forms.FileField",  # class or (field, options) -> Field
+        "widget": "django.forms.ClearableFileInput",
+        "css": "file-input w-full",
+        "is_upload": True,
+        "handler": "myapp.uploads.store",
+    },
+}
+```
+
+Every registered type appears in each form field’s **Field type** dropdown.
+`field` may be a Django form field class **or** a factory taking
+`(form_field, options)` and returning a bound field, so a project can supply
+its own multiple-file field. `widget`, `widget_attrs` and `css` are applied to
+the input; `options` are merged into the field constructor. Every dotted path
+is imported lazily.
+
+Upload types (`is_upload: True`) **must** have a handler — the package ships no
+default storage. Set it per type (`handler`) or project-wide:
+
+```python
+WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER = "myapp.uploads.store"
+```
+
+The handler decides where the file goes and what reference is recorded:
+
+```python
+from django.core.files.storage import default_storage
+
+
+def store(*, page, form, field, file, request=None):
+    stored = default_storage.save(f"uploads/{file.name}", file)
+    return default_storage.url(stored)
+```
+
+It is called once per uploaded file (list values call it per item) and must
+return a JSON-safe value, which is stored in the submission’s `form_data`. The
+file object is still present while the bound model instance is created, so
+linking an input to a model `FileField`/`ImageField` also works. A missing
+handler raises `ImproperlyConfigured` at submission time and is reported when
+the page is saved; an exception raised by the handler is **not** swallowed, so
+a storage failure surfaces instead of silently recording the submission.
+
+Per-field options (maximum size, accepted types, target folder) belong on your
+concrete form field model, which can add its own columns; the handler and
+builder both receive that field instance. Override `get_upload_handler()` on
+the page to choose a handler per field or page instead of by type. Field-type
+keys are stored on `DaisieFormField.field_type`, so keep them within 16
+characters (the package logs a warning otherwise).
+
+The `css` classes come from the compiled stylesheet: `file-input`, `input` and
+`w-full` are already included, but any project-specific utility you add to a
+type’s `css` must be present in your own Tailwind build (the package safelist
+only scans the package’s own class choices and templates).
+
+The form template already posts as `multipart/form-data`, so no template
+changes are needed.
+
 ## Feedback and input blocks
 
 The **Feedback** block group (alerts, toasts, progress, loading, steps, modal,

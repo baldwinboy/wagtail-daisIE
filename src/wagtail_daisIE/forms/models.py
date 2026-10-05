@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import models
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -22,6 +22,7 @@ from ..pages import StyledPageMixin
 from .blocks import FormContentBlock, duplicate_field_names, placed_field_names
 from .builder import DaisyUIFormBuilder
 from .panels import FormModelFieldsHelpPanel
+from .registry import get_default_upload_handler, get_form_field_type
 
 
 logger = logging.getLogger(__name__)
@@ -167,6 +168,18 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
                     % {"names": ", ".join(duplicates)}
                 }
             )
+        if self.pk:
+            missing = [
+                str(field.label)
+                for field in self.get_form_fields()
+                if getattr(field, "is_upload", False)
+                and self.get_upload_handler(field) is None
+            ]
+            if missing:
+                raise ValidationError(
+                    _("These form fields need an upload handler: %(names)s")
+                    % {"names": ", ".join(missing)}
+                )
 
     def get_form(self, *args, **kwargs):
         form = super().get_form(*args, **kwargs)
@@ -202,9 +215,76 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
         return mapping
 
     def process_form_submission(self, form):
-        submission = super().process_form_submission(form)
+        submission = self.get_submission_class().objects.create(
+            form_data=self.get_submission_form_data(form),
+            page=self,
+        )
         self.create_instance_from_submission(form, submission)
         return submission
+
+    def get_upload_handler(self, field, form=None):
+        """Return the callable that persists an uploaded file for ``field``.
+
+        Configure a per-type ``handler`` in ``WAGTAIL_DAISIE_FORM_FIELD_TYPES``
+        or a project-wide ``WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER``. Override this
+        method to choose a handler per field or page.
+
+        A handler is called with the keyword arguments ``page``, ``form``,
+        ``field``, ``file`` and ``request`` and must return a JSON-safe
+        reference (for example a URL, path or id) for the stored submission.
+        """
+        spec = get_form_field_type(getattr(field, "field_type", ""))
+        handler = spec.handler if spec is not None else None
+        if handler is None:
+            handler = get_default_upload_handler()
+        return handler
+
+    def get_submission_form_data(self, form):
+        """Return JSON-safe data for ``FormSubmission.form_data``.
+
+        Uploaded files are passed to the configured handler and replaced by its
+        return value; every other value is stored unchanged.
+        """
+        request = getattr(self, "_daisie_request", None)
+        upload_fields = {
+            getattr(field, "clean_name", ""): field
+            for field in self.get_form_fields()
+            if getattr(field, "is_upload", False)
+        }
+        data = {}
+        for name, value in form.cleaned_data.items():
+            field = upload_fields.get(name)
+            if field is None or value is None or value == "":
+                data[name] = value
+                continue
+            handler = self.get_upload_handler(field, form)
+            if handler is None:
+                raise ImproperlyConfigured(
+                    _(
+                        "No upload handler is configured for the %(type)s form "
+                        "field %(name)r. Set 'handler' on the field type in "
+                        "WAGTAIL_DAISIE_FORM_FIELD_TYPES or define "
+                        "WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER."
+                    )
+                    % {"type": field.field_type, "name": name}
+                )
+            if isinstance(value, (list, tuple)):
+                data[name] = [
+                    self._store_upload(handler, form, field, item, request)
+                    for item in value
+                ]
+            else:
+                data[name] = self._store_upload(handler, form, field, value, request)
+        return data
+
+    def _store_upload(self, handler, form, field, uploaded_file, request):
+        return handler(
+            page=self,
+            form=form,
+            field=field,
+            file=uploaded_file,
+            request=request,
+        )
 
     def create_instance_from_submission(self, form, submission=None):
         """Create and save an instance of ``instance_model`` from ``form``."""
@@ -265,7 +345,11 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
                 request.POST, request.FILES, page=self, user=request.user
             )
             if form.is_valid():
-                submission = self.process_form_submission(form)
+                self._daisie_request = request
+                try:
+                    submission = self.process_form_submission(form)
+                finally:
+                    self._daisie_request = None
                 if self.success_redirect_page_id:
                     return redirect(self.success_redirect_page.url)
                 return self.render_landing_page(request, submission, *args, **kwargs)

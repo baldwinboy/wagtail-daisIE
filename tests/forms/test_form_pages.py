@@ -3,6 +3,8 @@ from types import SimpleNamespace
 import pytest
 
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from wagtail_daisIE.dynamic.registry import reset_context_models
 from wagtail_daisIE.forms.blocks import (
@@ -11,7 +13,57 @@ from wagtail_daisIE.forms.blocks import (
     placed_field_names,
 )
 from wagtail_daisIE.forms.builder import DaisyUIFormBuilder
+from wagtail_daisIE.forms.fields import DaisieFormField
 from wagtail_daisIE.forms.models import DaisieFormPage
+from wagtail_daisIE.forms.registry import (
+    FIELD_TYPE_MAX_LENGTH,
+    get_form_field_type,
+    get_form_field_type_choices,
+    get_form_field_types,
+    is_upload_field_type,
+    reset_form_field_types,
+)
+
+
+def _store_file(*, page, form, field, file, request=None):
+    return f"stored:{file.name}"
+
+
+class _MultipleUploadField(forms.FileField):
+    def clean(self, data, initial=None):
+        if not data:
+            return []
+        if isinstance(data, (list, tuple)):
+            return [super().clean(item, initial) for item in data]
+        return [super().clean(data, initial)]
+
+
+def _build_multiple_file_field(form_field, options):
+    return _MultipleUploadField(required=options.get("required", False))
+
+
+@pytest.fixture(autouse=True)
+def _field_type_registry(settings):
+    settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+        "file": {
+            "label": "File upload",
+            "field": "django.forms.FileField",
+            "widget": "django.forms.ClearableFileInput",
+            "css": "file-input w-full",
+            "is_upload": True,
+            "handler": _store_file,
+        },
+        "multifile": {
+            "label": "Multiple files",
+            "field": _build_multiple_file_field,
+            "is_upload": True,
+            "handler": _store_file,
+        },
+    }
+    settings.WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER = ""
+    reset_form_field_types()
+    yield
+    reset_form_field_types()
 
 
 class _FakeField:
@@ -51,6 +103,21 @@ class TestBuilder:
         assert "border-primary" in result.widget.attrs["class"]
         assert result.input_css == "border-primary"
         assert result.label_css == "text-primary"
+
+    def test_registered_field_type_is_built_from_registry(self):
+        field = _FakeField()
+        field.field_type = "file"
+        create = DaisyUIFormBuilder([]).get_create_field_function("file")
+        result = create(field, {"label": "Photo", "required": False})
+        assert isinstance(result, forms.FileField)
+        assert "file-input" in result.widget.attrs["class"]
+
+    def test_registry_factory_is_supported(self):
+        field = _FakeField()
+        field.field_type = "multifile"
+        create = DaisyUIFormBuilder([]).get_create_field_function("multifile")
+        result = create(field, {"required": False})
+        assert isinstance(result, _MultipleUploadField)
 
 
 CONFIG = {"member": {"label": "Member", "model": "auth.User"}}
@@ -144,6 +211,136 @@ class TestPlacement:
             ]
         )
         assert duplicate_field_names(duplicates) == ["title", "notes"]
+
+
+class TestFieldTypeRegistry:
+    def test_choices_include_defaults_and_registered_types(self):
+        choices = dict(get_form_field_type_choices())
+        assert str(choices["singleline"]) == "Single line text"
+        assert "file" in choices and "multifile" in choices
+
+    def test_lookup_and_upload_flag(self):
+        assert get_form_field_type("file") is not None
+        assert get_form_field_type("missing") is None
+        assert is_upload_field_type("file") is True
+        assert is_upload_field_type("singleline") is False
+        assert is_upload_field_type("missing") is False
+
+    def test_keys_fit_the_field_type_column(self):
+        model_max = DaisieFormField._meta.get_field("field_type").max_length
+        assert model_max == FIELD_TYPE_MAX_LENGTH
+        for key in get_form_field_types():
+            assert len(key) <= FIELD_TYPE_MAX_LENGTH
+
+    def test_overlong_key_warns(self, settings, caplog):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+            "a" * (FIELD_TYPE_MAX_LENGTH + 1): {
+                "field": "django.forms.FileField",
+                "is_upload": True,
+                "handler": _store_file,
+            }
+        }
+        reset_form_field_types()
+        with caplog.at_level("WARNING"):
+            get_form_field_types()
+        assert "longer than" in caplog.text
+
+
+class _UploadField:
+    label = "Photo"
+    clean_name = "photo"
+    field_type = "file"
+    is_upload = True
+
+
+class _MultiUploadField(_UploadField):
+    field_type = "multifile"
+
+
+class _UploadPage:
+    instance_model = ""
+    _daisie_request = None
+
+    def __init__(self, fields):
+        self._fields = fields
+
+    def get_form_fields(self):
+        return self._fields
+
+    get_upload_handler = DaisieFormPage.get_upload_handler
+    get_submission_form_data = DaisieFormPage.get_submission_form_data
+    _store_upload = DaisieFormPage._store_upload
+
+
+def _upload_form(value):
+    return SimpleNamespace(cleaned_data={"photo": value, "title": "x"})
+
+
+class TestUploadSubmission:
+    def test_handler_result_is_stored_in_form_data(self):
+        page = _UploadPage([_UploadField()])
+        data = page.get_submission_form_data(
+            _upload_form(SimpleUploadedFile("a.txt", b"hi"))
+        )
+        assert data == {"photo": "stored:a.txt", "title": "x"}
+
+    def test_empty_value_skips_handler(self):
+        page = _UploadPage([_UploadField()])
+        assert page.get_submission_form_data(_upload_form(None))["photo"] is None
+
+    def test_multiple_files_call_handler_per_file(self):
+        page = _UploadPage([_MultiUploadField()])
+        data = page.get_submission_form_data(
+            _upload_form(
+                [
+                    SimpleUploadedFile("a.txt", b"a"),
+                    SimpleUploadedFile("b.txt", b"b"),
+                ]
+            )
+        )
+        assert data["photo"] == ["stored:a.txt", "stored:b.txt"]
+
+    def test_missing_handler_raises(self, settings):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+            "file": {
+                "label": "File upload",
+                "field": "django.forms.FileField",
+                "is_upload": True,
+            }
+        }
+        reset_form_field_types()
+        page = _UploadPage([_UploadField()])
+        with pytest.raises(ImproperlyConfigured):
+            page.get_submission_form_data(
+                _upload_form(SimpleUploadedFile("a.txt", b"hi"))
+            )
+
+    def test_global_default_handler_is_used(self, settings):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+            "file": {
+                "label": "File upload",
+                "field": "django.forms.FileField",
+                "is_upload": True,
+            }
+        }
+        settings.WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER = _store_file
+        reset_form_field_types()
+        page = _UploadPage([_UploadField()])
+        data = page.get_submission_form_data(
+            _upload_form(SimpleUploadedFile("a.txt", b"hi"))
+        )
+        assert data["photo"] == "stored:a.txt"
+
+    def test_page_handler_override_is_used(self):
+        class _OverridePage(_UploadPage):
+            def get_upload_handler(self, field, form=None):
+                return lambda **kwargs: "overridden"
+
+        page = _OverridePage([_UploadField()])
+        data = page.get_submission_form_data(
+            _upload_form(SimpleUploadedFile("a.txt", b"hi"))
+        )
+        assert data["photo"] == "overridden"
 
 
 class TestFormFieldBlock:
