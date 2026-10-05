@@ -10,6 +10,7 @@ from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.fields import StreamField
 
 from ..base_blocks.button import ButtonAppearanceBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
 from ..dynamic.feeds import (
@@ -23,7 +24,7 @@ from ..dynamic.registry import get_context_model_choices, get_filter_choices
 from .blocks_data import ITEM_BLOCKS
 
 
-class FeedFilterBlock(blocks.StructBlock):
+class FeedFilterBlock(DaisieStructBlock):
     """Select, label and style one of the model's declared filters."""
 
     key = blocks.ChoiceBlock(choices=get_filter_choices, label=_("Filter"))

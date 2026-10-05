@@ -1,6 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks.compact import DaisieStreamBlock
 from ..choicelist import ChoiceList
 from .cards import CONTENT_BLOCKS
 from .icons import IconChooserBlock
@@ -19,7 +20,7 @@ LIST_ORDERING_CHOICES = ChoiceList(
 
 
 class SpacedBlock(SectionBlock):
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         CONTENT_BLOCKS,
     )
 
@@ -74,7 +75,7 @@ LIST_CONTENT_BLOCKS = [
 
 
 class SpacedBlockWithList(SpacedBlock):
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         LIST_CONTENT_BLOCKS,
     )
 

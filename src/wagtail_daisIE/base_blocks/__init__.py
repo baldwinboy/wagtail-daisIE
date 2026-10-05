@@ -16,6 +16,12 @@ from .background_layer import (
 )
 from .box import BorderBlock, BoxBlock, MarginBlock, PaddingBlock, SpacingBlock
 from .button import ButtonAppearanceBlock
+from .compact import (
+    CompactBlockMetaclass,
+    CompactBlockMixin,
+    DaisieStreamBlock,
+    DaisieStructBlock,
+)
 from .design import (
     BaseDesignBlock,
     DesignBlock,
@@ -53,7 +59,11 @@ __all__ = [
     "BoxBlock",
     "ButtonAppearanceBlock",
     "ColorChoiceBlock",
+    "CompactBlockMetaclass",
+    "CompactBlockMixin",
     "ContentAlignmentBlock",
+    "DaisieStreamBlock",
+    "DaisieStructBlock",
     "DesignBlock",
     "GradientStopBlock",
     "InlineDesignBlock",

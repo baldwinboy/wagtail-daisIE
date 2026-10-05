@@ -17,6 +17,7 @@ from wagtail_daisIE.widgets import (
     DaisyUISwatchWidget,
 )
 
+from .compact import DaisieStructBlock
 from .css import (
     build_border_css,
     build_box_css,
@@ -28,7 +29,7 @@ from .css import (
 from .fields import ColorChoiceBlock
 
 
-class BorderBlock(blocks.StructBlock):
+class BorderBlock(DaisieStructBlock):
     border_width = DaisyUIIntegerBlock(
         default=None,
         required=False,
@@ -68,7 +69,7 @@ class BorderBlock(blocks.StructBlock):
         return context
 
 
-class PaddingBlock(blocks.StructBlock):
+class PaddingBlock(DaisieStructBlock):
     all_padding = blocks.ChoiceBlock(
         choices=PADDING_CHOICES["ALL"],
         default="",
@@ -125,7 +126,7 @@ class PaddingBlock(blocks.StructBlock):
         return context
 
 
-class MarginBlock(blocks.StructBlock):
+class MarginBlock(DaisieStructBlock):
     all_margins = blocks.ChoiceBlock(
         choices=MARGIN_CHOICES["ALL"],
         default="",
@@ -182,7 +183,7 @@ class MarginBlock(blocks.StructBlock):
         return context
 
 
-class BoxBlock(blocks.StructBlock):
+class BoxBlock(DaisieStructBlock):
     rounded = blocks.ChoiceBlock(
         choices=ROUNDED_CHOICES,
         default="",
@@ -214,7 +215,7 @@ class BoxBlock(blocks.StructBlock):
         return context
 
 
-class SpacingBlock(blocks.StructBlock):
+class SpacingBlock(DaisieStructBlock):
     all = blocks.ChoiceBlock(
         choices=GAP_CHOICES["ALL"],
         default="",

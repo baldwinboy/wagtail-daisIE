@@ -4,11 +4,12 @@ from wagtail import blocks
 from wagtail_daisIE.choices import DAISYUI_BG_COLOR_CHOICES
 from wagtail_daisIE.widgets import DaisyUISwatchWidget
 
+from .compact import DaisieStructBlock
 from .css import build_background_css, merge_block_css
 from .fields import ColorChoiceBlock
 
 
-class TextBackgroundBlock(blocks.StructBlock):
+class TextBackgroundBlock(DaisieStructBlock):
     """Solid-colour background.
 
     The web design pipeline uses :class:`BackgroundStreamBlock` instead, so

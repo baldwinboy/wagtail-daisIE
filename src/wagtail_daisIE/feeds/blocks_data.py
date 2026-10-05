@@ -12,6 +12,7 @@ from wagtail import blocks
 from wagtail.snippets.blocks import SnippetChooserBlock
 
 from ..base_blocks import ThemedBlock
+from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from ..blocks.content_blocks import PAGE_CONTENT_BLOCKS
 from ..choices.utils import ChoiceList
 from ..dynamic.action_blocks import ActionBlock
@@ -70,7 +71,7 @@ FEED_TOGGLE_CHOICES = ChoiceList(
 )
 
 
-class FeedLayoutOverrideBlock(blocks.StructBlock):
+class FeedLayoutOverrideBlock(DaisieStructBlock):
     """Per-placement overrides for a feed's layout. Blank = use the feed."""
 
     layout = blocks.ChoiceBlock(
@@ -179,7 +180,7 @@ class CalendarBlock(ThemedBlock):
         label=_("Model"),
     )
     date_field = blocks.CharBlock(default="added_on")
-    event = blocks.StreamBlock(ITEM_BLOCKS, label=_("Event card"))
+    event = DaisieStreamBlock(ITEM_BLOCKS, label=_("Event card"))
     initial_date = blocks.DateBlock(required=False)
     limit = blocks.IntegerBlock(
         min_value=1, max_value=500, default=200, label=_("Maximum events")

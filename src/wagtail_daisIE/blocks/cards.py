@@ -1,6 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks.compact import DaisieStreamBlock
 from ..dynamic.action_blocks import ActionBlock
 from .base import ThemedBlock
 from .inline import HeaderBlock, InlineRichTextBlock, InlineTextBlock
@@ -54,7 +55,7 @@ INLINE_CARD_CONTENT = [
 
 
 class InlineCardBlock(ThemedBlock):
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         INLINE_CARD_CONTENT,
         label=_("Card content"),
     )
@@ -87,7 +88,7 @@ CARD_CONTENT_BLOCKS = [
 
 
 class CardBlock(SectionBlock):
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         CARD_CONTENT_BLOCKS,
         label=_("Card content"),
     )

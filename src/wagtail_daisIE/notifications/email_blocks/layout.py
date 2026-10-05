@@ -10,6 +10,7 @@ are body-level containers.
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ...base_blocks.compact import DaisieStreamBlock
 from ...base_blocks.design import ThemedBlock
 from ...blocks.section import SectionBlock
 from .base import EmailThemedMixin
@@ -56,7 +57,7 @@ EMAIL_COLUMN_BLOCKS = [
 class EmailColumnBlock(EmailThemedMixin, ThemedBlock):
     email_mjml_tag = "mj-column"
     design = EmailSolidDesignBlock()
-    content = blocks.StreamBlock(EMAIL_COLUMN_BLOCKS, label=_("Column content"))
+    content = DaisieStreamBlock(EMAIL_COLUMN_BLOCKS, label=_("Column content"))
 
     class Meta:
         abstract = False
@@ -74,7 +75,7 @@ class EmailColumnBlock(EmailThemedMixin, ThemedBlock):
 class EmailGroupBlock(EmailThemedMixin, ThemedBlock):
     email_mjml_tag = "mj-group"
     design = EmailSolidDesignBlock()
-    columns = blocks.StreamBlock([("column", EmailColumnBlock())])
+    columns = DaisieStreamBlock([("column", EmailColumnBlock())])
 
     class Meta:
         abstract = False
@@ -110,7 +111,7 @@ class EmailSectionBlock(EmailThemedMixin, SectionBlock):
     email_mjml_tag = "mj-section"
     email_allowed_children = EMAIL_SECTION_CHILDREN
     design = EmailImageSpacedDesignBlock()
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         [
             ("column", EmailColumnBlock()),
             ("group", EmailGroupBlock()),
@@ -143,7 +144,7 @@ class EmailHeroBlock(EmailThemedMixin, ThemedBlock):
     email_mjml_tag = "mj-hero"
     design = EmailImageDesignBlock()
     height = blocks.CharBlock(required=False, blank=True, help_text=_("e.g. 400px"))
-    content = blocks.StreamBlock(EMAIL_COLUMN_BLOCKS, label=_("Hero content"))
+    content = DaisieStreamBlock(EMAIL_COLUMN_BLOCKS, label=_("Hero content"))
 
     class Meta:
         abstract = False
@@ -161,7 +162,7 @@ class EmailHeroBlock(EmailThemedMixin, ThemedBlock):
 class EmailWrapperBlock(EmailThemedMixin, ThemedBlock):
     email_mjml_tag = "mj-wrapper"
     design = EmailImageDesignBlock()
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         [
             ("section", EmailSectionBlock()),
             ("hero", EmailHeroBlock()),

@@ -11,6 +11,7 @@ from ..base_blocks import (
     PublicThemedBlock,
     ThemedBlock,
 )
+from ..base_blocks.compact import DaisieStreamBlock
 from ..base_blocks.markup import strip_inline_markup
 from ..choicelist import ChoiceList
 from ..dynamic.action_blocks import ActionBlock
@@ -158,7 +159,7 @@ if "wagtail_daisIE.notifications" in settings.INSTALLED_APPS:
 MENU_ITEM_BLOCKS.extend(menu_block_contributions())
 
 
-class MenuItemStreamBlock(blocks.StreamBlock):
+class MenuItemStreamBlock(DaisieStreamBlock):
     """Top-level menu item stream used by the ``DaisyUIMenu`` snippet."""
 
     def __init__(self, *args, **kwargs):

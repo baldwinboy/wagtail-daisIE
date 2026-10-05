@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks.compact import DaisieStructBlock
 from ..choicelist import ChoiceList
 from .forms import DynamicInstanceField
 from .registry import get_context_model, get_context_model_choices
@@ -41,7 +42,7 @@ class DynamicInstanceChooserBlock(blocks.FieldBlock):
         icon = "snippet"
 
 
-class ContextBindingBlock(blocks.StructBlock):
+class ContextBindingBlock(DaisieStructBlock):
     """Expose a context value, resolved automatically, from the URL, or pinned."""
 
     key = blocks.ChoiceBlock(

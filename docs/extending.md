@@ -32,6 +32,15 @@ from .my_block import MyBlock
 ALL_CONTENT_BLOCKS = [..., ("my_block", MyBlock())]
 ```
 
+> **Block bases and migrations.** `ThemedBlock` (and the other `Themed*`/`Design*`
+> bases) already inherit `DaisieStructBlock`, so `MyBlock` is serialised in
+> migrations by a stable registry key. A block that subclasses Wagtail's
+> `blocks.StructBlock`/`blocks.StreamBlock` directly must instead subclass
+> `wagtail_daisIE.base_blocks.DaisieStructBlock`/`DaisieStreamBlock` to get the
+> same treatment. If you rename a registered block later, set
+> `class Meta: migration_key = "<old key>"` first so existing migrations keep
+> resolving. See [migrations.md](migrations.md).
+
 Template:
 
 ```html

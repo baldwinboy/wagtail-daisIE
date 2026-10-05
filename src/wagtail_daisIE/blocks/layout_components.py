@@ -5,6 +5,7 @@ from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 
 from ..base_blocks import InlineMarkupBlock, ThemedBlock
+from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from ..base_blocks.link import LinkDestinationBlock, link_url
 from ..choicelist import ChoiceList
 from ..choices import (
@@ -110,7 +111,7 @@ class DropdownBlock(ThemedBlock):
         default="",
         required=False,
     )
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         [
             ("link", LabelLinkBlock()),
             ("text", InlineTextBlock()),
@@ -145,9 +146,9 @@ class SwapBlock(ThemedBlock):
         )
 
 
-class TabItemBlock(blocks.StructBlock):
+class TabItemBlock(DaisieStructBlock):
     label = blocks.CharBlock(max_length=128)
-    content = blocks.StreamBlock(LIST_CONTENT_BLOCKS)
+    content = DaisieStreamBlock(LIST_CONTENT_BLOCKS)
 
     class Meta:
         icon = "doc-full"
@@ -174,7 +175,7 @@ class TabsBlock(ThemedBlock):
         )
 
 
-class CarouselSlideBlock(blocks.StructBlock):
+class CarouselSlideBlock(DaisieStructBlock):
     image = WagtailImageBlock()
     caption = blocks.CharBlock(max_length=255, required=False, blank=True)
 
@@ -203,7 +204,7 @@ class CarouselBlock(ThemedBlock):
         )
 
 
-class PaginationItemBlock(blocks.StructBlock):
+class PaginationItemBlock(DaisieStructBlock):
     label = blocks.CharBlock(max_length=64)
     destination = LinkDestinationBlock()
 
@@ -246,7 +247,7 @@ class PaginationBlock(ThemedBlock):
         )
 
 
-class FabItemBlock(blocks.StructBlock):
+class FabItemBlock(DaisieStructBlock):
     label = blocks.CharBlock(max_length=64)
     icon = IconChooserBlock(required=False)
     destination = LinkDestinationBlock()
@@ -312,7 +313,7 @@ class HeroBlock(SpacedBlock):
 
 
 class DrawerBlock(SpacedBlock):
-    side = blocks.StreamBlock(LIST_CONTENT_BLOCKS, label=_("Sidebar"))
+    side = DaisieStreamBlock(LIST_CONTENT_BLOCKS, label=_("Sidebar"))
 
     class Meta:
         abstract = False
@@ -343,7 +344,7 @@ class FilterBlock(ThemedBlock):
         )
 
 
-class JoinItemBlock(blocks.StructBlock):
+class JoinItemBlock(DaisieStructBlock):
     type = blocks.ChoiceBlock(
         choices=JOIN_ITEM_TYPE_CHOICES,
         default="button",

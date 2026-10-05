@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks import ColorChoiceBlock, InlineMarkupBlock, ThemedBlock
+from ..base_blocks.compact import DaisieStreamBlock
 from ..choices import DAISYUI_BG_COLOR_CHOICES, MASK_SHAPE_CHOICES
 from ..choices.inputs import (
     CHOICE_COLOR_CHOICES,
@@ -403,7 +404,7 @@ FIELD_BLOCKS = [
 class FieldsetBlock(ThemedBlock):
     legend = InlineMarkupBlock(max_length=255)
     description = InlineMarkupBlock(max_length=255, required=False, blank=True)
-    content = blocks.StreamBlock(FIELD_BLOCKS, label=_("Fields"))
+    content = DaisieStreamBlock(FIELD_BLOCKS, label=_("Fields"))
 
     class Meta:
         icon = "folder-open-inverse"

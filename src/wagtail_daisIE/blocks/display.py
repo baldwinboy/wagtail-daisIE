@@ -5,6 +5,7 @@ from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 
 from ..base_blocks import InlineMarkupBlock, ThemedBlock, ThemedTypographyBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..choicelist import ChoiceList
 from ..choices import (
     ASPECT_RATIO_CHOICES,
@@ -184,7 +185,7 @@ class TextRotateBlock(ThemedBlock):
         )
 
 
-class ChatMessageBlock(blocks.StructBlock):
+class ChatMessageBlock(DaisieStructBlock):
     position = blocks.ChoiceBlock(
         choices=CHAT_POSITION_CHOICES,
         default="chat-start",
@@ -215,7 +216,7 @@ class ChatBlock(ThemedBlock):
         )
 
 
-class TimelineItemBlock(blocks.StructBlock):
+class TimelineItemBlock(DaisieStructBlock):
     start = InlineMarkupBlock(max_length=255, required=False, blank=True)
     end = InlineMarkupBlock(max_length=255, required=False, blank=True)
     icon = IconChooserBlock(required=False, label=_("Marker icon"))

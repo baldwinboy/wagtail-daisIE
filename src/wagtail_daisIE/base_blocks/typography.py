@@ -18,11 +18,12 @@ from wagtail_daisIE.widgets import (
     DaisyUISwatchWidget,
 )
 
+from .compact import DaisieStructBlock
 from .css import build_typography_css, merge_block_css
 from .fields import ColorChoiceBlock, FontFamilyChoiceBlock
 
 
-class TypographyStateBlock(blocks.StructBlock):
+class TypographyStateBlock(DaisieStructBlock):
     """Colour/decoration overrides for one interaction state (hover/active)."""
 
     text_color = ColorChoiceBlock(
@@ -65,7 +66,7 @@ class TypographyStateBlock(blocks.StructBlock):
         )
 
 
-class TypographyBlock(blocks.StructBlock):
+class TypographyBlock(DaisieStructBlock):
     text_color = ColorChoiceBlock(
         choices=DAISYUI_TEXT_COLOR_CHOICES,
         default="",

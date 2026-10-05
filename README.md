@@ -78,6 +78,14 @@ Extras: `notifications` (emails, audiences, campaigns), `allauth`
 python manage.py migrate
 ```
 
+Blocks are serialised in migrations by a stable registry key rather than a
+frozen block tree, which keeps migrations small and `makemigrations` fast.
+Runtime behaviour (the editor, revisions, previews, fixtures) is unchanged. If
+you add blocks to a page model, regenerate migrations as usual
+(`python manage.py makemigrations <your_apps>`). See
+[docs/migrations.md](docs/migrations.md) for the key/rename contract, the
+upgrade procedure and data guarantees.
+
 ### 3. Serve the DaisyUI stylesheet
 
 The package ships a committed, precompiled Tailwind + daisyUI stylesheet; no
@@ -212,6 +220,10 @@ defaults cascade into items without any menu-specific block code.
 Any block with a `typography` group (a `TypographyBlock`) exposes a **Font
 family** picker populated from the current theme's font-family roles. The stored
 value is the role (or custom name) and renders as `font-<role>`.
+
+Custom blocks should subclass `DaisieStructBlock`/`DaisieStreamBlock` (the
+`Themed*` bases already do) so they are serialised compactly; see
+[docs/extending.md](docs/extending.md) and [docs/migrations.md](docs/migrations.md).
 
 ## Audience restrictions
 

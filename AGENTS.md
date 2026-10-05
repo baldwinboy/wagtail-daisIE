@@ -51,7 +51,7 @@ Everything else is code-only (no models/migrations):
 
 ```
 src/wagtail_daisIE/
-├── base_blocks/     # Design primitives: size, box, background, typography, link, design, audience, markup
+├── base_blocks/     # Design primitives: size, box, background, typography, link, design, audience, markup, compact
 ├── blocks/          # Public block composition (content, cards, inline, link, menu_items, ...)
 ├── choices/         # DaisyUI/Tailwind class-choice constants (incl. MAIN_LAYOUT_CHOICES)
 ├── detail_pages/    # ModelDetailPage/ModelDetailTemplate + post_save/pre_delete bridges
@@ -68,6 +68,7 @@ src/wagtail_daisIE/
 ├── models/          # DaisyUITheme + theme orderables and fields
 ├── notifications/   # Email templates, campaigns, audiences, bridges, email_blocks/, allauth overrides
 ├── templates/wagtail_daisIE/  # Block, tag, admin, preview templates
+├── blockref.py      # Stable registry keys for compact block migrations
 ├── context.py       # Theme contextvar used by FontFamilyChoiceBlock
 ├── pages.py         # StyledPageMixin
 ├── view_sets.py     # Wagtail admin "Design" snippet group
@@ -134,6 +135,16 @@ When adding a block, subclass the appropriate `Themed*Block` from
   cannot store an iterable callable, so give them a plain zero-arg function
   (e.g. `def layout_choices(): return LAYOUT_CHOICES`) and pass that instead.
   `tests/core/test_choice_lists.py` guards the package constants.
+- **Blocks serialise by stable registry key** (`base_blocks/compact.py`,
+  `blockref.py`): concrete blocks subclass `DaisieStructBlock`/`DaisieStreamBlock`
+  and register under `<top_package>.<ClassName>`, so a migration stores
+  `("wagtail_daisIE.blockref.RegisteredBlock", ["<key>"], {})` instead of an
+  expanded block tree. New block classes must use these bases; freeze
+  `Meta.migration_key` before renaming or moving one, and note that `FieldBlock`
+  subclasses (e.g. `IconChooserBlock`) are not keyed. Migrations no longer record
+  internal block-field changes (StreamField is a `JSONField`, so there is no
+  DDL); `tests/core/test_compact_blocks.py` guards round-trip and key resolution.
+  See `docs/migrations.md`.
 - **MJML backgrounds are per component**: only attributes a component supports
   are emitted (`background-color` / `container-background-color` /
   `inner-background-color`; images only on `mj-section`/`mj-wrapper`/`mj-hero`).
@@ -199,7 +210,10 @@ When adding a block, subclass the appropriate `Themed*Block` from
 themes, menus, error pages, email templates, notification audiences and feeds
 programmatically. It is idempotent; use `--force` to recreate.
 Block values passed to StreamFields must use the JSONish `{"type", "value"}`
-form (with chooser values as primary keys) so nested blocks resolve.
+form (with chooser values as primary keys) so nested blocks resolve. The loader
+assigns values to live model fields (no migration state), so it is unaffected by
+compact block serialization; `demo/home/tests.py::LoadInitialDataTests` covers
+seeding and idempotency.
 
 ## Guidelines
 

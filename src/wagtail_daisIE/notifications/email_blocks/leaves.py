@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 
+from ...base_blocks.compact import DaisieStructBlock
 from ...base_blocks.design import ThemedBlock
 from ...blocks.blockquote import BlockQuote
 from ...blocks.inline import (
@@ -142,7 +143,7 @@ class EmailSpacerBlock(EmailThemedMixin, ThemedBlock):
         )
 
 
-class EmailRawBlock(blocks.StructBlock):
+class EmailRawBlock(DaisieStructBlock):
     """Inline raw HTML/MJML, inserted through an ``mj-raw`` ending tag."""
 
     html = blocks.RawHTMLBlock()
@@ -162,7 +163,7 @@ class EmailAccordionBlock(EmailThemedMixin, ThemedBlock):
     design = EmailSolidDesignBlock()
 
     items = blocks.ListBlock(
-        blocks.StructBlock(
+        DaisieStructBlock(
             [
                 ("title", blocks.CharBlock(max_length=255, label=_("Title"))),
                 ("text", blocks.RichTextBlock(label=_("Content"))),
@@ -191,7 +192,7 @@ class EmailCarouselBlock(EmailThemedMixin, ThemedBlock):
     design = EmailSolidDesignBlock()
 
     images = blocks.ListBlock(
-        blocks.StructBlock(
+        DaisieStructBlock(
             [
                 ("image", WagtailImageBlock(label=_("Image"))),
                 (
@@ -224,7 +225,7 @@ class EmailNavbarBlock(EmailThemedMixin, ThemedBlock):
     design = EmailNavbarDesignBlock()
 
     links = blocks.ListBlock(
-        blocks.StructBlock(
+        DaisieStructBlock(
             [
                 ("text", blocks.CharBlock(max_length=255, label=_("Text"))),
                 ("href", blocks.URLBlock(label=_("Link"))),
@@ -253,7 +254,7 @@ class EmailSocialBlock(EmailThemedMixin, ThemedBlock):
     design = EmailSolidDesignBlock()
 
     elements = blocks.ListBlock(
-        blocks.StructBlock(
+        DaisieStructBlock(
             [
                 (
                     "name",

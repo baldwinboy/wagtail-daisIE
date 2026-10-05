@@ -11,8 +11,10 @@ from wagtail_daisIE.widgets import (
     DaisyUISliderWidget,
 )
 
+from .compact import DaisieStructBlock
 
-class TableBorderSpacingBlock(blocks.StructBlock):
+
+class TableBorderSpacingBlock(DaisieStructBlock):
     all_spacing = DaisyUIIntegerBlock(
         default=None,
         required=False,
@@ -51,7 +53,7 @@ class TableBorderSpacingBlock(blocks.StructBlock):
         )
 
 
-class TableAppearanceBlock(blocks.StructBlock):
+class TableAppearanceBlock(DaisieStructBlock):
     table_size = blocks.ChoiceBlock(
         choices=TABLE_SIZE_CHOICES,
         default="",

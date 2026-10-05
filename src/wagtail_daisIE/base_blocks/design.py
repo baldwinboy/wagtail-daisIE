@@ -7,6 +7,7 @@ from wagtail_daisIE.choices import MAIN_LAYOUT_CHOICES
 from .audience import AudienceBlock, evaluate_audience
 from .background_layer import BackgroundStreamBlock
 from .box import BorderBlock, BoxBlock, MarginBlock, PaddingBlock, SpacingBlock
+from .compact import DaisieStructBlock
 from .css import build_design_css
 from .mjml import build_design_style
 from .size import BlockSizeBlock, InlineSizeBlock, MediaSizeBlock
@@ -35,7 +36,7 @@ _SPACED_CHILDREN = [
 ]
 
 
-class BaseDesignBlock(blocks.StructBlock):
+class BaseDesignBlock(DaisieStructBlock):
     padding = PaddingBlock()
     margin = MarginBlock()
     box = BoxBlock()
@@ -162,7 +163,7 @@ class MainDesignBlock(SpacedDesignBlock):
         )
 
 
-class PageDesignBlock(blocks.StructBlock):
+class PageDesignBlock(DaisieStructBlock):
     """Page-wide defaults applied per element category.
 
     Editors set default container, text, button and media styles once; each
@@ -232,7 +233,7 @@ class MenuItemDesignBlock(TypographyDesignBlock):
         )
 
 
-class ThemedBlock(blocks.StructBlock):
+class ThemedBlock(DaisieStructBlock):
     audience = AudienceBlock()
     design = DesignBlock()
 

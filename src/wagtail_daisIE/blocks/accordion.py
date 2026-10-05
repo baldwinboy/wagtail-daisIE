@@ -1,14 +1,15 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from .cards import CONTENT_BLOCKS
 from .inline import HeaderBlock
 from .section import SectionBlock
 
 
-class AccordionItemBlock(blocks.StructBlock):
+class AccordionItemBlock(DaisieStructBlock):
     heading = HeaderBlock()
-    content = blocks.StreamBlock(
+    content = DaisieStreamBlock(
         CONTENT_BLOCKS,
         label=_("Accordion item content"),
     )

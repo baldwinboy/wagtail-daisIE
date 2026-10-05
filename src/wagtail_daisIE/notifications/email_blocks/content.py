@@ -5,8 +5,8 @@ section block wraps its own content in an ``mj-column``.
 """
 
 from django.utils.translation import gettext_lazy as _
-from wagtail import blocks
 
+from ...base_blocks.compact import DaisieStreamBlock
 from .layout import EmailHeroBlock, EmailSectionBlock, EmailWrapperBlock
 from .leaves import EmailRawBlock
 
@@ -20,7 +20,7 @@ EMAIL_BODY_BLOCKS = [
 ]
 
 
-class EmailContentBlock(blocks.StreamBlock):
+class EmailContentBlock(DaisieStreamBlock):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("local_blocks", EMAIL_BODY_BLOCKS)
         super().__init__(*args, **kwargs)

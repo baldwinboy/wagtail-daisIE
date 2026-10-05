@@ -16,11 +16,12 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks import ThemedTypographyBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.link import LinkDestinationBlock, link_url
 from ..icons.blocks import IconChooserBlock
 
 
-class BreadcrumbItemBlock(blocks.StructBlock):
+class BreadcrumbItemBlock(DaisieStructBlock):
     """One manually authored crumb."""
 
     label = blocks.CharBlock(max_length=255)

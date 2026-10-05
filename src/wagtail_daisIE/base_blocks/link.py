@@ -2,8 +2,10 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.documents.blocks import DocumentChooserBlock
 
+from .compact import DaisieStreamBlock, DaisieStructBlock
 
-class LinkDestinationBlock(blocks.StreamBlock):
+
+class LinkDestinationBlock(DaisieStreamBlock):
     """A single link destination chosen from page/URL/document/email/phone.
 
     This is a reusable custom ``StreamBlock``; wrap it in a ``StreamField``
@@ -92,7 +94,7 @@ def link_is_active(value, request):
     return False
 
 
-class AbstractLinkBlock(blocks.StructBlock):
+class AbstractLinkBlock(DaisieStructBlock):
     destination = LinkDestinationBlock()
     open_in_new_tab = blocks.BooleanBlock(
         default=False,

@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * enable form ordering ([80c872c](https://github.com/baldwinboy/wagtail-daisIE/commit/80c872c47b6825493a894d68a8564dc711c32d2d))
 
-## [Unreleased]
+## [2.0.0]
 
 ### Added
 
@@ -117,6 +117,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   regenerated (~15% smaller, ~70% smaller than before choice compaction).
   Editing a choice list no longer produces a schema-only `AlterField`
   migration.
+- **Blocks serialise by stable registry key** instead of a frozen `block_lookup`
+  tree. Concrete blocks subclass `DaisieStructBlock`/`DaisieStreamBlock`
+  (`base_blocks/compact.py`) and register under `<top_package>.<ClassName>` in
+  `blockref.py`; migrations store
+  `("wagtail_daisIE.blockref.RegisteredBlock", ["<key>"], {})`. One content
+  field drops from ~390 lookup entries / ~90 KB to ~75 short entries, and
+  `makemigrations` for all package apps now runs in seconds. Runtime (admin,
+  revisions, previews, telepath, fixture loading via `load_initial_data`) is
+  unchanged. See `docs/migrations.md`.
 - The Bread chooser is hidden on the **Bread suggestions** snippet; the linked
   Bread is still set automatically by the approval workflow.
 
@@ -164,6 +173,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `<main>` no longer ships hardcoded container classes; set
   `DaisyUITheme.main_design` (and optionally `StyledPageMixin.main_design`) or
   the container renders unstyled.
+- **Migration regeneration:** package and demo migrations were regenerated for
+  compact block serialization. Migration file names are unchanged and
+  `StreamField` columns are `JSONField`, so the schema and existing content are
+  unchanged; downstream projects should update the package and run
+  `makemigrations --check --noinput`. Renaming or moving a registered block
+  requires setting `Meta.migration_key` to its previous key first.
 
 ### Validation
 

@@ -3,8 +3,10 @@ from wagtail import blocks
 
 from wagtail_daisIE.choices import ALIGNMENT_CHOICES, JUSTIFY_CHOICES
 
+from .compact import DaisieStructBlock
 
-class ContentAlignmentBlock(blocks.StructBlock):
+
+class ContentAlignmentBlock(DaisieStructBlock):
     """Alignment of the content inside a section or container block.
 
     This block is meant to be placed in the ``settings`` area of a themed

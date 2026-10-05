@@ -17,7 +17,9 @@ All primitives live in `wagtail_daisIE.base_blocks`.
 | `PageDesignBlock` | container, text, button and media defaults | `StyledPageMixin.page_design` |
 
 `ThemedBlock` subclasses pair a composite with a `form_layout`. Concrete blocks
-add their own content fields and a `template`.
+add their own content fields and a `template`. They inherit `DaisieStructBlock`,
+so migrations store them as a stable registry key rather than a frozen tree (see
+[migrations.md](migrations.md)).
 
 ## Producing class strings
 

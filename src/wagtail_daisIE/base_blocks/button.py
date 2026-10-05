@@ -10,10 +10,11 @@ from wagtail_daisIE.choices import (
 )
 from wagtail_daisIE.widgets import DaisyUISwatchWidget
 
+from .compact import DaisieStructBlock
 from .fields import ColorChoiceBlock
 
 
-class ButtonStateBlock(blocks.StructBlock):
+class ButtonStateBlock(DaisieStructBlock):
     """Base-state styling: what the button looks like normally."""
 
     color = ColorChoiceBlock(
@@ -47,7 +48,7 @@ class ButtonStateBlock(blocks.StructBlock):
         collapsed = True
 
 
-class ButtonAppearanceBlock(blocks.StructBlock):
+class ButtonAppearanceBlock(DaisieStructBlock):
     """Button appearance: what the button looks like when hovered or active."""
 
     normal = ButtonStateBlock()

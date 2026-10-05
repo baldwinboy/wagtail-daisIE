@@ -15,6 +15,7 @@ from wagtail_daisIE.widgets import (
     DaisyUIRawSwatchWidget,
 )
 
+from .compact import DaisieStreamBlock, DaisieStructBlock
 from .fields import ColorChoiceBlock
 
 
@@ -49,7 +50,7 @@ BACKGROUND_SIZE_CHOICES = ChoiceList(
 )
 
 
-class GradientStopBlock(blocks.StructBlock):
+class GradientStopBlock(DaisieStructBlock):
     bg_color = ColorChoiceBlock(
         choices=DAISYUI_BG_COLOR_CHOICES,
         default="bg-primary",
@@ -75,7 +76,7 @@ class GradientStopBlock(blocks.StructBlock):
         collapsed = True
 
 
-class BackgroundLayerBlock(blocks.StructBlock):
+class BackgroundLayerBlock(DaisieStructBlock):
     def __init__(self, *args, allowed_types=None, **kwargs):
         """Optionally restrict the selectable layer types.
 
@@ -228,7 +229,7 @@ class BackgroundLayerBlock(blocks.StructBlock):
         return ""
 
 
-class BackgroundStreamBlock(blocks.StreamBlock):
+class BackgroundStreamBlock(DaisieStreamBlock):
     layer = BackgroundLayerBlock()
 
     def __init__(self, *args, allowed_types=None, required=False, **kwargs):

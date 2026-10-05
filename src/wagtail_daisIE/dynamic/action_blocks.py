@@ -23,6 +23,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks import InlineMarkupBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..blocks.link import ButtonBlock
 from ..choices.feedback import (
     ALERT_COLOR_CHOICES,
@@ -53,7 +54,7 @@ ALERT_LEVELS = {
 }
 
 
-class ActionConfirmationBlock(blocks.StructBlock):
+class ActionConfirmationBlock(DaisieStructBlock):
     """The confirmation alert added to Django messages when an action runs."""
 
     text = InlineMarkupBlock(
@@ -112,7 +113,7 @@ class ActionButtonBlock(ButtonBlock):
         )
 
 
-class ActionBlock(blocks.StructBlock):
+class ActionBlock(DaisieStructBlock):
     """A themed action button plus its optional confirmation alert."""
 
     action = blocks.ChoiceBlock(choices=get_action_choices)

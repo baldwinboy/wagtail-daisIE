@@ -28,6 +28,7 @@ from ...base_blocks import (
 )
 from ...base_blocks.background import TextBackgroundBlock
 from ...base_blocks.background_layer import BackgroundStreamBlock
+from ...base_blocks.compact import DaisieStructBlock
 from ...base_blocks.design import (
     ButtonDesignBlock,
     DesignBlock,
@@ -69,7 +70,7 @@ class EmailSolidMediaDesignBlock(MediaDesignBlock):
     background = TextBackgroundBlock()
 
 
-class EmailNavbarDesignBlock(blocks.StructBlock):
+class EmailNavbarDesignBlock(DaisieStructBlock):
     """The design groups ``mj-navbar`` supports (no background)."""
 
     size = BlockSizeBlock()

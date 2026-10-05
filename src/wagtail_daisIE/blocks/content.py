@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
-from wagtail import blocks
 
+from ..base_blocks.compact import DaisieStreamBlock
 from ..feeds.blocks_data import DATA_BLOCKS
 from .accordion import AccordionBlock
 from .blockquote import BlockQuote
@@ -22,7 +22,7 @@ ALL_CONTENT_BLOCKS = [
 ]
 
 
-class ContentBlock(blocks.StreamBlock):
+class ContentBlock(DaisieStreamBlock):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("local_blocks", ALL_CONTENT_BLOCKS)
         super().__init__(*args, **kwargs)

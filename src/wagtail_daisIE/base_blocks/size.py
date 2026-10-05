@@ -19,6 +19,7 @@ from wagtail_daisIE.choices import (
 )
 from wagtail_daisIE.widgets import DaisyUISliderWidget
 
+from .compact import DaisieStructBlock
 from .css import build_media_size_css, build_size_css, merge_block_css
 from .utils import validate_aspect
 
@@ -43,7 +44,7 @@ class MediaSizeContextMixin:
         return context
 
 
-class InlineWidthBlock(SizeContextMixin, blocks.StructBlock):
+class InlineWidthBlock(SizeContextMixin, DaisieStructBlock):
     width = blocks.ChoiceBlock(
         choices=INLINE_WIDTH_CHOICES,
         default="",
@@ -76,7 +77,7 @@ class InlineWidthBlock(SizeContextMixin, blocks.StructBlock):
         )
 
 
-class InlineHeightBlock(SizeContextMixin, blocks.StructBlock):
+class InlineHeightBlock(SizeContextMixin, DaisieStructBlock):
     height = blocks.ChoiceBlock(
         choices=INLINE_HEIGHT_CHOICES,
         default="",
@@ -109,7 +110,7 @@ class InlineHeightBlock(SizeContextMixin, blocks.StructBlock):
         )
 
 
-class InlineSizeBlock(SizeContextMixin, blocks.StructBlock):
+class InlineSizeBlock(SizeContextMixin, DaisieStructBlock):
     size = blocks.ChoiceBlock(
         choices=INLINE_SIZE_CHOICES,
         default="",
@@ -133,7 +134,7 @@ class InlineSizeBlock(SizeContextMixin, blocks.StructBlock):
         )
 
 
-class BlockWidthBlock(SizeContextMixin, blocks.StructBlock):
+class BlockWidthBlock(SizeContextMixin, DaisieStructBlock):
     width = blocks.ChoiceBlock(
         choices=BLOCK_WIDTH_CHOICES,
         default="",
@@ -166,7 +167,7 @@ class BlockWidthBlock(SizeContextMixin, blocks.StructBlock):
         )
 
 
-class BlockHeightBlock(SizeContextMixin, blocks.StructBlock):
+class BlockHeightBlock(SizeContextMixin, DaisieStructBlock):
     height = blocks.ChoiceBlock(
         choices=BLOCK_HEIGHT_CHOICES,
         default="",
@@ -199,7 +200,7 @@ class BlockHeightBlock(SizeContextMixin, blocks.StructBlock):
         )
 
 
-class AbstractBlockSizeBlock(blocks.StructBlock):
+class AbstractBlockSizeBlock(DaisieStructBlock):
     size = blocks.ChoiceBlock(
         choices=BLOCK_SIZE_CHOICES,
         default="",

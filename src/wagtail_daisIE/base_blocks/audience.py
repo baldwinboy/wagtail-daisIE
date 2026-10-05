@@ -11,6 +11,8 @@ from wagtail import blocks
 from wagtail.admin.telepath import register
 from wagtail.blocks.struct_block import StructBlockAdapter
 
+from .compact import DaisieStructBlock
+
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +99,7 @@ def evaluate_audience(audience_keys, request):
     return False
 
 
-class AudienceBlock(blocks.StructBlock):
+class AudienceBlock(DaisieStructBlock):
     """
     Restrict a block to a named audience.
 

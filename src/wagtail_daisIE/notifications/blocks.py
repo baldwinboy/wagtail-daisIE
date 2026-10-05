@@ -8,6 +8,7 @@ from wagtail import blocks
 from wagtail.snippets.blocks import SnippetChooserBlock
 
 from ..base_blocks import InlineMarkupBlock, ThemedBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..choicelist import ChoiceList
 
 
@@ -27,7 +28,7 @@ NEWSLETTER_METHOD_CHOICES = ChoiceList(
 )
 
 
-class EmailVariableBlock(blocks.StructBlock):
+class EmailVariableBlock(DaisieStructBlock):
     """A key/value pair exposed to an email as ``{{ payload.<key> }}``."""
 
     key = blocks.CharBlock(

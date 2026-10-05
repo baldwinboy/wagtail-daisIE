@@ -7,6 +7,8 @@ This document maps the package for developers and AI agents.
 ```
 choices/        Plain constants: Tailwind/DaisyUI class choices
 base_blocks/    Reusable design primitives and the block CSS pipeline
+                (compact.py = registry-key block serialization for migrations)
+blockref.py     Stable block registry keys + RegisteredBlock resolver
 blocks/         Public block composition built on base_blocks
 models/         DaisyUITheme + theme orderables/fields (core app)
 assets/         DaisyUIIconSource, DaisyUIFavicon snippets + view sets
@@ -44,6 +46,17 @@ The distribution is one package split into per-feature apps (core,
 the optional view sets are guarded with `apps.is_installed()` in
 `wagtail_hooks.py`. Register all apps in `INSTALLED_APPS` before project apps
 (and before `allauth`).
+
+### Block serialization in migrations
+
+Blocks subclassing `DaisieStructBlock`/`DaisieStreamBlock`
+(`base_blocks/compact.py`) are registered under a stable key in
+`blockref.py` and written to migrations as
+`("wagtail_daisIE.blockref.RegisteredBlock", ["<key>"], {})` rather than an
+expanded `block_lookup` tree. This keeps migrations small and fast; keys are
+stable across moves within a package and are frozen with `Meta.migration_key`
+before a rename. Runtime (admin, revisions, telepath, rendering, fixture
+loading) is unaffected. See [migrations.md](migrations.md).
 
 ### `dynamic/`
 
@@ -133,7 +146,9 @@ frozen StreamField `block_lookup` in migrations instead of being written out
 verbatim. Add new constants as `ChoiceList(...)` assigned to a module-level name
 (the key must be unique); model fields, which Django materialises from an
 iterable, are passed a plain zero-arg function returning the list. The test
-`tests/core/test_choice_lists.py` enforces this.
+`tests/core/test_choice_lists.py` enforces this. The sibling `blockref.py`
+applies the same "store a key, not the definition" idea to whole blocks; see
+[Block serialization in migrations](#block-serialization-in-migrations).
 
 ### `base_blocks/`
 
@@ -155,6 +170,10 @@ Design primitives that can be composed into any block:
 - `design.py` — the design composites (`DesignBlock`, `TypographyDesignBlock`,
   `MenuItemDesignBlock`, `MainDesignBlock`, ...) and the `Themed*Block` bases
   that produce `block_css` and `audience_allowed`.
+- `compact.py` — `CompactBlockMetaclass`/`CompactBlockMixin` and the
+  `DaisieStructBlock`/`DaisieStreamBlock` bases that serialise blocks as
+  registry keys in migrations (see
+  [Block serialization in migrations](#block-serialization-in-migrations)).
 - `css.py` — pure functions that turn design values into class strings, plus
   `merge_block_css`.
 - `mjml.py` — email counterpart of `css.py`: turns design values into literal

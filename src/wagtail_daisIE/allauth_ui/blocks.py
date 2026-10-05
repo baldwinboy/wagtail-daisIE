@@ -19,6 +19,7 @@ from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
 from ..blocks.content import ALL_CONTENT_BLOCKS
@@ -43,7 +44,7 @@ AUTH_FIELD_PRESENTATION_CHOICES = ChoiceList(
 )
 
 
-class AllauthFieldBlock(blocks.StructBlock):
+class AllauthFieldBlock(DaisieStructBlock):
     """Render one allauth form field at this point in the body."""
 
     field = blocks.ChoiceBlock(
@@ -131,7 +132,7 @@ class AllauthFieldBlock(blocks.StructBlock):
         )
 
 
-class AllauthFormBlock(blocks.StructBlock):
+class AllauthFormBlock(DaisieStructBlock):
     """Render the allauth form (and any unplaced fields) plus the submit."""
 
     submit_label = blocks.CharBlock(

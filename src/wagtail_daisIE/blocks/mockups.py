@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks import ThemedBlock
+from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from .spaced import LIST_CONTENT_BLOCKS
 
 
@@ -11,7 +12,7 @@ class MockupBrowserBlock(ThemedBlock):
     url = blocks.CharBlock(
         max_length=255, required=False, blank=True, default="https://"
     )
-    content = blocks.StreamBlock(LIST_CONTENT_BLOCKS)
+    content = DaisieStreamBlock(LIST_CONTENT_BLOCKS)
 
     class Meta:
         icon = "browser"
@@ -25,7 +26,7 @@ class MockupBrowserBlock(ThemedBlock):
 
 
 class MockupWindowBlock(ThemedBlock):
-    content = blocks.StreamBlock(LIST_CONTENT_BLOCKS)
+    content = DaisieStreamBlock(LIST_CONTENT_BLOCKS)
 
     class Meta:
         icon = "placeholder"
@@ -39,7 +40,7 @@ class MockupWindowBlock(ThemedBlock):
 
 
 class MockupPhoneBlock(ThemedBlock):
-    content = blocks.StreamBlock(LIST_CONTENT_BLOCKS)
+    content = DaisieStreamBlock(LIST_CONTENT_BLOCKS)
 
     class Meta:
         icon = "mobile-alt"
@@ -52,7 +53,7 @@ class MockupPhoneBlock(ThemedBlock):
         )
 
 
-class MockupCodeLineBlock(blocks.StructBlock):
+class MockupCodeLineBlock(DaisieStructBlock):
     prefix = blocks.CharBlock(max_length=8, required=False, blank=True, default="$")
     code = blocks.CharBlock(max_length=500)
 
