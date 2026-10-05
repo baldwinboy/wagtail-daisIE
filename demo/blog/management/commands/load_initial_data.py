@@ -520,6 +520,12 @@ def _ensure_form_page(home, *, force=False):
         sort_order=2,
         model_field="description",
     )
+    page.form_fields.create(
+        label="Attachment",
+        field_type="file",
+        required=False,
+        sort_order=3,
+    )
     # Interleave the fields with content blocks: a heading, the title field,
     # some rich text, then the description field.
     page.body = _as_stream_data(

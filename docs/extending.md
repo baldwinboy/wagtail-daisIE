@@ -63,6 +63,22 @@ Add `DaisyUIThemeFontFamily` rows (one per role) to a theme's `DaisyUIThemeFonts
 and optional `DaisyUIThemeFontCDN` stylesheet links. The stored font role then
 appears in every `TypographyBlock` picker and renders as `font-<role>`.
 
+## Register a form field type
+
+Add extra form field types (file/image uploads, or any Django form field) to
+form pages via `WAGTAIL_DAISIE_FORM_FIELD_TYPES`; see
+[File and image uploads](forms.md#file-and-image-uploads). Upload types require
+a `handler` (per type or via `WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER`) that decides
+where the file is stored and returns a JSON-safe reference:
+
+```python
+def store(*, page, form, field, file, request=None):
+    return default_storage.url(default_storage.save(f"uploads/{file.name}", file))
+```
+
+`field` may be a class or a `(form_field, options) -> Field` factory, so a
+project can ship its own multiple-file field.
+
 ## Test settings
 
 Package tests use `src/wagtail_daisIE/test/settings.py`. Tests that need the

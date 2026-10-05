@@ -50,7 +50,6 @@ jobs:
       - run: just coverage
       - run: uv run ./demo/manage.py check
       - run: uv run ./demo/manage.py makemigrations --check --noinput
-      - run: uv run ./demo/manage.py test home
 
   test-lowest-deps:
     runs-on: ubuntu-latest

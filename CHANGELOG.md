@@ -77,6 +77,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `<form>` are associated with it via `form="daisie-form"`.
 - `payload.submission` in the form page landing context, exposing the stored
   `FormSubmission` data to `success_body` placeholders.
+- **Configurable form field types**: register extra types for `DaisieFormPage`
+  via `WAGTAIL_DAISIE_FORM_FIELD_TYPES` — a Django form field class (or a
+  `(field, options) -> Field` factory), a widget and DaisyUI classes. Types
+  marked `is_upload` accept a file; a required `handler` callable (per type or
+  `WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER`) decides where it is stored and returns
+  the JSON-safe reference recorded in the submission. See `docs/forms.md`.
 - **DaisyUI Editor Guide**: a multi-page guide in the admin help menu
   (Getting started, Concepts, How-to, Reference), covering themes, page blocks
   and design, menus, feeds, forms, notifications, icons, error pages and
