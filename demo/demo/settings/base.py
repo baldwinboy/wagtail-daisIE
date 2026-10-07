@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "wagtail_daisIE.notifications",
     "wagtail_daisIE.allauth_ui",
     "wagtail_daisIE.allauth_emails",
+    "draftail_text_utils",
     "blog",
     "home",
     "search",
@@ -368,6 +369,18 @@ WAGTAIL_DAISIE_ALLAUTH_UI = True
 
 # Render allauth pages with the same chrome as standard pages.
 WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
+
+# Draftail rich-text customisation for the demo: the colour palette comes
+# straight from the default DaisyUI theme, and font families/URLs are bridged
+# from daisIE's DB-backed helpers in ``demo.draftail_palette``.
+DRAFTAIL_TEXT_UTILS = {
+    "COLORS": {
+        "CALLABLE": "wagtail_daisIE.utils.get_draftail_color_palette",
+    },
+    "FONT_FAMILIES": {"MODULE": "demo.draftail_palette"},
+    "FONT_URLS": {"MODULE": "demo.draftail_palette"},
+    "FEATURES": {"DYNAMIC_LINK": True},
+}
 
 # Tailwind + DaisyUI is a committed, precompiled stylesheet served through
 # staticfiles (see `wagtail_daisIE.static.wagtail_daisIE.css.daisie.css`).

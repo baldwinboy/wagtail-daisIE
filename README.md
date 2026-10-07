@@ -472,6 +472,18 @@ features:
   sample *Account confirmation* and *Password reset* email templates.
 - Admin user `admin` / `changeme`.
 
+### Draftail rich text (`draftail_text_utils`)
+
+The `blocks` extra integrates
+[draftail-text-utils](https://pypi.org/project/draftail-text-utils/) so the
+rich-text editor's colour palette, font family, font size and alignment are
+driven by the active DaisyUI theme: colours via
+`wagtail_daisIE.utils.get_draftail_color_palette` and fonts/URLs via the
+`demo.draftail_palette` bridge.
+
+Install the extra with `uv sync --dev --extra blocks` (the dev environment
+already includes it).
+
 
 ## Development
 
