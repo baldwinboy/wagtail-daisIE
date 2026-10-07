@@ -45,11 +45,13 @@ jobs:
       # Smoke tests with ready-to-publish package.
       - run: uv run --isolated --no-project --with dist/*.whl python -c "import wagtail_daisIE; print('OK')"
       - run: uv run --isolated --no-project --with dist/*.tar.gz python -c "import wagtail_daisIE; print('OK')"
-      - name: Assert static JS assets are packaged
+      - name: Assert static assets are packaged
         run: |
-          count=$(unzip -l dist/*.whl | grep -cE 'static/wagtail_daisIE/js/[^/]+\.js$')
-          echo "JS assets in wheel: $count"
-          test "$count" -ge 12
+          js=$(unzip -l dist/*.whl | grep -cE 'static/wagtail_daisIE/js/[^/]+\.js$')
+          echo "JS assets in wheel: $js"
+          test "$js" -ge 12
+          unzip -l dist/*.whl | grep -qE 'static/wagtail_daisIE/css/daisie\.css$'
+          unzip -l dist/*.whl | grep -qE 'wagtail_daisIE/templates/'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: artifact
