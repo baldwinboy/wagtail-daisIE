@@ -2,6 +2,7 @@ import json
 
 from django.apps import apps
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.templatetags.static import static
 from django.urls import include, path, reverse
 from django.utils.html import format_html
@@ -280,6 +281,25 @@ def register_context_binding_js():
     return format_html(
         '<script src="{}"></script>',
         static("wagtail_daisIE/js/context_binding_block.js"),
+    )
+
+
+# Feed available context values to the draftail_text_utils dynamic-link control.
+@hooks.register("insert_global_admin_js")
+def register_dynamic_link_context_js():
+    if not apps.is_installed("draftail_text_utils"):
+        return ""
+    from .dynamic.link_context import get_dynamic_link_groups
+
+    groups_json = json.dumps(get_dynamic_link_groups(), cls=DjangoJSONEncoder)
+    script = (
+        "window.draftailTextUtils = window.draftailTextUtils || {};"
+        "window.draftailTextUtils.dynamicLinkContext = "
+        f"{groups_json};"
+    )
+    return format_html(
+        "<script type='text/javascript'>{}</script>",
+        mark_safe(script),  # noqa: S308
     )
 
 

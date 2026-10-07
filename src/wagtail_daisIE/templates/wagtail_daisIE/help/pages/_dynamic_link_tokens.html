@@ -1,0 +1,30 @@
+{% load i18n %}
+{% if dynamic_link_groups %}
+    <h2>{% trans "Dynamic links" %}</h2>
+    <p>
+        {% trans "Link to a value that changes with the visitor or page, such as the sign-in page or the current record. Use the Dynamic link control in the rich-text editor and pick a value below." %}
+    </p>
+    {% for group in dynamic_link_groups %}
+        <details class="w-mb-2"{% if forloop.first %} open{% endif %}>
+            <summary style="display: list-item; user-select: none;">
+                {{ group.title }}{% if group.description %} — {{ group.description }}{% endif %}
+            </summary>
+            <table class="listing">
+                <thead>
+                    <tr>
+                        <th>{% trans "Value" %}</th>
+                        <th>{% trans "Description" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in group.items %}
+                        <tr>
+                            <td><code>{{ item.token }}</code></td>
+                            <td>{{ item.description }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </details>
+    {% endfor %}
+{% endif %}

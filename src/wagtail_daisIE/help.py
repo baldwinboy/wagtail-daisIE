@@ -300,6 +300,14 @@ class GuidePageView(WagtailAdminTemplateMixin, TemplateView):
             from .help_reference import build_block_reference
 
             context["block_reference"] = build_block_reference()
+        if self.guide_page["slug"] in {
+            "concepts-context",
+            "context-models",
+            "markup-and-placeholders",
+        }:
+            from .dynamic.link_context import get_dynamic_link_groups
+
+            context["dynamic_link_groups"] = get_dynamic_link_groups()
         return context
 
     def get_breadcrumbs_items(self):

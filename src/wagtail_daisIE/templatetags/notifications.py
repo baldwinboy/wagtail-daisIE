@@ -14,7 +14,12 @@ sanitises Wagtail rich text.
 
 from __future__ import annotations
 
+import re
+
+from html import unescape
+
 from django import template
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from wagtail.templatetags.wagtailcore_tags import richtext as _richtext
 
@@ -24,6 +29,37 @@ from ..notifications.placeholders import render_expression, render_placeholders
 
 
 register = template.Library()
+
+
+#: Matches an ``<a>`` tag carrying a context-bound (dynamic) link marker.
+_DYNAMIC_ANCHOR_RE = re.compile(
+    r'<a\b(?=[^>]*\bdata-dynamic="(?P<expr>[^"]*)")[^>]*>',
+    re.IGNORECASE,
+)
+
+
+def resolve_dynamic_links(html, data):
+    """Resolve ``data-dynamic`` anchors produced by the styled-link handler.
+
+    The database holds ``<a href="#" data-dynamic="{expr}">`` because link
+    handlers have no request/context. By the time rich text is rendered here we
+    do, so each expression is resolved with :func:`resolve_dynamic_url` (which
+    sanitises the scheme) and written back as ``href``.
+    """
+    from ..dynamic.resolvers import resolve_dynamic_url
+
+    def _replace(match):
+        tag = match.group(0)
+        expression = unescape(match.group("expr"))
+        url = resolve_dynamic_url(expression, data)
+        tag = re.sub(r'\s+href="[^"]*"', "", tag, count=1)
+        tag = re.sub(r'\s+data-dynamic="[^"]*"', "", tag, count=1)
+        tag = re.sub(r'\s+linktype="dynamic"', "", tag, count=1)
+        if url:
+            tag = tag[:-1] + f' href="{escape(url)}">'
+        return tag
+
+    return _DYNAMIC_ANCHOR_RE.sub(_replace, html)
 
 
 @register.simple_tag(takes_context=True)
@@ -42,9 +78,15 @@ def daisie_html(context, value):
 
 @register.simple_tag(takes_context=True)
 def daisie_richtext(context, value):
-    """Substitute placeholders in rich text, then expand and sanitise it."""
+    """Substitute placeholders in rich text, then expand and sanitise it.
+
+    Context-bound (dynamic) links are resolved *first*, on the raw stored HTML,
+    so the ``{{ … }}`` inside a ``data-dynamic`` attribute is not consumed by
+    the generic placeholder pass before it can be resolved with URL validation.
+    """
     data = context_from_template_context(context)
-    substituted = render_placeholders(value, data, escape_literals=False)
+    resolved = resolve_dynamic_links(str(value), data)
+    substituted = render_placeholders(resolved, data, escape_literals=False)
     return _richtext(substituted)
 
 
