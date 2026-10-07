@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v2.1.0...v3.0.0) (2026-10-07)
+
+
+### Features
+
+* add account context value for allauth URLs ([348f1ab](https://github.com/baldwinboy/wagtail-daisIE/commit/348f1ab8c83d53c9961102b1fddd217a0c02fc28))
+* resolve context-bound dynamic styled links ([585d9c0](https://github.com/baldwinboy/wagtail-daisIE/commit/585d9c063247e193d0317b0f5ba7ded341a42315))
+
+
+### Bug Fixes
+
+* accept absolute paths in link and search URL blocks ([ef95ccf](https://github.com/baldwinboy/wagtail-daisIE/commit/ef95ccf0c45e1b775bfb74fe05597d7780224c19))
+* return usable labels from get_draftail_font_families ([c31f209](https://github.com/baldwinboy/wagtail-daisIE/commit/c31f20990321edf059add050185f50c2dd470ac7))
+
+
+### Documentation
+
+* wire up and document draftail in the demo ([16e4304](https://github.com/baldwinboy/wagtail-daisIE/commit/16e4304ef67313d8be3323d37442aab82b70e10c))
+
+
+### Miscellaneous Chores
+
+* release 3.0.0 ([912e99b](https://github.com/baldwinboy/wagtail-daisIE/commit/912e99bff6a419e74036dce2b1ed4b3b546d97f0))
+
 ## [Unreleased]
 
 ### Features
