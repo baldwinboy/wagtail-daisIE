@@ -12,6 +12,7 @@ from ..base_blocks import (
     ThemedBlock,
 )
 from ..base_blocks.compact import DaisieStreamBlock
+from ..base_blocks.fields import URLOrAbsolutePathBlock
 from ..base_blocks.markup import strip_inline_markup
 from ..choicelist import ChoiceList
 from ..dynamic.action_blocks import ActionBlock
@@ -95,7 +96,7 @@ class MenuBranding(AbstractLinkBlock, PublicThemedBlock):
 
 
 class MenuSearchBoxBlock(ThemedBlock):
-    search_url = blocks.URLBlock(
+    search_url = URLOrAbsolutePathBlock(
         required=False,
         default="/search/",
     )

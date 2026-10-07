@@ -1,11 +1,63 @@
 import re
 
 from django import forms
+from django.core import validators
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..context import get_current_theme
 from .utils import build_font_family_choices
+
+
+class URLOrAbsolutePathValidator(validators.URLValidator):
+    """Accept either an absolute URL or a site-relative absolute path.
+
+    Mirrors Wagtail's admin chooser validator so blocks can store paths like
+    ``/accounts/login/`` or ``/search/`` as well as full ``https://…`` URLs.
+    """
+
+    @staticmethod
+    def is_absolute_path(value):
+        return bool(value) and str(value).startswith("/")
+
+    def __call__(self, value):
+        if URLOrAbsolutePathValidator.is_absolute_path(value):
+            return
+        return super().__call__(value)
+
+
+class URLOrAbsolutePathField(forms.URLField):
+    default_validators = [URLOrAbsolutePathValidator()]
+
+    def to_python(self, value):
+        if URLOrAbsolutePathValidator.is_absolute_path(value):
+            return value
+        return super().to_python(value)
+
+
+class URLOrAbsolutePathBlock(blocks.FieldBlock):
+    """A ``URLBlock`` that also accepts leading-slash absolute paths."""
+
+    def __init__(
+        self,
+        required=True,
+        help_text=None,
+        max_length=None,
+        min_length=None,
+        validators=(),
+        **kwargs,
+    ):
+        self.field = URLOrAbsolutePathField(
+            required=required,
+            help_text=help_text,
+            max_length=max_length,
+            min_length=min_length,
+            validators=validators,
+        )
+        super().__init__(**kwargs)
+
+    class Meta:
+        icon = "link"
 
 
 def resolve_font_family_theme():

@@ -3,6 +3,7 @@ from wagtail import blocks
 from wagtail.documents.blocks import DocumentChooserBlock
 
 from .compact import DaisieStreamBlock, DaisieStructBlock
+from .fields import URLOrAbsolutePathBlock
 
 
 class LinkDestinationBlock(DaisieStreamBlock):
@@ -15,7 +16,9 @@ class LinkDestinationBlock(DaisieStreamBlock):
     """
 
     link_page = blocks.PageChooserBlock(required=False, label=_("Page"))
-    link_url = blocks.URLBlock(required=False, blank=True, label=_("External URL"))
+    link_url = URLOrAbsolutePathBlock(
+        required=False, blank=True, label=_("External URL or path")
+    )
     link_dynamic = blocks.CharBlock(
         required=False,
         blank=True,
