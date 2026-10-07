@@ -13,14 +13,14 @@
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/postcss": "^4.3.3",
-    "@wagtail/stylelint-config-wagtail": "^2.0.0",
-    "daisyui": "^5.7.39",
-    "postcss": "^8.5.28",
-    "prettier": "^3.9.7",
-    "stylelint": "^17.15.0",
+    "@wagtail/stylelint-config-wagtail": "^2.0.1",
+    "daisyui": "^5.7.47",
+    "postcss": "^8.5.29",
+    "prettier": "^3.9.9",
+    "stylelint": "^17.16.0",
     "tailwindcss": "^4.3.3"
   },
   "overrides": {
-    "stylelint": "^17.15.0"
+    "stylelint": "^17.16.0"
   }
 }

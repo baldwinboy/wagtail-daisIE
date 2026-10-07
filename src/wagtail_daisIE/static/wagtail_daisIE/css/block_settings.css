@@ -7,7 +7,7 @@
  * that contain at least one of these controls.
  */
 
-/* stylelint-disable selector-attribute-name-disallowed-list */
+/* stylelint-disable selector-disallowed-list */
 [data-block-settings]:has(
   .daisyui-swatch-widget,
   .daisyui-slider-widget,
@@ -20,7 +20,7 @@
   gap: var(--daisyui-settings-gap);
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
-/* stylelint-enable selector-attribute-name-disallowed-list */
+/* stylelint-enable selector-disallowed-list */
 
 /* -------------------------------------------------------------------------
  * Colour swatches
@@ -48,11 +48,10 @@
  * area to this widget makes the offset arithmetic line up.
  */
 
-/* stylelint-disable selector-attribute-name-disallowed-list */
 .daisyui-swatch-widget .clr-picker[data-inline='true'] {
   position: static;
 }
-/* stylelint-enable selector-attribute-name-disallowed-list */
+
 .daisyui-swatch-widget input[type='radio'],
 .daisyui-align-widget input[type='radio'] {
   opacity: 0;
