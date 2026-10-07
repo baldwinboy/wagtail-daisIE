@@ -109,7 +109,7 @@ def get_draftail_font_families(theme=None):
         return []
 
     return [
-        {"label": _(family.__str__.capitalize()), "value": family.css_value}
+        {"label": str(family).capitalize(), "value": family.css_value}
         for family in font_families
     ]
 
