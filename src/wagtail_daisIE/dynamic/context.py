@@ -6,7 +6,7 @@ from .registry import get_context_model_keys
 
 
 #: Built-in variables resolved by :mod:`wagtail_daisIE.notifications.context`.
-BUILTIN_CONTEXT_KEYS = ("site", "now", "user", "recipient", "payload")
+BUILTIN_CONTEXT_KEYS = ("site", "now", "user", "recipient", "payload", "account")
 
 
 def context_model_keys():
@@ -27,4 +27,11 @@ def copy_context_values(parent_context, context):
     for key in ("request", "csrf_token", *context_model_keys()):
         if key not in context and key in parent_context:
             context[key] = parent_context[key]
+    if not context.get("account"):
+        from .auth import get_account_urls
+
+        context["account"] = get_account_urls(
+            request=context.get("request") or parent_context.get("request"),
+            site=context.get("site") or parent_context.get("site"),
+        )
     return context

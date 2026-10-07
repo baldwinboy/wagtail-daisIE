@@ -18,4 +18,9 @@ class DaisieContextMixin:
     def add_daisie_context(self, request, context):
         for key, value in self.get_daisie_context(request).items():
             context.setdefault(key, value)
+        if not context.get("account"):
+            from .auth import get_account_urls
+
+            site = context.get("site") or getattr(request, "site", None)
+            context["account"] = get_account_urls(request=request, site=site)
         return context

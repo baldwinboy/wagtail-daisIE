@@ -106,9 +106,18 @@ def resolve_object(expression, context):
         return None
     parts = expression.split(".")
     root = parts[0]
-    if root not in context:
+    if root == "account":
+        value = context.get("account")
+        if value is None:
+            from .auth import get_account_urls
+
+            value = get_account_urls(
+                request=context.get("request"), site=context.get("site")
+            )
+    elif root in context:
+        value = context[root]
+    else:
         return None
-    value = context[root]
     for attr in parts[1:]:
         value = _lookup(value, attr)
         if value is None:

@@ -230,6 +230,22 @@ def _builtin_group():
                     "that triggered the message."
                 ),
             },
+            {
+                "token": "{{ account.login_url }}",
+                "description": "Sign-in page URL (django-allauth).",
+            },
+            {
+                "token": "{{ account.signup_url }}",
+                "description": "Sign-up page URL (django-allauth).",
+            },
+            {
+                "token": "{{ account.password_reset_url }}",
+                "description": "Request a password reset (django-allauth).",
+            },
+            {
+                "token": "{{ account.logout_url }}",
+                "description": "Sign-out URL (django-allauth).",
+            },
         ],
     }
 

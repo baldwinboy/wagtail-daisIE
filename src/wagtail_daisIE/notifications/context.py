@@ -101,8 +101,9 @@ def build_context(
     if recipient_obj is None and user_obj is not None:
         recipient_obj = recipient_from(user_obj)
 
+    resolved_site = get_current_site(request, site)
     context = {
-        "site": get_current_site(request, site),
+        "site": resolved_site,
         "now": now or timezone.now(),
         "payload": payload if payload is not None else {},
     }
@@ -111,12 +112,15 @@ def build_context(
         context["user"] = user_obj if user_obj is not None else recipient_obj
     elif user_obj is not None:
         context["user"] = user_obj
+    from ..dynamic.auth import get_account_urls
+
+    context["account"] = get_account_urls(request=request, site=resolved_site)
     return context
 
 
 #: Context keys that are copied from an email block's parent context so nested
 #: templates keep access to the placeholder context.
-PLACEHOLDER_CONTEXT_KEYS = ("payload", "recipient", "user", "site", "now")
+PLACEHOLDER_CONTEXT_KEYS = ("payload", "recipient", "user", "site", "now", "account")
 
 
 def context_from_template_context(template_context):
@@ -138,13 +142,18 @@ def context_from_template_context(template_context):
 
     data.setdefault("payload", {})
     data.setdefault("now", timezone.now())
-    if "site" not in data:
+    request = None
+    try:
+        request = template_context.get("request")
+    except (AttributeError, KeyError, TypeError):  # pragma: no cover - defensive
         request = None
-        try:
-            request = template_context.get("request")
-        except Exception:  # pragma: no cover - defensive
-            request = None
+    if "site" not in data:
         data["site"] = get_current_site(request)
+
+    if not data.get("account"):
+        from ..dynamic.auth import get_account_urls
+
+        data["account"] = get_account_urls(request=request, site=data.get("site"))
 
     # Configured context models are resolved into the render context by the
     # page/block machinery; pick them up so tags can resolve {{ key.field }}.
