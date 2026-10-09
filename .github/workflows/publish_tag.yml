@@ -4,7 +4,8 @@ name: Publish to PyPI
 
 on:
   push:
-    branches: [main]
+    tags:
+      - 'v*'
 
 permissions: {}
 
@@ -13,27 +14,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release-please:
+  guard:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-    steps:
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
-        id: release
-
-  test:
-    needs: [release-please]
-    if: ${{ needs.release-please.outputs.release_created }}
-    uses: $/.github/workflows/test.yml
-    permissions:
       contents: read
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check whether this version is already on PyPI
+        id: check
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          name=$(grep -E '^name\s*=' pyproject.toml | head -1 | sed -E 's/.*=\s*"([^"]+)".*/\1/')
+          echo "Checking pypi.org/pypi/$name/$version"
+          if curl -fsS "https://pypi.org/pypi/${name}/${version}/json" >/dev/null 2>&1; then
+            echo "Version $version already on PyPI — skipping publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
 
   build:
-    needs: [release-please, test]
-    if: ${{ needs.release-please.outputs.release_created }}
+    needs: [guard]
+    if: ${{ needs.guard.outputs.publish == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,8 +71,8 @@ jobs:
           path: ./dist
 
   publish:
-    needs: [release-please, build]
-    if: ${{ needs.release-please.outputs.release_created }}
+    needs: [build]
+    if: ${{ needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: none
