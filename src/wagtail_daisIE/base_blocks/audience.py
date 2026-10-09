@@ -1,5 +1,6 @@
 import logging
 
+from django import forms
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import redirect
@@ -107,6 +108,7 @@ class AudienceBlock(DaisieStructBlock):
         default=[],
         required=False,
         help_text=_("Who can see this content (empty = everyone)."),
+        widget=forms.CheckboxSelectMultiple,
     )
 
     class Meta:
