@@ -50,6 +50,7 @@ class FormFieldType:
     widget_path: object = ""
     widget_attrs: dict = field(default_factory=dict)
     css: str = ""
+    choices: object = False
     options: dict = field(default_factory=dict)
     is_upload: bool = False
     handler_path: object = ""
@@ -111,6 +112,7 @@ def _build_field_type(key, raw):
         widget_path=raw.get("widget", "") or "",
         widget_attrs=dict(raw.get("widget_attrs") or {}),
         css=raw.get("css", "") or "",
+        choices=raw.get("choices", False) or False,
         options=dict(raw.get("options") or {}),
         is_upload=bool(raw.get("is_upload", False)),
         handler_path=raw.get("handler", "") or "",

@@ -1,0 +1,26 @@
+{% load static notifications %}
+{% if audience_allowed %}
+  <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <label class="fieldset-legend" for="daisie-{{ block.id }}">
+      {% daisie_markup value.label %}{% if value.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}
+    </label>
+    <div class="daisyui-autocomplete" data-daisyui-autocomplete>
+      <select
+        id="daisie-{{ block.id }}"
+        {% if value.name %}name="{{ value.name }}"{% endif %}
+        multiple
+        class="select {{ value.color }} {{ value.size }}{% if value.error_text %} select-error{% endif %}"
+        {% if value.required %}required{% endif %}
+        {% if value.error_text %}aria-invalid="true" aria-describedby="daisie-{{ block.id }}-error"{% elif value.helper_text %}aria-describedby="daisie-{{ block.id }}-help"{% endif %}
+      >
+        {% for option in autocomplete_options %}
+          <option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+      {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=autocomplete_options placeholder=autocomplete_placeholder %}
+    </div>
+    {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{% daisie_markup value.helper_text %}</p>{% endif %}
+    {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{% daisie_markup value.error_text %}</p>{% endif %}
+  </fieldset>
+  <script src="{% static 'wagtail_daisIE/js/daisyui_autocomplete.js' %}"></script>
+{% endif %}

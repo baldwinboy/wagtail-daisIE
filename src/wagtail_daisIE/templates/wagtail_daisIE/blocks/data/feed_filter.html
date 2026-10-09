@@ -1,8 +1,16 @@
-{% load i18n %}
+{% load i18n static %}
 {% if filter.type == "choice" %}
     <fieldset class="fieldset">
         <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
-        {% if filter.multi %}
+        {% if filter.autocomplete %}
+            <div class="daisyui-autocomplete" data-daisyui-autocomplete>
+                <select name="filter_{{ filter.key }}" multiple class="select w-full {{ filter.input_css }}">
+                    {% for option in filter.options %}<option value="{{ option.value }}"{% if option.value in filter.values %} selected{% endif %}>{{ option.label }}</option>{% endfor %}
+                </select>
+                {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=filter.options placeholder=filter.label %}
+            </div>
+            <script src="{% static 'wagtail_daisIE/js/daisyui_autocomplete.js' %}"></script>
+        {% elif filter.multi %}
             <div class="flex flex-wrap gap-2">
                 {% for option in filter.options %}
                     <label class="{{ filter.button_css }}{% if option.value in filter.values %} {{ filter.selected_css }} btn-active{% endif %}">
@@ -49,6 +57,16 @@
                 />
             {% endfor %}
         </div>
+    </fieldset>
+{% elif filter.type == "sort" %}
+    <fieldset class="fieldset">
+        <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
+        <select name="filter_{{ filter.key }}" class="select w-full {{ filter.input_css }}">
+            <option value="">{% translate "Default" %}</option>
+            {% for option in filter.options %}
+                <option value="{{ option.value }}"{% if filter.value == option.value %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+        </select>
     </fieldset>
 {% elif filter.type == "date" %}
     <fieldset class="fieldset">

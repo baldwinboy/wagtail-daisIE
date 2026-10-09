@@ -238,6 +238,8 @@ WAGTAIL_DAISIE_CONTEXT_MODELS = {
             "tag": {
                 "label": "Tag",
                 "type": "choice",
+                "multi": True,
+                "autocomplete": True,
                 "field": "tags__slug",
                 "choices": "blog.filters.tags",
             },
@@ -268,6 +270,13 @@ WAGTAIL_DAISIE_CONTEXT_MODELS = {
         "lookup_field": "pk",
         "url_source": "url",
         "select_related": ["image"],
+    },
+    "tag": {
+        "label": "Bread tag",
+        "model": "taggit.Tag",
+        "source": "url",
+        "lookup_field": "pk",
+        "queryset": "blog.filters.tag_queryset",
     },
     "basket": {
         "label": "Bread basket",
@@ -318,6 +327,13 @@ WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
         "css": "file-input w-full",
         "is_upload": True,
         "handler": "blog.uploads.store_upload",
+    },
+    "tags": {
+        "label": "Tags",
+        "field": "django.forms.MultipleChoiceField",
+        "widget": "wagtail_daisIE.widgets.DaisieAutocompleteSelectMultiple",
+        "choices": "blog.filters.tag_choices",
+        "css": "select w-full",
     },
 }
 

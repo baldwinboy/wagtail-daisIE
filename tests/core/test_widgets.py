@@ -13,6 +13,7 @@ from wagtail_daisIE.blocks.inline import InlineTextBlock
 from wagtail_daisIE.models import DaisyUITheme
 from wagtail_daisIE.pages import get_default_theme_id
 from wagtail_daisIE.widgets import (
+    DaisieAutocompleteSelectMultiple,
     DaisyUIAlignWidget,
     DaisyUIIntegerBlock,
     DaisyUINumberSliderWidget,
@@ -75,6 +76,16 @@ class TestWidgetRendering:
         number = DaisyUINumberSliderWidget(min_value=0, max_value=10, step=1)
         assert 'value="10"' in number.render("__NAME__", 50, attrs={"id": "__ID__"})
 
+        autocomplete = DaisieAutocompleteSelectMultiple(
+            choices=[("a", "Alpha"), ("b", "Bravo")], placeholder="Pick"
+        )
+        html = autocomplete.render("tags", ["a"], attrs={"id": "__ID__"})
+        assert 'name="tags"' in html
+        assert "data-daisyui-autocomplete" in html
+        assert 'value="a" selected' in html
+        assert "Alpha" in html and "Bravo" in html
+        assert "daisyui_autocomplete.js" in str(autocomplete.media)
+
 
 class TestBlockWidgets:
     def test_design_and_numeric_widgets(self):
@@ -113,6 +124,7 @@ class TestNoImportTimeQueries:
         with CaptureQueriesContext(connection) as ctx:
             DaisyUISwatchWidget(prefix="bg")
             DaisyUIRawSwatchWidget(prefix="bg")
+            DaisieAutocompleteSelectMultiple(choices=[("a", "A")])
         assert len(ctx) == 0
 
         for name in list(sys.modules):

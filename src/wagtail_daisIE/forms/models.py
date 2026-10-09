@@ -17,6 +17,7 @@ from wagtail.fields import StreamField
 from ..base_blocks.button import ButtonAppearanceBlock
 from ..base_blocks.css import build_design_css
 from ..blocks.content import ContentBlock
+from ..context import reset_current_form_context, set_current_form_context
 from ..dynamic.registry import get_context_model, get_context_model_choices
 from ..pages import StyledPageMixin
 from .blocks import FormContentBlock, duplicate_field_names, placed_field_names
@@ -27,6 +28,18 @@ from .registry import get_default_upload_handler, get_form_field_type
 
 
 logger = logging.getLogger(__name__)
+
+
+def _model_field(model, name):
+    try:
+        return model._meta.get_field(name)
+    except Exception:
+        return None
+
+
+def _is_many(field):
+    """Whether ``field`` is a many-to-many or taggit manager field."""
+    return bool(getattr(field, "many_to_many", False)) or hasattr(field, "through")
 
 
 class DaisieFormPage(StyledPageMixin, AbstractForm):
@@ -42,6 +55,11 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
     #: rendered outside it (via the ``form_field`` body block) point back at it
     #: with the HTML ``form`` attribute.
     form_id = "daisie-form"
+
+    #: ``"create"`` (default) or ``"edit"``. In edit mode the page updates the
+    #: instance resolved by the ``instance_model`` context binding; subclasses
+    #: set ``form_mode = "edit"`` (a class attribute, never a model field).
+    form_mode = "create"
 
     body = StreamField(
         FormContentBlock(),
@@ -183,7 +201,21 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
                 )
 
     def get_form(self, *args, **kwargs):
-        form = super().get_form(*args, **kwargs)
+        request = getattr(self, "_daisie_request", None)
+        context = {}
+        instance = None
+        if request is not None and self.form_mode == "edit":
+            from ..dynamic.resolvers import resolve_context_models
+
+            context = resolve_context_models(request, self)
+            if self.instance_model:
+                instance = context.get(self.instance_model)
+        self._daisie_instance = instance
+        token = set_current_form_context({"instance": instance, "context": context})
+        try:
+            form = super().get_form(*args, **kwargs)
+        finally:
+            reset_current_form_context(token)
         for field in form.fields.values():
             widget = getattr(field, "widget", None)
             if widget is None:
@@ -192,7 +224,30 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
                 attrs = getattr(target, "attrs", None)
                 if attrs is not None:
                     attrs.setdefault("form", self.form_id)
+        if self.form_mode == "edit" and instance is not None:
+            self._apply_instance_initial(form, instance)
         return form
+
+    def _apply_instance_initial(self, form, instance):
+        """Prefill each bound form field from the edit instance."""
+        model = type(instance)
+        for name, target in self.get_model_field_map().items():
+            if name not in form.fields:
+                continue
+            field = _model_field(model, target)
+            if field is None:
+                continue
+            manager = getattr(instance, target, None)
+            if _is_many(field):
+                if hasattr(manager, "names"):
+                    initial = list(manager.names())
+                elif manager is not None:
+                    initial = list(manager.values_list("pk", flat=True))
+                else:
+                    initial = []
+            else:
+                initial = getattr(instance, target, None)
+            form.fields[name].initial = initial
 
     def render_landing_page(self, request, form_submission=None, *args, **kwargs):
         context = self.get_context(request)
@@ -220,8 +275,16 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
             form_data=self.get_submission_form_data(form),
             page=self,
         )
-        self.create_instance_from_submission(form, submission)
+        self.save_instance_from_submission(form, submission)
         return submission
+
+    def save_instance_from_submission(self, form, submission=None):
+        """Create or (in edit mode) update the linked instance from ``form``."""
+        if self.form_mode == "edit":
+            instance = getattr(self, "_daisie_instance", None)
+            if instance is not None:
+                return self.update_instance_from_submission(form, instance)
+        return self.create_instance_from_submission(form, submission)
 
     def get_upload_handler(self, field, form=None):
         """Return the callable that persists an uploaded file for ``field``.
@@ -304,16 +367,19 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
 
         mapping = self.get_model_field_map()
         kwargs = {}
+        many = {}
         for name, value in form.cleaned_data.items():
             target = mapping.get(name, name)
-            try:
-                model._meta.get_field(target)
-            except Exception:
+            field = _model_field(model, target)
+            if field is None:
                 logger.debug(
                     "Skipping unknown field %r on %s", target, model._meta.label
                 )
                 continue
-            kwargs[target] = value
+            if _is_many(field):
+                many[target] = value
+            else:
+                kwargs[target] = value
 
         if self.require_approval:
             approval_field = self.approval_field or "is_approved"
@@ -335,18 +401,56 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
             logger.exception("Failed to create %s from form submission", model)
             return None
 
+        for name, value in many.items():
+            manager = getattr(instance, name, None)
+            if hasattr(manager, "set"):
+                manager.set(value)
+
+        return instance
+
+    def update_instance_from_submission(self, form, instance):
+        """Apply ``form`` to an existing instance (edit mode)."""
+        model = type(instance)
+        mapping = self.get_model_field_map()
+        values = {}
+        many = {}
+        for name, value in form.cleaned_data.items():
+            target = mapping.get(name, name)
+            field = _model_field(model, target)
+            if field is None:
+                logger.debug(
+                    "Skipping unknown field %r on %s", target, model._meta.label
+                )
+                continue
+            if _is_many(field):
+                many[target] = value
+            else:
+                values[target] = value
+
+        for name, value in values.items():
+            setattr(instance, name, value)
+        try:
+            instance.save()
+        except Exception:
+            logger.exception("Failed to update %s from form submission", model)
+            return None
+
+        for name, value in many.items():
+            manager = getattr(instance, name, None)
+            if hasattr(manager, "set"):
+                manager.set(value)
         return instance
 
     def serve(self, request, *args, **kwargs):
         if not self.page_audience_allowed(request):
             return self.audience_denied_response(request)
 
+        self._daisie_request = request
         if request.method == "POST":
             form = self.get_form(
                 request.POST, request.FILES, page=self, user=request.user
             )
             if form.is_valid():
-                self._daisie_request = request
                 try:
                     submission = self.process_form_submission(form)
                 finally:

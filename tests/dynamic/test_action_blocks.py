@@ -12,6 +12,12 @@ def test_action_button_drops_link_fields():
     assert "destination" not in children
     assert "open_in_new_tab" not in children
     assert "text" in children
+    assert "confirm" in children
+    assert set(children["confirm"].child_blocks) == {
+        "title",
+        "text",
+        "confirm_label",
+    }
 
 
 def test_action_button_renders_every_nested_stream():

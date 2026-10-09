@@ -88,12 +88,18 @@ class TestThemeCss:
         )
         assert "fonts.googleapis.com" in cdn
 
-    def test_full_css_combines_colors_and_fonts(self, theme_with_fonts):
+    def test_full_css_combines_colors_and_fonts(self, theme, theme_with_fonts):
         html = _render(
             "{% daisyui_theme_full_css theme %}", {"theme": theme_with_fonts}
         )
         assert "--color-primary:" in html
         assert "--font-heading:" in html
+
+        # Every configured theme's variables are emitted so a page/toggle that
+        # names another theme never falls through to daisyUI's prefers-dark.
+        all_themes = _render("{% daisyui_all_themes_css %}", {})
+        assert f'[data-theme="{theme.name}"]' in all_themes
+        assert f'[data-theme="{theme_with_fonts.name}"]' in all_themes
 
 
 class TestMenuTag:

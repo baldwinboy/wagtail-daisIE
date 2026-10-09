@@ -554,6 +554,48 @@ class DaisyUIAlignWidget(widgets.RadioSelect):
         return context
 
 
+class DaisieAutocompleteSelectMultiple(forms.SelectMultiple):
+    """A ``SelectMultiple`` enhanced into a searchable token control.
+
+    The native ``<select multiple>`` is always rendered (and stays usable with
+    JavaScript disabled); ``daisyui_autocomplete.js`` hides it and reveals the
+    token UI. The widget ships its own JS through ``Media`` so it works on
+    standalone form pages (which only render ``{{ form.media }}``) and in the
+    admin alike.
+    """
+
+    template_name = "wagtail_daisIE/admin/daisyui_autocomplete_widget.html"
+    allow_multiple_selected = True
+
+    def __init__(self, attrs=None, choices=(), pattern="", placeholder=""):
+        super().__init__(attrs)
+        if choices:
+            self.choices = choices
+        self.pattern = pattern
+        self.placeholder = placeholder
+
+    @property
+    def media(self):
+        return forms.Media(js=["wagtail_daisIE/js/daisyui_autocomplete.js"])
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        options = []
+        for _group_name, group_options, _index in context["widget"]["optgroups"]:
+            for option in group_options:
+                options.append(
+                    {
+                        "value": option["value"],
+                        "label": option["label"],
+                        "selected": option["selected"] or False,
+                    }
+                )
+        context["autocomplete_options"] = options
+        context["autocomplete_placeholder"] = self.placeholder or ""
+        context["autocomplete_pattern"] = self.pattern or ""
+        return context
+
+
 class LayerTypeSelect(forms.Select):
     """``layer_type`` select wired to the background-layer Stimulus controller.
 

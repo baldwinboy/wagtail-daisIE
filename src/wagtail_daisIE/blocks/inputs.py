@@ -7,6 +7,8 @@ form and a form page stay visually consistent.
 
 from __future__ import annotations
 
+import re
+
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
@@ -43,6 +45,54 @@ def _split_options(value):
     if "\n" in text:
         return [line.strip() for line in text.splitlines() if line.strip()]
     return [item.strip() for item in text.split(",") if item.strip()]
+
+
+_RANGE_RE = re.compile(
+    r"^\s*(\d+)\s*(?:-|\.\.)\s*(\d+)(?:\s*(?:/|step)\s*(\d+))?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _expand_option_ranges(value):
+    """Split option text and expand ranges like ``5-120`` or ``5-120/5``."""
+    options = []
+    for token in _split_options(value):
+        match = _RANGE_RE.match(token)
+        if not match:
+            options.append(token)
+            continue
+        start, end, step = match.groups()
+        start, end = int(start), int(end)
+        step = int(step) if step else 1
+        if step <= 0 or end < start:
+            options.append(token)
+            continue
+        options.extend(str(number) for number in range(start, end + 1, step))
+    return options
+
+
+def _model_autocomplete_options(key, request, page, value_field, label_field):
+    """Return ``[{value,label}]`` for a configured context model's queryset."""
+    from ..dynamic.registry import get_context_model
+
+    config = get_context_model(key)
+    if config is None or config.model is None:
+        return []
+    queryset = config.get_queryset(request, page)
+    if queryset is None:
+        queryset = config.model._default_manager.all()
+    label_field = (label_field or "").strip()
+    value_field = (value_field or "pk").strip() or "pk"
+    options = []
+    for obj in queryset:
+        value = obj.pk if value_field == "pk" else getattr(obj, value_field, "")
+        label = (
+            str(obj)
+            if label_field in ("", "__str__")
+            else getattr(obj, label_field, "")
+        )
+        options.append({"value": value, "label": label})
+    return options
 
 
 class InputBlock(ThemedBlock):
@@ -388,6 +438,105 @@ class FileInputBlock(ThemedBlock):
         )
 
 
+def _context_model_choices():
+    from ..dynamic.registry import get_context_model_choices
+
+    return get_context_model_choices()
+
+
+class AutocompleteSelectMultipleBlock(ThemedBlock):
+    """A searchable multi-select, with static or model-backed options."""
+
+    label = InlineMarkupBlock(max_length=255)
+    name = blocks.CharBlock(
+        max_length=64, required=False, blank=True, label=_("Field name")
+    )
+    options_source = blocks.ChoiceBlock(
+        choices=_context_model_choices,
+        required=False,
+        blank=True,
+        label=_("Options from"),
+        help_text=_("Use a configured context model instead of the options below."),
+    )
+    options = blocks.TextBlock(
+        required=False,
+        blank=True,
+        help_text=_(
+            "One option per line or comma separated. Ranges like 5-120/5 work."
+        ),
+    )
+    selected = blocks.TextBlock(
+        required=False,
+        blank=True,
+        label=_("Selected by default"),
+        help_text=_("One or more option values, comma separated."),
+    )
+    value_field = blocks.CharBlock(
+        default="pk", required=False, blank=True, label=_("Value field")
+    )
+    label_field = blocks.CharBlock(
+        default="__str__", required=False, blank=True, label=_("Label field")
+    )
+    placeholder = blocks.CharBlock(max_length=255, required=False, blank=True)
+    color = blocks.ChoiceBlock(
+        choices=INPUT_COLOR_CHOICES, required=False, label=_("Colour")
+    )
+    size = blocks.ChoiceBlock(choices=INPUT_SIZE_CHOICES, required=False)
+    required = blocks.BooleanBlock(default=False, required=False)
+    helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    error_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        value = value or {}
+        source = (value.get("options_source") or "").strip()
+        request = (parent_context or {}).get("request")
+        page = (parent_context or {}).get("page") or (parent_context or {}).get("self")
+        if source:
+            options = _model_autocomplete_options(
+                source,
+                request,
+                page,
+                value.get("value_field"),
+                value.get("label_field"),
+            )
+        else:
+            options = [
+                {"value": option, "label": option}
+                for option in _expand_option_ranges(value.get("options"))
+            ]
+        selected = set(_split_options(value.get("selected")))
+        for option in options:
+            option["selected"] = str(option["value"]) in selected
+        context["autocomplete_options"] = options
+        context["autocomplete_placeholder"] = value.get("placeholder") or ""
+        return context
+
+    class Meta:
+        icon = "list-ul"
+        group = _("Data input")
+        collapsed = True
+        template = "wagtail_daisIE/blocks/inputs/autocomplete.html"
+        form_layout = blocks.BlockGroup(
+            children=[
+                "label",
+                "name",
+                "options_source",
+                "options",
+                "selected",
+                "value_field",
+                "label_field",
+                "placeholder",
+                "color",
+                "size",
+                "required",
+                "helper_text",
+                "error_text",
+            ],
+            settings=["design", "audience"],
+        )
+
+
 FIELD_BLOCKS = [
     ("input", InputBlock()),
     ("textarea", TextareaBlock()),
@@ -400,11 +549,19 @@ FIELD_BLOCKS = [
     ("file", FileInputBlock()),
 ]
 
+#: The autocomplete block is deliberately *not* part of the top-level palette:
+#: adding it there would change every model ``StreamField``'s frozen child list
+#: and force migrations. It is offered through the keyed nested streams
+#: (``FieldsetBlock``, ``ActionFormBlock`` and tabs) instead.
+AUTOCOMPLETE_BLOCKS = [("autocomplete", AutocompleteSelectMultipleBlock())]
+
 
 class FieldsetBlock(ThemedBlock):
     legend = InlineMarkupBlock(max_length=255)
     description = InlineMarkupBlock(max_length=255, required=False, blank=True)
-    content = DaisieStreamBlock(FIELD_BLOCKS, label=_("Fields"))
+    content = DaisieStreamBlock(
+        [*FIELD_BLOCKS, *AUTOCOMPLETE_BLOCKS], label=_("Fields")
+    )
 
     class Meta:
         icon = "folder-open-inverse"

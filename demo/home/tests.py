@@ -100,6 +100,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
     def test_showcase_pages_and_form(self):
         from blog.models import BreadSuggestion, BreadSuggestionFormPage
         from home.models import DemoPage
+        from taggit.models import Tag
 
         call_command("load_initial_data")
 
@@ -110,6 +111,16 @@ class LoadInitialDataTests(WagtailPageTestCase):
         assert self.client.get(gated_page.url).status_code == 403
 
         form_page = BreadSuggestionFormPage.objects.get(slug="suggest-a-bread")
+
+        # A tag must exist for the autocomplete field's choices to validate.
+        Tag.objects.get_or_create(name="rye")
+        form_page.form_fields.create(
+            label="Tags",
+            field_type="tags",
+            required=False,
+            sort_order=4,
+            model_field="tags",
+        )
 
         content = self.client.get(form_page.url).content.decode()
         heading = content.index("Suggest a bread")
@@ -130,15 +141,14 @@ class LoadInitialDataTests(WagtailPageTestCase):
 
         response = self.client.post(
             form_page.url,
-            {"title": "Rye loaf", "description": "Dark rye please"},
+            {"title": "Rye loaf", "description": "Dark rye please", "tags": ["rye"]},
             follow=True,
         )
         assert response.status_code == 200
         assert "awaiting review" in response.content.decode()
         assert "Rye loaf" in response.content.decode()
-        assert BreadSuggestion.objects.filter(
-            title="Rye loaf", is_approved=False
-        ).exists()
+        suggestion = BreadSuggestion.objects.get(title="Rye loaf", is_approved=False)
+        assert list(suggestion.tags.names()) == ["rye"]
 
     def test_approved_suggestion_becomes_bread(self):
         from blog.models import (
@@ -147,6 +157,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
             BreadSuggestion,
             BreadSuggestionFormPage,
         )
+        from taggit.models import Tag
 
         call_command("load_initial_data")
 
@@ -156,6 +167,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
             {"title": "Rye loaf", "description": "Dark rye please"},
         )
         suggestion = BreadSuggestion.objects.get(title="Rye loaf")
+        suggestion.tags.set([Tag.objects.get_or_create(name="rye")[0]])
         suggestion.is_approved = True
         suggestion.save()
 
@@ -163,6 +175,7 @@ class LoadInitialDataTests(WagtailPageTestCase):
         assert suggestion.bread is not None
         assert Bread.objects.filter(name="Rye loaf").exists()
         bread = suggestion.bread
+        assert list(bread.tags.names()) == ["rye"]
         assert BreadDetailPage.objects.filter(
             source_object_id=bread.pk, live=True
         ).exists()
@@ -219,8 +232,15 @@ class LoadInitialDataTests(WagtailPageTestCase):
         assert index is not None
         assert post is not None
 
+        # Home and the blog tree share a single theme for consistent backgrounds.
+        home = index.get_parent().specific
+        assert home.page_theme_id == index.page_theme_id == post.page_theme_id
+
         content = self.client.get(index.url).content.decode()
         assert post.title in content
+        # The tag filter renders the searchable multi-select control.
+        assert "data-daisyui-autocomplete" in content
+        assert 'name="filter_tag"' in content
 
     def test_blog_feed_date_range_filter(self):
         from blog.models import BlogPage

@@ -123,14 +123,28 @@ Override them or `get_template()` / `get_landing_page_template()` as needed.
 ## How submission works
 
 1. The form is validated and a `FormSubmission` is stored (Wagtail behaviour).
-2. `create_instance_from_submission` builds the target model from each input’s
-   linked **Model field** (falling back to the field’s clean name) and saves it.
+2. The target model is built from each input’s linked **Model field** (falling
+   back to the field’s clean name): `create_instance_from_submission` on a create
+   page, or `update_instance_from_submission` in **edit mode**. Many-to-many and
+   taggit values are set after the instance is saved.
 3. If **Require approval** is on, the approval field is set to `False`, so the
    instance is hidden from the public until an editor approves it. To convert an
    approved instance into another record, configure an
    [approval workflow](approval.md).
 
 Failures creating the instance are logged and do not break the submission.
+
+### Editing an existing instance
+
+Set `form_mode = "edit"` on a `DaisieFormPage` subclass (a class attribute, never
+a model field). The bound instance is resolved from the page’s **Context
+bindings** for `instance_model` (for example a `pk` path or query parameter); the
+fields prefill from it and a valid submission updates it in place:
+
+```python
+class MeetingEditPage(DaisieFormPage):
+    form_mode = "edit"  # instance comes from the page's context binding
+```
 
 ## File and image uploads
 
@@ -197,6 +211,33 @@ only scans the package’s own class choices and templates).
 
 The form template already posts as `multipart/form-data`, so no template
 changes are needed.
+
+### Choice sources
+
+A registered type may declare `choices`:
+
+* `True` — read the field’s own **Choices** box (comma/newline separated; range
+  tokens such as `5-120/5` expand to `5, 10, …, 120`);
+* a callable `(form_field, form_context) -> options`, or a dotted path to one —
+  for model-backed options. `form_context` carries the bound instance in edit
+  mode (`{"instance": …, "context": {…}}`).
+
+```python
+WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+    "languages": {
+        "label": _("Languages"),
+        "field": "django.forms.MultipleChoiceField",
+        "widget": "wagtail_daisIE.widgets.DaisieAutocompleteSelectMultiple",
+        "choices": "myapp.filters.language_choices",
+    },
+}
+```
+
+Either source renders through `DaisieAutocompleteSelectMultiple`, a searchable
+multi-select with a native `<select multiple>` fallback. The same control is
+available as a **block** inside **Fieldset**, **Action forms** and **Tabs** (it
+is deliberately not part of the top-level page palette, so adding it does not
+force a migration).
 
 ## Feedback and input blocks
 

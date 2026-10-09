@@ -14,4 +14,5 @@ def approve_bread_suggestion(suggestion):
             "is_available": True,
         },
     )
+    bread.tags.set(suggestion.tags.names())
     return bread

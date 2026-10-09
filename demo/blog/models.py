@@ -6,6 +6,7 @@ from django.utils.translation import gettext as _
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from taggit.managers import TaggableManager
 from taggit.models import Tag, TaggedItemBase
 from wagtail.admin.panels import (
     FieldPanel,
@@ -299,6 +300,7 @@ class BreadSuggestion(models.Model):
 
     title = models.CharField("Title", max_length=255)
     description = models.TextField("Description", blank=True)
+    tags = TaggableManager("Tags", blank=True)
     is_approved = models.BooleanField(
         "Approved",
         default=False,
@@ -318,6 +320,7 @@ class BreadSuggestion(models.Model):
     panels = [
         FieldPanel("title"),
         FieldPanel("description"),
+        FieldPanel("tags"),
         FieldPanel("is_approved"),
     ]
 
@@ -336,6 +339,7 @@ class Bread(models.Model):
 
     name = models.CharField("Name", max_length=255)
     description = models.TextField("Description", blank=True)
+    tags = TaggableManager("Tags", blank=True)
     image = models.ForeignKey(
         "wagtailimages.Image",
         null=True,
@@ -356,6 +360,7 @@ class Bread(models.Model):
     panels = [
         FieldPanel("name"),
         FieldPanel("description"),
+        FieldPanel("tags"),
         FieldPanel("image"),
         FieldPanel("added_on"),
         FieldPanel("is_available"),

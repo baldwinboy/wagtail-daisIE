@@ -1,0 +1,28 @@
+{% load i18n %}
+{# Enhanced UI for an autocomplete control. The enclosing element must carry
+   data-daisyui-autocomplete and contain the native <select multiple>. Rendered
+   hidden; daisyui_autocomplete.js reveals it and hides the native select. #}
+<div class="daisyui-autocomplete__enhanced hidden" data-daisyui-autocomplete-enhanced>
+  <div
+    class="daisyui-autocomplete__tokens mb-2 flex flex-wrap gap-1 empty:mb-0"
+    data-daisyui-autocomplete-tokens
+  ></div>
+  <input
+    type="text"
+    class="input input-bordered w-full"
+    data-daisyui-autocomplete-input
+    placeholder="{{ placeholder }}"
+    autocomplete="off"
+    spellcheck="false"
+  />
+  <ul
+    class="daisyui-autocomplete__options menu menu-sm z-10 mt-1 hidden max-h-60 w-full flex-nowrap overflow-y-auto rounded-box bg-base-100 p-2 shadow"
+    data-daisyui-autocomplete-options
+  >
+    {% for option in options %}
+      <li data-value="{{ option.value }}" data-label="{{ option.label }}">
+        <button type="button" data-daisyui-autocomplete-option>{{ option.label }}</button>
+      </li>
+    {% endfor %}
+  </ul>
+</div>

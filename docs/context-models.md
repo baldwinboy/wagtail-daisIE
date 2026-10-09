@@ -37,7 +37,7 @@ Each entry supports:
 | `url_source` | How `{{ key.url }}` is derived: a field name, `"get_absolute_url"`, or a dotted callable. |
 | `select_related` / `prefetch_related` | Eager loading for url-sourced lookups. |
 | `queryset` | Optional dotted callable (or callable) `(request, page) -> QuerySet` used by data blocks to scope/filter rows (e.g. live posts for the blog feed). |
-| `filters` | Optional typed filters for feeds (choice/boolean/date/date range/number range/search) — see [data-components.md](data-components.md#filtering). |
+| `filters` | Optional typed filters for feeds (choice — optionally `multi`/`autocomplete` — boolean, date, date range, number range, search, sort; plus a `query` callable for custom lookups) — see [data-components.md](data-components.md#filtering). |
 | `fields` | Optional allow-list used by the help panel. |
 
 The configured values are resolved at render time and injected into the page

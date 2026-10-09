@@ -27,6 +27,11 @@ from wagtail_daisIE.forms.registry import (
     is_upload_field_type,
     reset_form_field_types,
 )
+from wagtail_daisIE.widgets import DaisieAutocompleteSelectMultiple
+
+
+def _tag_choices(field, context):
+    return [("a", "Alpha"), ("b", "Bravo")]
 
 
 def _store_file(*, page, form, field, file, request=None):
@@ -62,6 +67,18 @@ def _field_type_registry(settings):
             "field": _build_multiple_file_field,
             "is_upload": True,
             "handler": _store_file,
+        },
+        "autocomplete": {
+            "label": "Autocomplete",
+            "field": "django.forms.MultipleChoiceField",
+            "widget": "wagtail_daisIE.widgets.DaisieAutocompleteSelectMultiple",
+            "choices": True,
+        },
+        "tags": {
+            "label": "Tags",
+            "field": "django.forms.MultipleChoiceField",
+            "widget": "wagtail_daisIE.widgets.DaisieAutocompleteSelectMultiple",
+            "choices": _tag_choices,
         },
     }
     settings.WAGTAIL_DAISIE_FORM_UPLOAD_HANDLER = ""
@@ -115,6 +132,21 @@ class TestBuilder:
         result = create(field, {"label": "Photo", "required": False})
         assert isinstance(result, forms.FileField)
         assert "file-input" in result.widget.attrs["class"]
+
+        field = _FakeField()
+        field.field_type = "autocomplete"
+        field.choices = "5-10/5"
+        create = DaisyUIFormBuilder([]).get_create_field_function("autocomplete")
+        result = create(field, {"required": False})
+        assert isinstance(result, forms.MultipleChoiceField)
+        assert isinstance(result.widget, DaisieAutocompleteSelectMultiple)
+        assert list(result.choices) == [("5", "5"), ("10", "10")]
+
+        field = _FakeField()
+        field.field_type = "tags"
+        create = DaisyUIFormBuilder([]).get_create_field_function("tags")
+        result = create(field, {"required": False})
+        assert list(result.choices) == [("a", "Alpha"), ("b", "Bravo")]
 
     def test_registry_factory_is_supported(self):
         field = _FakeField()
@@ -177,6 +209,43 @@ class TestInstanceCreation:
         second = DaisieFormPage.create_instance_from_submission(page, _FakeForm2())
         assert second.username == "bob" and second.is_active is True
 
+        # M2M/taggit values are set after save rather than passed to model().
+        from django.contrib.auth.models import Group
+
+        group = Group.objects.create(name="testers")
+
+        class _GroupForm(_FakeForm):
+            cleaned_data = {
+                "display_name": "Dan",
+                "username": "dan",
+                "email": "d@e.com",
+                "groups": [group.pk],
+            }
+
+        page = _DummyPage()
+        page.require_approval = False
+        third = DaisieFormPage.create_instance_from_submission(page, _GroupForm())
+        assert third is not None
+        assert list(third.groups.values_list("name", flat=True)) == ["testers"]
+
+        # Edit mode updates the bound instance in place.
+        from django.contrib.auth import get_user_model
+
+        user = get_user_model().objects.create(username="carol")
+
+        class _UpdateForm(_FakeForm):
+            cleaned_data = {
+                "display_name": "Carol",
+                "username": "carol",
+                "email": "c@e.com",
+            }
+
+        updated = DaisieFormPage.update_instance_from_submission(
+            _DummyPage(), _UpdateForm(), user
+        )
+        assert updated.pk == user.pk
+        assert user.first_name == "Carol"
+
 
 def _child(block_type, value):
     return SimpleNamespace(block_type=block_type, value=value)
@@ -222,6 +291,7 @@ class TestFieldTypeRegistry:
         choices = dict(get_form_field_type_choices())
         assert str(choices["singleline"]) == "Single line text"
         assert "file" in choices and "multifile" in choices
+        assert "autocomplete" in choices and "tags" in choices
 
     def test_lookup_and_upload_flag(self):
         assert get_form_field_type("file") is not None

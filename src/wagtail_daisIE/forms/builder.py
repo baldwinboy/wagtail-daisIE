@@ -7,10 +7,55 @@ from __future__ import annotations
 
 from django import forms
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 from wagtail.contrib.forms.forms import FormBuilder
 
+from ..context import get_current_form_context
 from .registry import get_form_field_type
+
+
+def _normalise_choices(raw):
+    """Return ``[(value, label)]`` from strings, pairs or ``{value,label}``."""
+    choices = []
+    for item in raw or []:
+        if isinstance(item, dict):
+            value = item.get("value")
+            choices.append((value, item.get("label", value)))
+        elif isinstance(item, (list, tuple)) and len(item) == 2:
+            choices.append((item[0], item[1]))
+        else:
+            choices.append((item, item))
+    return choices
+
+
+def _resolve_choices(spec, field):
+    """Return options for a registered ``choices`` source, or ``None``.
+
+    ``True`` reads the form field's own **Choices** box (with range expansion);
+    a callable/dotted path is called with ``(field, form_context)`` and may
+    return strings, ``(value, label)`` pairs or ``{value, label}`` mappings.
+    """
+    source = getattr(spec, "choices", False)
+    if not source:
+        return None
+    if source is True:
+        from ..blocks.inputs import _expand_option_ranges
+
+        return [(value, value) for value in _expand_option_ranges(field.choices)]
+    target = source
+    if isinstance(source, str):
+        try:
+            target = import_string(source)
+        except ImportError:
+            return None
+    if not callable(target):
+        return None
+    try:
+        raw = target(field, get_current_form_context())
+    except TypeError:
+        raw = target()
+    return _normalise_choices(raw)
 
 
 class DaisyUIFormBuilder(FormBuilder):
@@ -48,6 +93,9 @@ class DaisyUIFormBuilder(FormBuilder):
         def create_field(field, options):
             options = dict(options)
             options.update(spec.options)
+            resolved_choices = _resolve_choices(spec, field)
+            if resolved_choices is not None:
+                options["choices"] = resolved_choices
             if spec.widget is not None:
                 self._styled(options, spec.widget, spec.css, spec.widget_attrs)
             builder = spec.field

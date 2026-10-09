@@ -23,7 +23,7 @@ from ..choices import (
 from ..dynamic.action_blocks import ActionBlock, ActionFormBlock
 from ..icons.blocks import IconChooserBlock
 from .inline import InlineTextBlock
-from .inputs import INPUT_BLOCKS
+from .inputs import AUTOCOMPLETE_BLOCKS, INPUT_BLOCKS
 from .link import LabelLinkBlock
 from .spaced import LIST_CONTENT_BLOCKS, SpacedBlock
 
@@ -152,6 +152,7 @@ class SwapBlock(ThemedBlock):
 TAB_CONTENT_BLOCKS = [
     *LIST_CONTENT_BLOCKS,
     *INPUT_BLOCKS,
+    *AUTOCOMPLETE_BLOCKS,
     ("action", ActionBlock()),
     ("action_form", ActionFormBlock()),
 ]

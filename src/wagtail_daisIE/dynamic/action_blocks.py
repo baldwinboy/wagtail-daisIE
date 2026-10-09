@@ -24,7 +24,7 @@ from wagtail import blocks
 
 from ..base_blocks import InlineMarkupBlock
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
-from ..blocks.inputs import FIELD_BLOCKS
+from ..blocks.inputs import AUTOCOMPLETE_BLOCKS, FIELD_BLOCKS
 from ..blocks.link import ButtonBlock
 from ..choicelist import ChoiceList
 from ..choices.feedback import (
@@ -102,6 +102,25 @@ class ActionConfirmationBlock(DaisieStructBlock):
         )
 
 
+class ActionConfirmBlock(DaisieStructBlock):
+    """A pre-submit confirmation dialog for destructive actions."""
+
+    title = InlineMarkupBlock(max_length=128, required=False, blank=True)
+    text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    confirm_label = blocks.CharBlock(
+        max_length=64, required=False, blank=True, label=_("Confirm label")
+    )
+
+    class Meta:
+        icon = "warning"
+        label = _("Confirmation dialog")
+        collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=["title", "text", "confirm_label"],
+            heading=_("Confirmation dialog"),
+        )
+
+
 class ActionButtonBlock(ButtonBlock):
     """A normal button, restricted to the fields an action needs.
 
@@ -113,6 +132,10 @@ class ActionButtonBlock(ButtonBlock):
 
     destination = None
     open_in_new_tab = None
+    confirm = ActionConfirmBlock(
+        required=False,
+        help_text=_("Show a confirmation dialog before the action is submitted."),
+    )
 
     class Meta:
         icon = "link"
@@ -120,7 +143,13 @@ class ActionButtonBlock(ButtonBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/data/action_button_inner.html"
         form_layout = blocks.BlockGroup(
-            children=["text", "icon", "icon_after", "make_parent_clickable"],
+            children=[
+                "text",
+                "icon",
+                "icon_after",
+                "make_parent_clickable",
+                "confirm",
+            ],
             settings=["design", "audience"],
         )
 
@@ -188,7 +217,7 @@ class ActionFormBlock(DaisieStructBlock):
         blank=True,
         help_text=_("Sent as 'target', e.g. {{ bread.pk }}."),
     )
-    fields = DaisieStreamBlock(FIELD_BLOCKS, label=_("Fields"))
+    fields = DaisieStreamBlock([*FIELD_BLOCKS, *AUTOCOMPLETE_BLOCKS], label=_("Fields"))
     button = ActionButtonBlock()
     confirmation = ActionConfirmationBlock(
         required=False,

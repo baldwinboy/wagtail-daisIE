@@ -1,0 +1,15 @@
+{% load i18n %}
+<div class="daisyui-autocomplete" data-daisyui-autocomplete>
+  <select
+    name="{{ widget.name }}"
+    {% include "django/forms/widgets/attrs.html" %}
+    multiple
+  >
+    {% for group_name, group_choices, group_index in widget.optgroups %}
+      {% if group_name %}<optgroup label="{{ group_name }}">{% endif %}
+      {% for option in group_choices %}{% include option.template_name with widget=option %}{% endfor %}
+      {% if group_name %}</optgroup>{% endif %}
+    {% endfor %}
+  </select>
+  {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=autocomplete_options placeholder=autocomplete_placeholder %}
+</div>

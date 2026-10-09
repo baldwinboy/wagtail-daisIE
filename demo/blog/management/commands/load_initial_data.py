@@ -1403,6 +1403,14 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS("Created blog index and posts."))
 
+        # Keep home and the blog tree on one theme so navigation is consistent
+        # (and independent of whether the tree was just created).
+        blog_index.page_theme = bakery_theme
+        blog_index.save()
+        for post in BlogPage.objects.descendant_of(blog_index):
+            post.page_theme = bakery_theme
+            post.save()
+
         home.page_theme = bakery_theme
         home.page_design = _as_stream_data(
             [("defaults", {"text": {"typography": {"font_family": "heading"}}})]

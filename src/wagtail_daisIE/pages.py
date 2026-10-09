@@ -165,7 +165,11 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
     ]
 
     def get_daisyui_theme(self):
-        return self.page_theme or DaisyUITheme.objects.filter(default=True).first()
+        return (
+            self.page_theme
+            or DaisyUITheme.objects.filter(default=True).first()
+            or DaisyUITheme.objects.first()
+        )
 
     def get_page_background_css(self):
         """Return the CSS ``background`` value for this page's background layers."""

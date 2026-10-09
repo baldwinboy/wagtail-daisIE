@@ -102,6 +102,13 @@ class TestCalendarBlock:
         assert "bob" in "".join(context["days"][1]["events"])
 
 
+def _query_username(queryset, params, key):
+    value = (params.get(f"filter_{key}") or "").strip()
+    if value:
+        return queryset.filter(username__icontains=value)
+    return queryset
+
+
 def _filter_config(settings):
     settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
         "staff": {
@@ -117,6 +124,11 @@ def _filter_config(settings):
                 },
                 "joined": {"type": "date_range", "field": "date_joined"},
                 "username": {"type": "search", "fields": ["username"]},
+                "named": {
+                    "type": "choice",
+                    "field": "username",
+                    "query": _query_username,
+                },
             },
         }
     }
@@ -153,6 +165,8 @@ class TestFilters:
             "staffer",
         ]
         assert names("feed_search=staff") == ["staffer"]
+        # A ``query`` callable can filter on anything (annotations, lookups).
+        assert names("filter_named=sta") == ["staffer"]
         # An unknown filter key is ignored rather than erroring.
         assert names("filter_nope=1") == [
             "active",
@@ -202,16 +216,48 @@ class TestFeedRendering:
             "user": {
                 "label": "User",
                 "model": "auth.User",
-                "filters": {"active": {"type": "boolean", "field": "is_active"}},
+                "filters": {
+                    "active": {"type": "boolean", "field": "is_active"},
+                    "tags": {
+                        "type": "choice",
+                        "multi": True,
+                        "autocomplete": True,
+                        "field": "username",
+                        "choices": [("ada", "Ada")],
+                    },
+                    "sort": {
+                        "label": "Sort",
+                        "type": "sort",
+                        "choices": [("username", "A-Z"), ("-username", "Z-A")],
+                    },
+                },
             }
         }
         reset_context_models()
-        feed = _feed()
-        feed.filters = [("filter", {"key": "user:active"})]
+        feed = _feed(order_by="username")
+        feed.filters = [
+            ("filter", {"key": "user:active"}),
+            ("filter", {"key": "user:tags"}),
+            ("filter", {"key": "user:sort"}),
+        ]
         feed.save()
         data = render_feed(feed, RequestFactory().get("/"))
-        assert data["filters"][0]["key"] == "active"
-        assert data["filters"][0]["type"] == "boolean"
+        by_key = {item["key"]: item for item in data["filters"]}
+        assert by_key["active"]["type"] == "boolean"
+        assert by_key["tags"]["autocomplete"] is True
+        assert by_key["tags"]["multi"] is True
+        assert by_key["sort"]["type"] == "sort"
+        assert [option["value"] for option in by_key["sort"]["options"]] == [
+            "username",
+            "-username",
+        ]
+
+        USER_MODEL.objects.create(username="aaa")
+        USER_MODEL.objects.create(username="zzz")
+        ordered = render_feed(
+            feed, RequestFactory().get("/", {"filter_sort": "-username"})
+        )
+        assert ordered["items_html"].index("zzz") < ordered["items_html"].index("aaa")
 
     def test_uses_configured_queryset(self, settings):
         settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {

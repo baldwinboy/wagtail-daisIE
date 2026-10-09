@@ -57,6 +57,30 @@ def get_current_model_fields():
     return list(_current_model_fields.get())
 
 
+_current_form_context: contextvars.ContextVar = contextvars.ContextVar(
+    "wagtail_daisIE_current_form_context", default=None
+)
+
+
+def set_current_form_context(context):
+    """Set the bound instance/context for the form currently being built.
+
+    ``context`` is a ``{"instance": obj_or_None, "context": {key: value}}``
+    mapping. Choice callables for registered form-field types read it so their
+    options can depend on the bound record (for example a meeting's price tiers).
+    """
+    return _current_form_context.set(context or {})
+
+
+def get_current_form_context():
+    """Return the bound form context for the current request, or an empty dict."""
+    return _current_form_context.get() or {}
+
+
+def reset_current_form_context(token):
+    _current_form_context.reset(token)
+
+
 def theme_from_instance(instance):
     """
     Extract a DaisyUITheme from a Page or DaisyUIMenu-like instance.

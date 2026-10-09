@@ -33,6 +33,7 @@ FILTER_TYPES = (
     "date_range",
     "number_range",
     "search",
+    "sort",
 )
 
 
@@ -199,6 +200,19 @@ def _apply_one(queryset, config, key, spec, params):
     filter_type = spec.get("type", "choice")
     field = spec.get("field")
 
+    query = spec.get("query")
+    if query:
+        if isinstance(query, str):
+            try:
+                query = import_string(query)
+            except ImportError:
+                query = None
+        if callable(query):
+            return query(queryset, params, key)
+
+    if filter_type == "sort":
+        # Ordering is resolved centrally by ``resolve_order``; nothing to filter.
+        return queryset
     if filter_type == "choice":
         if spec.get("multi"):
             values = [v for v in params.getlist(f"filter_{key}") if v]
@@ -278,6 +292,7 @@ def build_filters(feed, config, params, request=None, page=None):
             or spec.get("label")
             or filter_key.replace("_", " ").title(),
             "multi": bool(spec.get("multi")),
+            "autocomplete": bool(spec.get("autocomplete")),
             "collapsed": bool(value.get("collapsed")),
             "button_css": build_design_css(
                 {"button_appearance": value.get("button_appearance")}
@@ -298,10 +313,30 @@ def build_filters(feed, config, params, request=None, page=None):
                 {"value": "1", "label": "Yes"},
                 {"value": "0", "label": "No"},
             ]
-        elif filter_type == "choice":
+        elif filter_type in ("choice", "sort", "autocomplete"):
             entry["options"] = resolve_choices(spec, request, page)
         filters.append(entry)
     return filters
+
+
+def resolve_order(feed, config, params, request=None, page=None):
+    """Return the order_by for a feed, honouring a visitor ``sort`` filter."""
+    order_by = (feed.order_by or "").strip()
+    if params is None:
+        return order_by
+    selected = {
+        (value.get("key") or "").partition(":")[2] for value in _selected_filters(feed)
+    }
+    for key, spec in config.get_filters().items():
+        if spec.get("type") != "sort" or key not in selected:
+            continue
+        value = params.get(f"filter_{key}")
+        if not value:
+            continue
+        allowed = {str(item["value"]) for item in resolve_choices(spec, request, page)}
+        if str(value) in allowed:
+            return str(value)
+    return order_by
 
 
 # --- Layout -----------------------------------------------------------------
@@ -478,7 +513,7 @@ def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
         return result
     queryset = apply_filters(queryset, config, params)
 
-    order_by = (feed.order_by or "").strip()
+    order_by = resolve_order(feed, config, params, request, page)
     if order_by:
         try:
             config.model._meta.get_field(order_by.lstrip("-"))

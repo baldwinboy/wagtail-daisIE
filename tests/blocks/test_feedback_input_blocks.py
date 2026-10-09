@@ -6,6 +6,7 @@ from wagtail_daisIE.blocks.feedback import (
     StepsBlock,
 )
 from wagtail_daisIE.blocks.inputs import (
+    AutocompleteSelectMultipleBlock,
     InputBlock,
     RadioBlock,
     RatingBlock,
@@ -96,3 +97,24 @@ class TestInputBlocks:
             }
         )
         assert html.count("mask-star") == 5 and 'value="3"' in html
+
+    def test_autocomplete_block_design_and_options(self):
+        html = AutocompleteSelectMultipleBlock().render(
+            {
+                "label": "Durations",
+                "name": "durations",
+                "options_source": "",
+                "options": "5-10/5",
+                "selected": "5",
+                "color": "input-primary",
+                "required": True,
+                "helper_text": "Pick some",
+                "design": {},
+                "audience": {},
+            }
+        )
+        assert html.count("<option") == 2
+        assert 'value="5" selected' in html
+        assert "data-daisyui-autocomplete" in html
+        assert "input-primary" in html
+        assert "Pick some" in html

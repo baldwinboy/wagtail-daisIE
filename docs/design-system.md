@@ -157,6 +157,13 @@ available in pages, form pages and allauth bodies.
 overriding those variables; the shared structural CSS comes from the committed
 `daisie.css`.
 
+Base templates also render `{% daisyui_all_themes_css %}`, which emits those
+variables for **every** configured theme. Without it, a `data-theme` (or the
+theme toggle) naming another theme has no variables and daisyUI's built-in
+`@media (prefers-color-scheme: dark) { :root:not([data-theme]) }` fallback can
+show the wrong background. Pages always resolve a theme
+(`page_theme → default → first`) so `data-theme` is never omitted.
+
 ## Adding a design primitive
 
 1. Add the field(s) to a new `StructBlock` in `base_blocks/`.

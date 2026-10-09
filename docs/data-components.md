@@ -212,15 +212,29 @@ WAGTAIL_DAISIE_CONTEXT_MODELS = {
 |------|----|-------|
 | `choice` (`multi: false`) | DaisyUI filter tabs (radio) | `field=value` |
 | `choice` (`multi: true`) | checkbox buttons | `field__in=values` |
+| `choice` (`multi: true`, `autocomplete: true`) | searchable multi-select (long option lists) | `field__in=values` |
 | `boolean` | Yes/No tabs | `field=True/False` |
 | `date` | date input | `field__date=…` |
 | `date_range` | two date inputs | `field__date__gte/__lte` |
 | `number_range` | two number inputs (price) | `field__gte`/`__lte` |
 | `search` | text input | `field__icontains` (OR over `fields`) |
+| `sort` | order `<select>` | `?filter_<key>=<order_by>` (only when the feed selects it) |
 
 `choices` may be a callable `(request, page) -> [{"value","label"}]`, a list of
 `(value, label)` pairs, or a dotted path to such a callable. Invalid values are
 ignored.
+
+Three extras cover the rest:
+
+* **`autocomplete: true`** (on a `multi` choice filter) renders the searchable
+  multi-select control instead of checkbox buttons — the same widget used by the
+  `tags`/`languages` form-field types. It works with or without JavaScript.
+* **`query`** — a callable `(queryset, params, key) -> queryset` (or dotted path)
+  for filters that need annotations or custom lookups, e.g. “at capacity”
+  (`queryset.annotate(...).filter(...)`). It takes precedence over `field`.
+* **`sort`** — a `choice`-style filter whose option values are `order_by`
+  expressions; the visitor's selection overrides the Feed's **Order by** when
+  that filter is placed on the feed.
 
 Each selected filter can be styled individually, and the controls offered
 depend on the filter type:
@@ -229,8 +243,8 @@ depend on the filter type:
   (`ButtonAppearanceBlock`) — colour, style, size, behaviour and modifier for the
   normal, hover and active states. The **selected** tab uses the configured
   active state (with DaisyUI’s `btn-active` as a fallback).
-* **Input filters** (date, date range, price range, search) expose **Input
-  design** (typography and input styling).
+* **Input filters** (date, date range, price range, search, sort, autocomplete)
+  expose **Input design** (typography and input styling).
 * All filters expose **Label design** (typography for the legend).
 
 Date and date-range filters work with both `DateField` and `DateTimeField`

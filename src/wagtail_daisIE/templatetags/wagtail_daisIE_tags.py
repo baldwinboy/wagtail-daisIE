@@ -275,6 +275,24 @@ def daisyui_theme_full_css(theme):
     return {"theme": theme}
 
 
+@register.inclusion_tag("wagtail_daisIE/tags/all_themes_css.html")
+def daisyui_all_themes_css():
+    """Render the CSS variables for every configured theme.
+
+    With only the active theme's variables in the document, any ``data-theme``
+    (or the theme toggle) that names another theme has no variables and daisyUI's
+    built-in ``prefers-color-scheme: dark`` fallback can leak in. Emitting them
+    all keeps every page and the toggle consistent.
+    """
+    from ..models import DaisyUITheme
+
+    try:
+        themes = list(DaisyUITheme.objects.all())
+    except Exception:  # pragma: no cover - e.g. error pages with the DB down
+        themes = []
+    return {"themes": themes}
+
+
 @register.simple_tag
 def daisyui_theme_full_inline_css(theme):
     """Return complete theme CSS string."""

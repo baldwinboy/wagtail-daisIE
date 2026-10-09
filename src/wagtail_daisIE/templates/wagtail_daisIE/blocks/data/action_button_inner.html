@@ -6,6 +6,26 @@
       class="absolute! inset-0!"
       aria-label="{% if value.text %}{{ value.text|daisie_strip_markup }}{% else %}{% trans 'Run action' %}{% endif %}"
     ></button>
+  {% elif value.confirm %}
+    <a
+      href="#daisie-action-confirm-{{ block.id }}"
+      class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
+    >
+      {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
+    </a>
+    <div class="modal" id="daisie-action-confirm-{{ block.id }}" tabindex="0">
+      <div class="modal-box">
+        {% if value.confirm.title %}<h3 class="text-lg font-bold">{% daisie_markup value.confirm.title %}</h3>{% endif %}
+        {% if value.confirm.text %}<p class="py-4">{% daisie_markup value.confirm.text %}</p>{% endif %}
+        <div class="modal-action">
+          <button type="submit" class="btn btn-error">
+            {% if value.confirm.confirm_label %}{{ value.confirm.confirm_label }}{% else %}{% trans "Confirm" %}{% endif %}
+          </button>
+          <a href="#" class="btn">{% trans "Cancel" %}</a>
+        </div>
+      </div>
+      <a href="#" class="modal-backdrop" aria-label="{% trans 'Close' %}">{% trans "Close" %}</a>
+    </div>
   {% else %}
     <button type="submit" class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
       {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
