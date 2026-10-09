@@ -43,9 +43,10 @@ def theme_from_instance(instance):
     Extract a DaisyUITheme from a Page or DaisyUIMenu-like instance.
 
     Pages carry ``page_theme``; menus (custom Snippets/Clusterable models)
-    carry ``menu_theme``. Either may be None.
+    carry ``menu_theme``. Either may be None. Model classes (as passed to the
+    ``before_create_*`` admin hooks) are not instances and resolve to None.
     """
-    if instance is None:
+    if instance is None or isinstance(instance, type):
         return None
     for attr in ("page_theme", "menu_theme"):
         theme = getattr(instance, attr, None)

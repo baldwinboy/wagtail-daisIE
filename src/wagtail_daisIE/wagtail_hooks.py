@@ -98,8 +98,8 @@ register_snippet(ErrorViewSetGroup)
 # Set the current theme for the page/menu being created/edited.
 # -- START --
 @hooks.register("before_create_page")
-def _set_theme_before_create_page(request, page):
-    set_current_theme(theme_from_instance(page))
+def _set_theme_before_create_page(request, parent_page, page_class):
+    set_current_theme(theme_from_instance(parent_page))
 
 
 @hooks.register("before_edit_page")
@@ -108,8 +108,8 @@ def _set_theme_before_edit_page(request, page):
 
 
 @hooks.register("before_create_snippet")
-def _set_theme_before_create_snippet(request, page):
-    set_current_theme(theme_from_instance(page))
+def _set_theme_before_create_snippet(request, model):
+    set_current_theme(theme_from_instance(model))
 
 
 @hooks.register("before_edit_snippet")
@@ -156,8 +156,8 @@ def _form_page_fields(page):
 
 
 @hooks.register("before_create_page")
-def _set_form_fields_before_create_page(request, page):
-    set_current_form_fields(_form_page_fields(page))
+def _set_form_fields_before_create_page(request, parent_page, page_class):
+    set_current_form_fields(())
 
 
 @hooks.register("before_edit_page")

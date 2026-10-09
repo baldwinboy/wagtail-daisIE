@@ -1,6 +1,8 @@
 import pytest
 
 from django.core.exceptions import ValidationError
+from django.urls import reverse
+from wagtail.models import Page
 
 from wagtail_daisIE.models import (
     BackgroundLayer,
@@ -31,3 +33,20 @@ class TestDaisyUIColorField:
         BackgroundLayer(
             background=parent, layer_type="solid", color="#422ad5"
         ).full_clean()
+
+
+class TestPageCreateAdmin:
+    def test_create_form_renders(self, admin_client):
+        # Wagtail calls ``before_create_page(request, parent_page, page_class)``;
+        # the registered hooks must accept that signature and render the form.
+        response = admin_client.get(
+            reverse(
+                "wagtailadmin_pages:add",
+                args=[
+                    "wagtail_daisIE_test",
+                    "widgetindexpage",
+                    Page.get_first_root_node().pk,
+                ],
+            )
+        )
+        assert response.status_code == 200
