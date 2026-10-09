@@ -1,3 +1,9 @@
+import re
+
+from types import SimpleNamespace
+
+import pytest
+
 from wagtail_daisIE.base_blocks import LinkDestinationBlock
 from wagtail_daisIE.base_blocks.css import (
     build_border_css,
@@ -7,6 +13,12 @@ from wagtail_daisIE.base_blocks.css import (
 )
 from wagtail_daisIE.base_blocks.link import link_is_active, link_url
 from wagtail_daisIE.base_blocks.utils import build_class
+from wagtail_daisIE.blocks.accordion import AccordionBlock
+
+
+# Rendering blocks runs ``{% daisie_markup %}``, which resolves the current
+# site from the database, so the render test needs database access.
+pytestmark = pytest.mark.django_db
 
 
 class TestBuildClass:
@@ -81,3 +93,34 @@ class TestLinkUrl:
 
         request = type("R", (), {"path": "/blog/x/"})()
         assert link_is_active({"link_page": FakePage()}, request) is True
+
+
+class TestAccordion:
+    def test_radio_group_scoped_to_the_accordion(self):
+        def _value(labels):
+            return {
+                "items": [
+                    {"heading": {"text": label}, "content": [], "collapsed": True}
+                    for label in labels
+                ],
+                "design": {},
+                "audience": {},
+            }
+
+        block = AccordionBlock()
+        # ``block`` is supplied by the page template loop in real rendering.
+        html_a = block.render(
+            block.to_python(_value(["A", "B"])),
+            context={"block": SimpleNamespace(id="a")},
+        )
+        html_b = block.render(
+            block.to_python(_value(["C"])),
+            context={"block": SimpleNamespace(id="b")},
+        )
+
+        names_a = re.findall(r'name="(accordion-[^"]+)"', html_a)
+        names_b = re.findall(r'name="(accordion-[^"]+)"', html_b)
+
+        assert names_a == ["accordion-a", "accordion-a"]  # items share one group
+        assert names_b == ["accordion-b"]  # different accordion, different group
+        assert names_a[0] != names_b[0]  # the cross-accordion bug is fixed

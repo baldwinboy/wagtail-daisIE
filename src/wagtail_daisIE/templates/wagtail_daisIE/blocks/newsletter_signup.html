@@ -8,7 +8,9 @@
       method="post"
       action="{{ subscribe_url }}"
       class="join mt-3 w-full"
-      data-daisie-newsletter
+      hx-post="{{ subscribe_url }}"
+      hx-target="#daisie-newsletter-status-{{ block.id }}"
+      hx-swap="innerHTML"
     >
       {% csrf_token %}
       {% if audience_id %}<input type="hidden" name="audience" value="{{ audience_id }}" />{% endif %}
@@ -25,8 +27,10 @@
       <button type="submit" class="btn btn-primary join-item">{% daisie_markup value.button_label allow_links=False %}</button>
     </form>
 
-    {% if request.GET.subscribed and value.success_message %}
-      <p class="mt-2 text-sm" role="status">{{ value.success_message }}</p>
-    {% endif %}
+    <div id="daisie-newsletter-status-{{ block.id }}" role="status" aria-live="polite">
+      {% if request.GET.subscribed and value.success_message %}
+        <p class="mt-2 text-sm">{{ value.success_message }}</p>
+      {% endif %}
+    </div>
   </div>
 {% endif %}

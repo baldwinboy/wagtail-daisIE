@@ -453,7 +453,7 @@ def resolve_layout(feed, override=None, request=None):
 # --- Rendering --------------------------------------------------------------
 
 
-def render_feed(feed, request, offset=0, page=None, override=None):
+def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
     """Render a slice of ``feed`` and return the template context data."""
     config = get_context_model(feed.context_model)
     result = {
@@ -493,13 +493,21 @@ def render_feed(feed, request, offset=0, page=None, override=None):
     except (TypeError, ValueError):
         page_size = 9
     result["page_size"] = page_size
-    try:
-        offset = max(0, int(offset))
-    except (TypeError, ValueError):
-        offset = 0
-
-    objects = list(queryset[offset : offset + page_size])
-    result["next_offset"] = offset + page_size
+    if limit is not None:
+        try:
+            end = max(0, int(limit))
+        except (TypeError, ValueError):
+            end = page_size
+        objects = list(queryset[:end])
+        result["next_offset"] = end
+    else:
+        try:
+            offset = max(0, int(offset))
+        except (TypeError, ValueError):
+            offset = 0
+        objects = list(queryset[offset : offset + page_size])
+        result["next_offset"] = offset + page_size
+    result["next_limit"] = result["next_offset"] + page_size
     result["has_more"] = result["next_offset"] < result["total"]
     result["filters"] = build_filters(feed, config, params, request, page)
 

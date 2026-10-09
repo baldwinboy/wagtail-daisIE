@@ -13,8 +13,12 @@ class WagtailDaisIEAppConfig(AppConfig):
     verbose_name = "Wagtail DaisyUI Interface Editor"
 
     def ready(self):
+        # Register system checks (e.g. htmx wiring).
         # Register telepath adapters for the DaisyUI admin widgets.
-        from . import telepath  # noqa: F401
+        from . import (
+            checks,  # noqa: F401
+            telepath,  # noqa: F401
+        )
 
         # Register context-model placeholder documentation for admin help.
         from .dynamic import panels  # noqa: F401

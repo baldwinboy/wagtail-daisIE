@@ -69,6 +69,7 @@ src/wagtail_daisIE/
 ├── notifications/   # Email templates, campaigns, audiences, bridges, email_blocks/, allauth overrides
 ├── templates/wagtail_daisIE/  # Block, tag, admin, preview templates
 ├── blockref.py      # Stable registry keys for compact block migrations
+├── checks.py        # System checks (e.g. htmx middleware wiring)
 ├── context.py       # Theme contextvar used by FontFamilyChoiceBlock
 ├── pages.py         # StyledPageMixin
 ├── view_sets.py     # Wagtail admin "Design" snippet group
@@ -162,6 +163,30 @@ When adding a block, subclass the appropriate `Themed*Block` from
   confirmation alert. The action view adds the confirmation to Django messages;
   `{% daisie_messages %}` renders them. `make_parent_clickable` is only honored
   inside a card and renders the control as a bare `absolute! inset-0!` overlay.
+- **The Action form block** (`ActionFormBlock`, same module) collects
+  data-input blocks and posts them to an action in one `<form>`. Its
+  **After submit** `behaviour` (`inline` / `reload` / `navigate`) is submitted
+  as `daisie_behaviour`; the action view returns an inline alert fragment
+  (`action_form_status.html`), `HttpResponseClientRefresh`, or
+  `HttpResponseClientRedirect`. It is nested only (tab content), so it never
+  appears as a top-level block and produces no migration.
+- **htmx is progressive enhancement** (`django-htmx` is a hard dependency):
+  `WAGTAIL_DAISIE_HTMX` (default `True`) / `WAGTAIL_DAISIE_HTMX_VERSION`
+  (default `2`) control `{% daisie_htmx %}`; `checks.py` warns (W001/W002) when
+  the app/middleware are missing. Views branch on
+  `getattr(request, "htmx", False)` so they work without the middleware. Feeds
+  swap `feed_body.html` (`feed_items` returns the fragment, filtering/layout via
+  `?layout=`/`limit`); the button-only Action block is not enhanced. Never rely
+  on htmx: every form/link keeps a real `action`/`method`/`href`.
+- **Tabs are CSS-only with per-block radio groups**: `TabItemBlock` has an
+  optional `icon`, `key` (used by `?tab=`) and `audience`, and its `content`
+  includes `LIST_CONTENT_BLOCKS`, the data-input blocks and the
+  Action/Action-form blocks. `TabsBlock.get_context` resolves the per-tab list
+  (audience, checked state, first-allowed fallback) and `tabs.html` renders
+  DaisyUI `label.tab` controls containing a hidden radio, so an icon and label
+  show while the panel switching stays pure CSS. Radio-group names use the
+  inherited `block.id` (like inputs/drawer/modal), so accordions and tabs scope
+  their controls per enclosing block rather than page-wide.
 - **Feed layout choices live in `dynamic/feeds.py`** (`LAYOUT_CHOICES`,
   `ROW_MODE_CHOICES`, `GAP_CHOICES`, `TOGGLE_CHOICES`, `TOGGLE_PAIRS`) and are
   imported by `models.py` and `blocks_data.py`. They cannot live on the `Feed`

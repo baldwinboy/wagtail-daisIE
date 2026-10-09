@@ -40,8 +40,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Context-bound (dynamic) styled links are resolved by `daisie_richtext` and
   the link destination block can store absolute paths such as
   `/accounts/login/`.
+* `TabsBlock` tabs can carry an icon, a stable `key` (for `?tab=` links) and an
+  audience, and their content stream now also accepts data-input, action and
+  action-form blocks.
+* New **Action form** block: a data-collecting form that POSTs its fields to a
+  configured action, with inline / reload / navigate behaviour.
+* htmx (`django-htmx`) progressive enhancement for feed filtering, layout,
+  load-more, action forms and newsletter signup. Controlled by
+  `WAGTAIL_DAISIE_HTMX` (default on) and `WAGTAIL_DAISIE_HTMX_VERSION`
+  (default 2); `{% daisie_htmx %}` adds the script to a base template.
 
 ### Bug Fixes
+
+* Accordion items now scope their radio group per accordion, so opening one
+  accordion no longer closes items in another.
+* Feed layout toggles use per-block identifiers, fixing collisions when more
+  than one feed is placed on a page.
+* Feed "Load more" preserves the active filters and matches between the package
+  and demo templates.
+* The Cally calendar script is pinned to a released version
+  (`https://unpkg.com/cally@0.9.2`).
 
 * `get_draftail_font_families` now returns usable string labels, fixing the
   Draftail font-family picker.

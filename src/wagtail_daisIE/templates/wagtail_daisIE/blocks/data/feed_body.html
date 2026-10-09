@@ -1,0 +1,31 @@
+{% load i18n %}
+<div id="daisie-feed-body-{{ block_id }}">
+  <div
+    id="daisie-feed-items-{{ block_id }}"
+    data-daisie-feed-items
+    data-daisie-feed-layout="{{ layout }}"
+    class="{{ layout_container_css }}"
+  >{{ items_html|safe }}</div>
+
+  {% if not items_html %}
+    <p class="text-base-content/70">{{ empty_message }}</p>
+  {% endif %}
+
+  <p class="mt-3 text-sm" role="status" aria-live="polite" data-daisie-feed-status>
+    {% blocktranslate count total=total %}{{ total }} item{% plural %}{{ total }} items{% endblocktranslate %}
+  </p>
+
+  {% if has_more %}
+    <div class="mt-4 text-center">
+      <a
+        href="?limit={{ next_limit }}"
+        hx-get="{{ feed_url }}?limit={{ next_limit }}&block={{ block_id }}"
+        hx-include="#daisie-feed-{{ block_id }}"
+        hx-target="#daisie-feed-body-{{ block_id }}"
+        hx-swap="outerHTML"
+        class="{{ submit_css }}"
+        data-daisie-feed-more
+      >{% translate "Load more" %}</a>
+    </div>
+  {% endif %}
+</div>

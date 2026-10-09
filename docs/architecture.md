@@ -65,9 +65,13 @@ request/URL/fixed values and dynamic expressions (including the URL scheme
 allow-list); `mixins.py` injects the values into page and block contexts;
 `blocks.py`/`forms.py` provide the per-page binding chooser; `feeds.py`
 implements typed filters and feed rendering; `action_blocks.py` defines the
-Action struct (a normal button subclass plus a confirmation alert);
-`actions.py` + `urls.py` + `views.py` run developer-defined actions (adding the
-confirmation to Django messages) and serve feed slices. This package is
+Action struct (a normal button subclass plus a confirmation alert) and the
+**Action form** struct (`ActionFormBlock`) that collects data-input blocks and
+posts them to an action; `actions.py` + `urls.py` + `views.py` run
+developer-defined actions and serve feed slices. The views branch on
+[`django-htmx`](htmx.md)'s `request.htmx`: the action view returns an inline
+alert fragment, a client redirect (`HX-Redirect`) or a page refresh, and
+`feed_items` returns the swappable feed **body fragment**. This package is
 code-only: the `Feed` model lives in the `feeds` app and the Feed/Calendar
 blocks in `feeds/blocks_data.py`.
 
@@ -194,6 +198,14 @@ package `__init__` imports the heavy composition modules lazily to avoid an
 import cycle with `dynamic.action_blocks` (cards and menus both expose the Action
 block). Cards may contain an Action block, and either a button or an action can
 set `make_parent_clickable` to turn the whole card into its click target.
+
+`TabItemBlock` carries an optional `icon`, `key` and `audience`, and its
+`content` stream is `LIST_CONTENT_BLOCKS` plus the data-input blocks and the
+Action/Action-form blocks, so a tab can hold working mini-forms. The tab strip
+is rendered as DaisyUI `label.tab` controls containing a hidden radio, which
+keeps the icon/label visible while remaining pure CSS; the radio group is scoped
+per enclosing block id (the same `block.id` convention used by inputs, drawer,
+modal, etc.).
 
 ## The `block_css` pipeline
 

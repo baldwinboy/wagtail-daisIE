@@ -1,6 +1,10 @@
 from wagtail import blocks
 
-from wagtail_daisIE.dynamic.action_blocks import ActionButtonBlock
+from wagtail_daisIE.dynamic.action_blocks import (
+    ACTION_FORM_BEHAVIOUR_CHOICES,
+    ActionButtonBlock,
+    ActionFormBlock,
+)
 
 
 def test_action_button_drops_link_fields():
@@ -20,3 +24,15 @@ def test_action_button_renders_every_nested_stream():
     for name, child in block.child_blocks.items():
         if isinstance(child, blocks.StreamBlock):
             assert name in names
+
+
+def test_action_form_resolves_url_and_behaviours():
+    context = ActionFormBlock().get_context(
+        {"action": "demo", "fields": [], "button": {}, "behaviour": "inline"}
+    )
+    assert context["action_url"] == "/daisie/actions/demo/"
+    assert {key for key, _label in ACTION_FORM_BEHAVIOUR_CHOICES} == {
+        "inline",
+        "reload",
+        "navigate",
+    }

@@ -88,6 +88,31 @@ def store(*, page, form, field, file, request=None):
 `field` may be a class or a `(form_field, options) -> Field` factory, so a
 project can ship its own multiple-file field.
 
+## Bridge app-owned forms into an Action form block
+
+A project can own a form's markup, validation and uploads while still letting
+admins place a block by overriding the **Action form** template (project
+template dirs take precedence over the package):
+
+```django
+{# myproject/templates/wagtail_daisIE/blocks/data/action_form.html #}
+{% if value.action|slice:":9" == "settings." %}
+  <div hx-get="{% url 'settings:section' key=value.action %}" hx-trigger="load" hx-swap="innerHTML">
+    <a href="{% url 'settings:section' key=value.action %}">Open</a>
+  </div>
+{% else %}
+  {# fall back to the plugin's default markup for other actions #}
+  {% include "myproject/action_form_default.html" %}
+{% endif %}
+```
+
+Name the project actions with a reserved prefix (for example `settings.*`) so
+the override can distinguish them. The app view then renders and validates a
+real Django form, returning a fragment for htmx and a normal redirect with
+`{% daisie_messages %}` without it. This is how a single page can host several
+independent, app-owned mini-forms inside a **Tab** block — see
+[htmx.md](htmx.md) and [forms.md](forms.md#form-pages-vs-the-action-form-block).
+
 ## Test settings
 
 Package tests use `src/wagtail_daisIE/test/settings.py`. Tests that need the

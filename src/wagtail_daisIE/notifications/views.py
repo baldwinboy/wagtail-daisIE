@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.core.cache import cache
-from django.http import JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.utils.html import format_html
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -16,10 +17,14 @@ from .models import AudienceMember
 RATE_LIMIT_SECONDS = 60
 
 
-def _wants_json(request):
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return True
-    return "application/json" in request.headers.get("accept", "")
+def _is_async(request):
+    return bool(getattr(request, "htmx", False))
+
+
+def _alert(message, level):
+    return HttpResponse(
+        format_html('<div class="alert alert-{}" role="alert">{}</div>', level, message)
+    )
 
 
 def _client_ip(request):
@@ -42,15 +47,15 @@ def subscribe(request):
         True,
         timeout=RATE_LIMIT_SECONDS,
     ):
-        if _wants_json(request):
-            return JsonResponse({"ok": False, "error": "rate_limited"}, status=429)
+        if _is_async(request):
+            return _alert(_("Please wait a moment and try again."), "warning")
         messages.error(request, _("Please wait a moment and try again."))
         return _redirect_back(request)
 
     form = SubscribeForm(request.POST)
     if not form.is_valid():
-        if _wants_json(request):
-            return JsonResponse({"ok": False, "errors": form.errors}, status=400)
+        if _is_async(request):
+            return _alert(_("Please enter a valid email address."), "error")
         messages.error(request, _("Please enter a valid email address."))
         return _redirect_back(request)
 
@@ -68,8 +73,8 @@ def subscribe(request):
         member.is_active = True
         member.save(update_fields=["is_active"])
 
-    if _wants_json(request):
-        return JsonResponse({"ok": True, "created": created})
+    if _is_async(request):
+        return _alert(_("Thanks! You are subscribed."), "success")
 
     messages.success(request, _("Thanks! You are subscribed."))
     return _redirect_back(request, subscribed=True)

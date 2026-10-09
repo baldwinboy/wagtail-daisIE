@@ -40,13 +40,14 @@ class TestSubscribe:
         member.refresh_from_db()
         assert member.is_active is True
 
-    def test_json_response_and_rule_rejection(self, audience):
+    def test_async_response_and_rule_rejection(self, audience):
         response = Client().post(
             SUBSCRIBE_URL,
             {"audience": audience.pk, "email": "ada@example.com"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
-        assert response.status_code == 200 and response.json()["ok"] is True
+        assert response.status_code == 200
+        assert b"alert-success" in response.content
 
         rule = Audience.objects.create(
             name="Subs", kind=Audience.Kind.RULE, rule_key="subs"
@@ -55,18 +56,21 @@ class TestSubscribe:
         response = Client().post(
             SUBSCRIBE_URL,
             {"audience": rule.pk, "email": "ada@example.com"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
-        assert response.status_code == 400 and response.json()["ok"] is False
+        assert response.status_code == 200
+        assert b"alert-error" in response.content
 
     def test_rate_limited(self, audience):
         client = Client()
         data = {"audience": audience.pk, "email": "ada@example.com"}
-        first = client.post(SUBSCRIBE_URL, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        first = client.post(SUBSCRIBE_URL, data, HTTP_HX_REQUEST="true")
         second = client.post(
             SUBSCRIBE_URL,
             {"audience": audience.pk, "email": "bob@example.com"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
         assert first.status_code == 200
-        assert second.status_code == 429
+        assert b"alert-success" in first.content
+        assert second.status_code == 200
+        assert b"alert-warning" in second.content

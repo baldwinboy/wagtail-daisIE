@@ -204,3 +204,16 @@ The **Feedback** block group (alerts, toasts, progress, loading, steps, modal,
 tooltip) and the **Data input** block group (input, textarea, select, checkbox,
 toggle, radio, range, rating, file, fieldset) can be used in the success/error
 bodies (and any page body) to design the look of those states without code.
+
+## Form pages vs the Action form block
+
+`DaisieFormPage` is the right tool when a page **is** a form: it has one form,
+binds inputs to a model, validates them and creates/stores an instance. The
+**Action form** block (`dynamic/action_blocks.py`) is the right tool for
+**several small forms on one page** (for example a tabbed settings page): each
+block is an independent `<form>` that posts its fields to a configured action,
+without a model binding. Prefer `DaisieFormPage` when you need per-field
+validation and error rendering or file uploads tied to a model field; prefer
+**Action form** when you need many independent "mini-forms" that call project
+code. See [data-components.md](data-components.md#action-forms) and
+[htmx.md](htmx.md).

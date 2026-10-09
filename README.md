@@ -16,7 +16,7 @@ them to pages, and build navigation menus from the same block components.
 - [Emails](docs/emails.md) · [Context models](docs/context-models.md) ·
   [Error pages](docs/error-pages.md) · [Forms](docs/forms.md) ·
   [Approval workflows](docs/approval.md) ·
-  [Data components](docs/data-components.md) ·
+  [Data components](docs/data-components.md) · [htmx](docs/htmx.md) ·
   [Notifications](docs/notifications.md) · [django-allauth](docs/allauth.md) ·
   [Allauth pages](docs/allauth-pages.md)
 - [Changelog](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CHANGELOG.md)
@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     # ...
     "wagtail.contrib.table_block",
     # ...
+    "django_htmx",  # htmx integration (feeds/action forms/newsletter)
+    # ...
     "colorfield",
 ]
 ```
@@ -94,10 +96,16 @@ Node.js or CLI is required in production.
 ```python
 # settings.py
 MIDDLEWARE += [
+    # Lets views detect htmx requests (feeds, action forms, newsletter).
+    "django_htmx.middleware.HtmxMiddleware",
     # Covers arbitrary colour utilities (bg-[#0080ff] and friends).
     "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
 ]
 ```
+
+The htmx script itself is opt-out: `{% daisie_htmx %}` (default on) renders it,
+and `WAGTAIL_DAISIE_HTMX = False` disables the integration. See
+[docs/htmx.md](docs/htmx.md).
 
 Add the render-blocking link to your base template's `<head>`:
 
@@ -166,6 +174,7 @@ This mixin adds:
     <head>
         {% daisyui_theme_full_css daisyui_theme %}
         {% daisyui_theme_script %}
+        {% daisie_htmx %}
         {% daisyui_icon_assets %}
     </head>
     <body{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
@@ -284,6 +293,9 @@ Render project data and trigger actions with reusable components:
 - **Action** — a struct of a themed button and an optional confirmation alert
   that posts to a developer-defined action (`WAGTAIL_DAISIE_ACTIONS`), e.g.
   *Add to basket*. Inside a card it can make the whole card clickable.
+- **Action form** — one `<form>` of data-input blocks that posts to a
+  developer-defined action, with an inline/reload/navigate behaviour. Ideal for
+  several independent mini-forms on one page (e.g. a tabbed settings page).
 - **Calendar** — a [Cally](https://cally.dev) date picker showing each day's
   events as designed cards.
 
@@ -378,6 +390,7 @@ def register_icon_providers(providers):
 | `{% daisyui_theme_full_css theme %}` | Inclusion | Font CDNs + colors + background + fonts |
 | `{% daisyui_theme_full_inline_css theme %}` | Simple | Raw combined CSS string |
 | `{% daisyui_theme_script %}` | Simple | Script tag that persists the theme choice |
+| `{% daisie_htmx %}` | Simple | Script tag for htmx (when `WAGTAIL_DAISIE_HTMX` is on) |
 | `{% daisie_messages %}` | Inclusion | Renders Django messages as DaisyUI alerts |
 | `{% daisyui_menu "Name" %}` | Inclusion | Renders a `DaisyUIMenu` snippet |
 | `{% daisyui_icon value %}` | Simple | Renders a stored icon value |
@@ -427,8 +440,12 @@ WAGTAIL_DAISIE_ACTIONS = {
     "basket.add": {"label": "Add to basket", "handler": "myapp.actions.add"},
 }
 
+# htmx integration (default on; requires django_htmx + HtmxMiddleware).
+WAGTAIL_DAISIE_HTMX = True
+WAGTAIL_DAISIE_HTMX_VERSION = 2
+
 # Optional: self-hosted Cally for the calendar block.
-WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally"
+WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally@0.9.2"
 ```
 
 ## Demo

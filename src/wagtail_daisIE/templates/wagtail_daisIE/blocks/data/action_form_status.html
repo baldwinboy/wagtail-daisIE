@@ -1,0 +1,9 @@
+{% load i18n notifications wagtail_daisIE_tags %}
+{% if message_text %}
+  <div class="alert {{ message_tags }}" role="alert">
+    {% if message_icon %}{% daisyui_icon message_icon %}{% endif %}
+    {% daisie_markup message_text %}
+  </div>
+{% else %}
+  <div class="alert alert-success" role="alert">{% translate "Saved" %}</div>
+{% endif %}

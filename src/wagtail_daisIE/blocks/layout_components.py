@@ -5,6 +5,7 @@ from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 
 from ..base_blocks import InlineMarkupBlock, ThemedBlock
+from ..base_blocks.audience import AudienceBlock, evaluate_audience
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from ..base_blocks.link import LinkDestinationBlock, link_url
 from ..choicelist import ChoiceList
@@ -19,8 +20,10 @@ from ..choices import (
     TABS_SIZE_CHOICES,
     TABS_STYLE_CHOICES,
 )
+from ..dynamic.action_blocks import ActionBlock, ActionFormBlock
 from ..icons.blocks import IconChooserBlock
 from .inline import InlineTextBlock
+from .inputs import INPUT_BLOCKS
 from .link import LabelLinkBlock
 from .spaced import LIST_CONTENT_BLOCKS, SpacedBlock
 
@@ -146,9 +149,26 @@ class SwapBlock(ThemedBlock):
         )
 
 
+TAB_CONTENT_BLOCKS = [
+    *LIST_CONTENT_BLOCKS,
+    *INPUT_BLOCKS,
+    ("action", ActionBlock()),
+    ("action_form", ActionFormBlock()),
+]
+
+
 class TabItemBlock(DaisieStructBlock):
     label = blocks.CharBlock(max_length=128)
-    content = DaisieStreamBlock(LIST_CONTENT_BLOCKS)
+    key = blocks.CharBlock(
+        max_length=64,
+        required=False,
+        blank=True,
+        label=_("Key"),
+        help_text=_("Optional stable id used by ?tab= links."),
+    )
+    icon = IconChooserBlock(required=False)
+    audience = AudienceBlock()
+    content = DaisieStreamBlock(TAB_CONTENT_BLOCKS)
 
     class Meta:
         icon = "doc-full"
@@ -163,6 +183,34 @@ class TabsBlock(ThemedBlock):
     placement = blocks.ChoiceBlock(
         choices=TABS_PLACEMENT_CHOICES, default="", required=False
     )
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        request = (parent_context or {}).get("request")
+        requested = (
+            (getattr(request, "GET", None) or {}).get("tab") if request else None
+        )
+        tabs = []
+        for index, tab in enumerate((value or {}).get("tabs") or []):
+            selected = (tab.get("audience") or {}).get("audience") or []
+            key = str(tab.get("key") or index)
+            tabs.append(
+                {
+                    "label": tab.get("label"),
+                    "icon": tab.get("icon"),
+                    "content": tab.get("content"),
+                    "key": key,
+                    "allowed": evaluate_audience(selected, request),
+                    "checked": requested == key or (not requested and index == 0),
+                }
+            )
+        if not any(tab["checked"] and tab["allowed"] for tab in tabs):
+            for tab in tabs:
+                if tab["allowed"]:
+                    tab["checked"] = True
+                    break
+        context["tabs"] = tabs
+        return context
 
     class Meta:
         icon = "list-ul"

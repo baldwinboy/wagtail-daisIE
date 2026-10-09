@@ -1,4 +1,6 @@
 from django import template
+from django.conf import settings
+from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -376,6 +378,25 @@ def daisyui_theme_script():
     return format_html(
         '<script src="{}" defer></script>',
         static("wagtail_daisIE/js/theme_persistence.js"),
+    )
+
+
+@register.simple_tag
+def daisie_htmx():
+    """Render the htmx script tag (from ``django-htmx``) when enabled.
+
+    Controlled by ``WAGTAIL_DAISIE_HTMX`` (default on) and
+    ``WAGTAIL_DAISIE_HTMX_VERSION`` (default 2). Returns an empty string when
+    disabled or when ``django_htmx`` is not installed, so templates stay
+    portable.
+    """
+    if not getattr(settings, "WAGTAIL_DAISIE_HTMX", True):
+        return ""
+    if "django_htmx" not in getattr(settings, "INSTALLED_APPS", []):
+        return ""
+    version = getattr(settings, "WAGTAIL_DAISIE_HTMX_VERSION", 2)
+    return mark_safe(  # noqa: S308
+        render_to_string("wagtail_daisIE/tags/htmx.html", {"version": version})
     )
 
 

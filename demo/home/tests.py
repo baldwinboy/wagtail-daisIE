@@ -234,6 +234,6 @@ class LoadInitialDataTests(WagtailPageTestCase):
             f"/daisie/feeds/{feed.pk}/items/"
             f"?filter_published_from={latest.date_published.isoformat()}"
         )
-        data = self.client.get(url).json()
-        assert data["total"] == 1
-        assert latest.title in data["html"]
+        html = self.client.get(url).content.decode()
+        assert latest.title in html
+        assert "1 item" in html

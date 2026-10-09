@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "wagtail_daisIE.allauth_ui",
     "wagtail_daisIE.allauth_emails",
     "wagtail_daisIE.test",
+    "django_htmx",
     "colorfield",
     "wagtail.contrib.search_promotions",
     "wagtail.contrib.forms",
@@ -78,6 +79,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
 ]
 
 ROOT_URLCONF = "wagtail_daisIE.test.urls"
@@ -169,6 +171,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "test-media")
 # Wagtail settings
 
 WAGTAIL_SITE_NAME = "Wagtail DaisyUI Interface Editor test site"
+
+# htmx integration (django-htmx)
+WAGTAIL_DAISIE_HTMX = True
+WAGTAIL_DAISIE_HTMX_VERSION = 2
 
 
 # Email

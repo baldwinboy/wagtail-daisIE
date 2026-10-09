@@ -1,5 +1,4 @@
 import itertools
-import json
 
 from datetime import timedelta
 from types import SimpleNamespace
@@ -233,7 +232,7 @@ class TestFeedRendering:
 
 
 class TestFeedEndpoint:
-    def test_returns_items_json(self):
+    def test_returns_items_fragment(self):
         from wagtail_daisIE.dynamic.views import feed_items
 
         USER_MODEL.objects.create(username="ada")
@@ -245,10 +244,13 @@ class TestFeedEndpoint:
             }
         ]
         feed.save()
-        payload = json.loads(feed_items(RequestFactory().get("/"), feed.pk).content)
-        # The AJAX slice must carry the rendered item and the wrapper class.
-        assert "ada" in payload["html"]
-        assert "daisie-feed__item" in payload["html"]
+        html = feed_items(
+            RequestFactory().get("/", {"block": "x"}), feed.pk
+        ).content.decode()
+        # The htmx slice carries the rendered items inside the swappable body.
+        assert "ada" in html
+        assert "daisie-feed__item" in html
+        assert 'id="daisie-feed-body-x"' in html
 
 
 class TestFilterStyling:
@@ -403,11 +405,12 @@ class TestFeedLayout:
             }
         )
         html = block.render(value, context={"request": RequestFactory().get("/")})
-        assert "data-daisie-feed-toggle" in html
-        assert "data-daisie-feed-layout-option" in html
-        assert 'id="daisie-feed-layout-classes"' in html
+        # The layout toggle is a set of htmx-driven radio inputs on the form.
+        assert 'name="layout"' in html
+        assert "hx-get=" in html
+        assert 'id="daisie-feed-body-' in html
         assert "daisie-feed--grid" in html
-        assert html.count("checked") == 1 and "btn-active" in html
+        assert html.count("btn-active") == 1
 
         listed = render_feed(self._feed(layout="list"), RequestFactory().get("/"))
         assert (

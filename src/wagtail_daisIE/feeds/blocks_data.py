@@ -148,10 +148,18 @@ class FeedBlock(ThemedBlock):
             offset = int((request.GET.get("offset") if request else 0) or 0)
         except (TypeError, ValueError):
             offset = 0
+        limit = request.GET.get("limit") if request else None
 
         override = (value or {}).get("layout") or {}
         context.update(
-            render_feed(feed, request, offset=offset, page=page, override=override)
+            render_feed(
+                feed,
+                request,
+                offset=offset,
+                limit=limit,
+                page=page,
+                override=override,
+            )
         )
         try:
             context["feed_url"] = reverse(
@@ -196,7 +204,7 @@ class CalendarBlock(ThemedBlock):
         context = super().get_context(value, parent_context)
         value = value or {}
         context["cally_url"] = getattr(
-            settings, "WAGTAIL_DAISIE_CALLY_URL", "https://unpkg.com/cally"
+            settings, "WAGTAIL_DAISIE_CALLY_URL", "https://unpkg.com/cally@0.9.2"
         )
         context["days"] = []
         initial = value.get("initial_date")

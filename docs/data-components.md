@@ -60,6 +60,10 @@ Daisie URLs in your project:
 (path("daisie/", include("wagtail_daisIE.dynamic.urls")),)
 ```
 
+The button-only action is a plain form; the action view adds its confirmation to
+Django messages and redirects back. See the htmx-enhanced **Action form** below
+for data-collecting forms.
+
 ### Confirmation alerts
 
 When an action's **Confirmation** is set, the action view adds its text (and
@@ -83,6 +87,35 @@ clickable**. The control then renders as a bare `absolute! inset-0!` overlay
 that covers the card (the card gets `relative overflow-hidden cursor-pointer`),
 so the whole card is the click target while the rest of the content still
 renders. Outside a card the option is ignored and the button renders normally.
+
+## Action forms
+
+The **Action form** block collects inputs and posts them to a configured action
+in a single `<form>`. Use it for "mini-forms" — settings panels, preference
+toggles, short submissions — instead of building a whole form page.
+
+It is a struct of:
+
+- **Action** — a key from `WAGTAIL_DAISIE_ACTIONS`.
+- **Target expression** — an optional expression sent as `target`.
+- **Fields** — any of the data-input blocks (input, textarea, select, checkbox,
+  toggle, radio, range, rating, file, fieldset). Each field's **Field name**
+  becomes the key the handler reads from `data`.
+- **Button** — the themed submit button.
+- **After submit** — `Update in place` (default), `Reload the page`, or
+  `Follow the response`.
+- **Confirmation** — an optional DaisyUI alert shown after the action runs.
+
+The form posts to the same action endpoint as the button action. On htmx
+requests the endpoint returns a small alert fragment (the **After submit**
+behaviour above); without JavaScript it is a normal `POST` that redirects back
+with the confirmation in `{% daisie_messages %}`. The confirmation fields are
+treated as untrusted (escaped text, validated icon, allowlisted alert classes).
+
+Unlike `DaisieFormPage`, an **Action form** is not bound to a model and does not
+create an instance automatically — the handler decides what to do with the
+posted data (`request.POST` / `request.FILES`). It can be placed inside a
+**Tab** block so several independent forms share one page.
 
 ## Feeds
 
@@ -125,10 +158,10 @@ A **Feed block** can override the feed's layout per placement (**Layout
 override**); leave a field blank to use the feed's value.
 
 Admins can let visitors switch layout with **Let visitors switch layout** and
-**Toggle options** (Grid/List, Grid/Row or Row/List). The toggle is progressive
-enhancement: the server renders the configured (or `?layout=`) layout and the
-script swaps the container classes instantly and remembers the choice in
-`localStorage`. The toggle stays hidden without JavaScript.
+**Toggle options** (Grid/List, Grid/Row or Row/List). The toggle is a set of
+radio inputs inside the filter form: changing one re-requests the feed with
+`?layout=<value>` and the server renders the chosen layout. Without JavaScript
+the radios are part of the `GET` form, so the layout is applied on submit.
 
 ### Filtering
 
@@ -206,14 +239,19 @@ Date and date-range filters work with both `DateField` and `DateTimeField`
 The Feed’s **Submit / Load more button** exposes the same button appearance,
 styling the filter form’s Apply button and the Load more button.
 
-### AJAX and infinite scroll
+### htmx and infinite scroll
 
-Filtering and pagination fetch items from
-`wagtail_daisIE_dynamic:feed_items` and swap them in with JavaScript, so the page
-does not reload and the URL query string is updated (shareable). Filters are a
-real `GET` form and pagination a real link, so the feed still works without
-JavaScript. With **Infinite scroll** enabled the next page loads as the visitor
-scrolls (IntersectionObserver); otherwise a **Load more** button is shown.
+Filtering, layout and pagination request the feed body fragment from
+`wagtail_daisIE_dynamic:feed_items` and swap it in place with
+[htmx](htmx.md), so the page does not reload. Filters fire a request on change
+(and after a short typing delay for the search input); **Load more** requests the
+next slice with `?limit=<n>` (a cumulative window, so no duplicate items). With
+**Infinite scroll** enabled the same request fires when the button scrolls into
+view; otherwise a **Load more** button is shown.
+
+Every control is a real `GET` form field or link, so the feed still works
+without JavaScript — the page reloads and the server renders the same state
+(the block reads `?limit=`/`?layout=` from the request).
 
 ### Example: a blog feed
 
@@ -242,10 +280,10 @@ as feed items).
 
 All events are rendered server-side (one hidden panel per day) and the bundled
 script toggles the correct panel when the date changes — no per-click request.
-Cally is loaded from a URL you can override:
+Cally is loaded from a version-pinned URL you can override:
 
 ```python
-WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally"
+WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally@0.9.2"
 ```
 
 ## The demo

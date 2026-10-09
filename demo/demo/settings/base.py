@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "wagtail_daisIE.notifications",
     "wagtail_daisIE.allauth_ui",
     "wagtail_daisIE.allauth_emails",
+    "django_htmx",
     "draftail_text_utils",
     "blog",
     "home",
@@ -76,6 +77,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
     "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
 ]
 
@@ -369,6 +371,10 @@ WAGTAIL_DAISIE_ALLAUTH_UI = True
 
 # Render allauth pages with the same chrome as standard pages.
 WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
+
+# htmx integration (django-htmx) for feeds, actions and form blocks.
+WAGTAIL_DAISIE_HTMX = True
+WAGTAIL_DAISIE_HTMX_VERSION = 2
 
 # Draftail rich-text customisation for the demo: the colour palette comes
 # straight from the default DaisyUI theme, and font families/URLs are bridged
