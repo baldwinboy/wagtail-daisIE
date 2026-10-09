@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.0.0...v3.1.0) (2026-10-09)
+
+
+### Features
+
+* add autocomplete ([bba562f](https://github.com/baldwinboy/wagtail-daisIE/commit/bba562f9ecf8e4969c522337e2be306978450343))
+* migrate to htmx control ([b975985](https://github.com/baldwinboy/wagtail-daisIE/commit/b9759857294512e9b1093ebf4b56b92b81d80a35))
+
+
+### Bug Fixes
+
+* form field default ([a8543ce](https://github.com/baldwinboy/wagtail-daisIE/commit/a8543cedd81141b2cc86c58e8fbf2afcbca8ee33))
+* migrate low-risk choosers to stimulus ([c7694e8](https://github.com/baldwinboy/wagtail-daisIE/commit/c7694e81653d0dcdc97f8bdb51520fc582a4de85))
+* preload no theme if none available ([93749b8](https://github.com/baldwinboy/wagtail-daisIE/commit/93749b8e7a7b83be138530846ecee286d22fe2f0))
+
 ## [3.0.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v2.1.0...v3.0.0) (2026-10-07)
 
 
