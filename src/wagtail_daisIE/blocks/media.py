@@ -1,9 +1,5 @@
-from django import forms
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
-from wagtail.admin.telepath import register
-from wagtail.blocks.struct_block import StructBlockAdapter
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 from wagtail.images.models import Image
 
@@ -79,6 +75,7 @@ class ImageBlock(ThemedMediaBlock):
         icon = "image"
         group = _("Media")
         collapsed = True
+        form_attrs = {"data-controller": "daisie-image-block"}
         template = "wagtail_daisIE/blocks/image.html"
         form_layout = blocks.BlockGroup(
             children=["image", "image_source", "image_expression"],
@@ -129,21 +126,3 @@ class EmbedBlock(ThemedMediaBlock):
             children=["url"],
             settings=["design", "audience"],
         )
-
-
-class ImageBlockAdapter(StructBlockAdapter):
-    js_constructor = "wagtail_daisIE.blocks.media.ImageBlock"
-
-    @cached_property
-    def media(self):
-        structblock_media = super().media
-        return forms.Media(
-            js=[
-                *structblock_media._js,
-                "wagtail_daisIE/js/image_block.js",
-            ],
-            css=structblock_media._css,
-        )
-
-
-register(ImageBlockAdapter(), ImageBlock)

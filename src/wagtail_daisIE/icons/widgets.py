@@ -9,6 +9,12 @@ class IconChooserWidget(forms.TextInput):
 
     template_name = "wagtail_daisIE/admin/daisyui_icon_widget.html"
 
+    @property
+    def media(self):
+        # Loaded only on pages that use the widget; the controller registers
+        # itself with ``window.wagtail.app`` as a Stimulus controller.
+        return forms.Media(js=["wagtail_daisIE/js/icon_chooser.js"])
+
     def get_context(self, name, value, attrs=None):
         context = super().get_context(name, value, attrs)
         value = value or ""
@@ -18,7 +24,9 @@ class IconChooserWidget(forms.TextInput):
             search_url = ""
         context["widget"].update(
             {
-                "current_value": value,
+                # Normalise ``None`` to "" so the input never renders
+                # ``value="None"`` in the telepath template.
+                "value": value,
                 "current_preview": render_icon(value),
                 "icon_search_url": search_url,
                 "sources": [

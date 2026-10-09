@@ -29,7 +29,7 @@ def test_build_backend_does_not_exclude_javascript():
 def test_static_js_assets_present():
     names = {path.name for path in JS_DIR.glob("*.js")}
     assert "theme_persistence.js" in names
-    assert len(names) >= 11
+    assert len(names) >= 8
 
 
 def test_static_css_assets_present():

@@ -107,7 +107,7 @@ class TestIconifyProvider:
 
 @pytest.mark.django_db
 class TestIconSources:
-    def test_icon_search_endpoint_returns_wagtail_icons(self, admin_client):
+    def test_icon_search_and_preview_endpoints(self, admin_client):
         response = admin_client.get(
             reverse("wagtail_daisIE:icon_search"),
             {"prefix": "wagtail", "q": "home"},
@@ -115,3 +115,11 @@ class TestIconSources:
         assert response.status_code == 200
         values = [icon["value"] for icon in response.json()["icons"]]
         assert "wagtail:home" in values
+
+        # The picker restores an existing icon's preview through ``?value=``.
+        preview = admin_client.get(
+            reverse("wagtail_daisIE:icon_search"),
+            {"value": "wagtail:home"},
+        )
+        assert preview.status_code == 200
+        assert "<svg" in preview.json()["preview"]

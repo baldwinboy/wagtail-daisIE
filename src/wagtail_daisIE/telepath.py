@@ -1,13 +1,10 @@
 from wagtail.admin.telepath import Adapter, register
 
 from wagtail_daisIE.widgets import (
-    DaisyUIAlignWidget,
     DaisyUINumberSliderWidget,
     DaisyUISliderWidget,
     DaisyUISwatchWidget,
 )
-
-from .icons.widgets import IconChooserWidget
 
 
 class DaisyUISwatchWidgetAdapter(Adapter):
@@ -44,27 +41,3 @@ class DaisyUINumberSliderWidgetAdapter(Adapter):
 
 
 register(DaisyUINumberSliderWidgetAdapter(), DaisyUINumberSliderWidget)
-
-
-class DaisyUIAlignWidgetAdapter(Adapter):
-    js_constructor = "wagtail_daisIE.widgets.AlignSelect"
-
-    def js_args(self, widget):
-        return [
-            widget.render("__NAME__", None, attrs={"id": "__ID__"}),
-        ]
-
-
-register(DaisyUIAlignWidgetAdapter(), DaisyUIAlignWidget)
-
-
-class IconChooserWidgetAdapter(Adapter):
-    js_constructor = "wagtail_daisIE.widgets.IconChooser"
-
-    def js_args(self, widget):
-        return [
-            widget.render("__NAME__", None, attrs={"id": "__ID__"}),
-        ]
-
-
-register(IconChooserWidgetAdapter(), IconChooserWidget)

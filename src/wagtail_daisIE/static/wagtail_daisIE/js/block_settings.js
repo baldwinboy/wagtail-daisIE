@@ -1,6 +1,7 @@
 /**
  * Telepath widget definitions for the DaisyUI StreamBlock settings controls
- * (colour swatches, preset sliders and text-alignment icons).
+ * (colour swatches and sliders). The alignment widget needs no client-side
+ * value handling and uses Wagtail's built-in RadioSelect adapter.
  *
  * Mirrors the render protocol used by Wagtail's generic widget definitions in
  * wagtailadmin/js/telepath/widgets.js and registers each constructor under the
@@ -624,15 +625,6 @@
   window.addEventListener('load', initAllNumberSliders);
   document.addEventListener('w-formset:ready', initAllNumberSliders);
 
-  function AlignSelectDefinition(html) {
-    BaseDefinition.call(this, html);
-  }
-  AlignSelectDefinition.prototype = Object.create(BaseDefinition.prototype);
-  AlignSelectDefinition.prototype.constructor = AlignSelectDefinition;
-  AlignSelectDefinition.prototype.createBound = function (container, name) {
-    return new RadioTileWidget(container, name);
-  };
-
   function SliderSelectDefinition(html) {
     BaseDefinition.call(this, html);
   }
@@ -662,9 +654,5 @@
   window.telepath.register(
     'wagtail_daisIE.widgets.NumberSlider',
     NumberSliderDefinition,
-  );
-  window.telepath.register(
-    'wagtail_daisIE.widgets.AlignSelect',
-    AlignSelectDefinition,
   );
 })();

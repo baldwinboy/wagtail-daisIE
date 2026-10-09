@@ -552,3 +552,17 @@ class DaisyUIAlignWidget(widgets.RadioSelect):
             )
         context["widget"]["tiles"] = tiles
         return context
+
+
+class LayerTypeSelect(forms.Select):
+    """``layer_type`` select wired to the background-layer Stimulus controller.
+
+    The controller (``daisie-background-layer``) reads this element and toggles
+    the ``.layer-*`` field groups on change. Shared by StreamField blocks and
+    the theme's inline background-layer panel.
+    """
+
+    def build_attrs(self, base_attrs, extra_attrs=None):
+        attrs = super().build_attrs(base_attrs, extra_attrs)
+        attrs["data-controller"] = "daisie-background-layer"
+        return attrs

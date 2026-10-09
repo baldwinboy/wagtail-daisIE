@@ -1,15 +1,11 @@
 import logging
 
-from django import forms
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import redirect
-from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
-from wagtail.admin.telepath import register
-from wagtail.blocks.struct_block import StructBlockAdapter
 
 from .compact import DaisieStructBlock
 
@@ -116,28 +112,11 @@ class AudienceBlock(DaisieStructBlock):
     class Meta:
         icon = "group"
         collapsed = True
+        form_attrs = {"data-controller": "daisie-audience"}
         form_layout = blocks.BlockGroup(
             children=["audience"],
             heading=_("Limit content to audiences"),
         )
-
-
-class AudienceBlockAdapter(StructBlockAdapter):
-    js_constructor = "wagtail_daisIE.base_blocks.AudienceBlock"
-
-    @cached_property
-    def media(self):
-        structblock_media = super().media
-        return forms.Media(
-            js=[
-                *structblock_media._js,
-                "wagtail_daisIE/js/audience_block.js",
-            ],
-            css=structblock_media._css,
-        )
-
-
-register(AudienceBlockAdapter(), AudienceBlock)
 
 
 class PageAudienceMixin:

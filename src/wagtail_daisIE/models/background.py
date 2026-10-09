@@ -12,6 +12,7 @@ from wagtail_daisIE.panels import (
     GradientStopColorPanel,
     LayerColorPanel,
 )
+from wagtail_daisIE.widgets import LayerTypeSelect
 
 from .fields import DaisyUIColorField
 
@@ -135,7 +136,11 @@ class DaisyUIThemeBackgroundLayer(ClusterableModel, Orderable):
     )
 
     panels = [
-        FieldPanel("layer_type", classname="background-layer-form"),
+        FieldPanel(
+            "layer_type",
+            classname="background-layer-form",
+            widget=LayerTypeSelect(),
+        ),
         MultiFieldPanel(
             [LayerColorPanel("color")],
             heading=_("Solid color"),

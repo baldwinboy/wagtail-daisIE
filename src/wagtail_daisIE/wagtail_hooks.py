@@ -230,14 +230,14 @@ def register_audience_rules_js():
     )
 
 
-# Register the background layer admin JS.
+# Register the Stimulus controllers for DaisyUI StructBlocks.
 
 
 @hooks.register("insert_global_admin_js")
-def register_background_layer_admin_js():
+def register_block_controllers_js():
     return format_html(
         '<script src="{}"></script>',
-        static("wagtail_daisIE/js/background_layer_admin.js"),
+        static("wagtail_daisIE/js/block_controllers.js"),
     )
 
 
@@ -354,10 +354,11 @@ def register_icon_chooser_css():
 
 @hooks.register("insert_global_admin_js")
 def register_icon_chooser_js():
+    # The Iconify web component is provider-dependent, so it is loaded
+    # globally; the picker controller itself ships through the widget's Media.
     return format_html(
-        '<script src="{}"></script><script src="{}"></script>',
+        '<script src="{}"></script>',
         ICONIFY_ICON_SCRIPT,
-        static("wagtail_daisIE/js/icon_chooser.js"),
     )
 
 

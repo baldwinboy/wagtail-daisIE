@@ -134,6 +134,7 @@ class TestStyledPageMixinLazyTheme:
         assert get_default_theme_id() == theme.pk
 
 
+@pytest.mark.django_db
 class TestWidgetAdapters:
     def test_widgets_pack_with_expected_constructors(self):
         payload = json.dumps(JSContext().pack(InlineTextBlock()))
@@ -141,6 +142,20 @@ class TestWidgetAdapters:
             "wagtail_daisIE.widgets.SwatchSelect",
             "wagtail_daisIE.widgets.SliderSelect",
             "wagtail_daisIE.widgets.NumberSlider",
-            "wagtail_daisIE.widgets.AlignSelect",
         ):
             assert adapter in payload, adapter
+
+        from wagtail_daisIE.icons.blocks import IconChooserBlock
+
+        # The icon chooser has no custom adapter: it packs through Wagtail's
+        # generic widget adapter, with the picker driven by a Stimulus
+        # controller shipped via the widget's media.
+        icon_block = IconChooserBlock()
+        icon_payload = json.dumps(JSContext().pack(icon_block))
+        assert "wagtail.widgets.Widget" in icon_payload
+        assert "wagtail_daisIE.widgets.IconChooser" not in icon_payload
+
+        # A value-less telepath placeholder must not bake in ``"None"``.
+        html = icon_block.field.widget.render("__NAME__", None, attrs={"id": "__ID__"})
+        assert 'value="None"' not in html
+        assert 'value=""' in html

@@ -1,5 +1,6 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
+from django.utils.html import escape
 from django.views.decorators.http import require_GET
 
 from .registry import get_provider, render_icon, search_icons
@@ -16,13 +17,20 @@ def _preview(value):
     if prefix:
         provider = get_provider(prefix)
         if provider is not None and provider.kind == "iconify":
-            return f'<iconify-icon class="daisyui-icon" icon="{value}"></iconify-icon>'
+            return (
+                f'<iconify-icon class="daisyui-icon" '
+                f'icon="{escape(value)}"></iconify-icon>'
+            )
     return render_icon(value)
 
 
 @staff_member_required
 @require_GET
 def icon_search(request):
+    value = (request.GET.get("value") or "").strip()
+    if value:
+        return JsonResponse({"preview": _preview(value)})
+
     query = (request.GET.get("q") or "").strip()
     prefix = (request.GET.get("prefix") or "").strip()
     prefix_param = request.GET.get("prefixes")

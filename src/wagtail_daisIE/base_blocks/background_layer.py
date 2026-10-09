@@ -1,10 +1,6 @@
-from django import forms
 from django.db import models
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
-from wagtail.admin.telepath import register
-from wagtail.blocks.struct_block import StructBlockAdapter
 from wagtail.images.blocks import ImageChooserBlock
 
 from wagtail_daisIE.choices import DAISYUI_BG_COLOR_CHOICES
@@ -13,6 +9,7 @@ from wagtail_daisIE.widgets import (
     DaisyUIIntegerBlock,
     DaisyUINumberSliderWidget,
     DaisyUIRawSwatchWidget,
+    LayerTypeSelect,
 )
 
 from .compact import DaisieStreamBlock, DaisieStructBlock
@@ -101,6 +98,7 @@ class BackgroundLayerBlock(DaisieStructBlock):
                         default=choices[0][0] if choices else "",
                         verbose_name=_("Layer type"),
                         classname="background-layer-form",
+                        widget=LayerTypeSelect(),
                     ),
                 )
             )
@@ -112,6 +110,7 @@ class BackgroundLayerBlock(DaisieStructBlock):
         default=BlockBackgroundLayerType.SOLID,
         verbose_name=_("Layer type"),
         classname="background-layer-form",
+        widget=LayerTypeSelect(),
     )
     color = ColorChoiceBlock(
         choices=DAISYUI_BG_COLOR_CHOICES,
@@ -255,21 +254,3 @@ class BackgroundStreamBlock(DaisieStreamBlock):
                 if css:
                     css_layers.append(css)
         return ", ".join(css_layers) if css_layers else ""
-
-
-class BackgroundLayerBlockAdapter(StructBlockAdapter):
-    js_constructor = "wagtail_daisIE.base_blocks.BackgroundLayerBlock"
-
-    @cached_property
-    def media(self):
-        structblock_media = super().media
-        return forms.Media(
-            js=[
-                *structblock_media._js,
-                "wagtail_daisIE/js/background_layer_block.js",
-            ],
-            css=structblock_media._css,
-        )
-
-
-register(BackgroundLayerBlockAdapter(), BackgroundLayerBlock)
