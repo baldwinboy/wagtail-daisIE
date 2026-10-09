@@ -38,6 +38,25 @@ def get_current_form_fields():
     return list(_current_form_fields.get())
 
 
+_current_model_fields: contextvars.ContextVar = contextvars.ContextVar(
+    "wagtail_daisIE_current_model_fields", default=()
+)
+
+
+def set_current_model_fields(fields):
+    """
+    Set the editable model-field choices offered by a form field's "Model field"
+    dropdown for the current admin request. Each entry is a ``{"name", "label"}``
+    mapping.
+    """
+    return _current_model_fields.set(tuple(fields or ()))
+
+
+def get_current_model_fields():
+    """Return the model-field choices active for the current admin request."""
+    return list(_current_model_fields.get())
+
+
 def theme_from_instance(instance):
     """
     Extract a DaisyUITheme from a Page or DaisyUIMenu-like instance.

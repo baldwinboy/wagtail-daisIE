@@ -7,32 +7,19 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..blocks.content import ALL_CONTENT_BLOCKS, ContentBlock
+from ..context import get_current_form_fields
+from .fields import DaisieFieldSelect
 
 
 #: ``StreamChild.block_type`` used by :class:`FormFieldBlock`.
 FORM_FIELD_BLOCK_TYPE = "form_field"
 
 
-class FormFieldSelect(forms.Select):
-    """A select populated client-side from the page's bound form fields."""
+class FormFieldSelect(DaisieFieldSelect):
+    """A select whose options are the page's own bound form fields."""
 
-    def optgroups(self, name, value, attrs=None):
-        groups = super().optgroups(name, value, attrs)
-        if any(options for _index, options, _subindex in groups):
-            return groups
-        selected = [item for item in value if item not in (None, "")]
-        if not selected:
-            return groups
-        return [
-            (
-                None,
-                [
-                    self.create_option(name, item, item, True, index)
-                    for index, item in enumerate(selected)
-                ],
-                0,
-            )
-        ]
+    def get_field_choices(self):
+        return get_current_form_fields()
 
 
 class FormFieldBlock(blocks.FieldBlock):
@@ -51,7 +38,7 @@ class FormFieldBlock(blocks.FieldBlock):
         self.field = forms.CharField(
             required=required,
             max_length=255,
-            widget=FormFieldSelect(attrs={"data-daisie-form-field": ""}),
+            widget=FormFieldSelect(empty_label=_("Choose a field")),
         )
         super().__init__(**kwargs)
 

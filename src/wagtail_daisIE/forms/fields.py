@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from django import forms
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -11,6 +13,8 @@ from wagtail.fields import StreamField
 
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
+from ..context import get_current_model_fields
+from ..dynamic.registry import get_context_models
 from .registry import (
     FIELD_TYPE_MAX_LENGTH,
     get_form_field_type_choices,
@@ -18,26 +22,98 @@ from .registry import (
 )
 
 
-class ModelFieldSelect(forms.Select):
-    """A select populated client-side from the page's bound model."""
+class DaisieFieldSelect(forms.Select):
+    """A ``Select`` whose options are the fields available for the current
+    admin request (resolved lazily from a contextvar).
+
+    A blank option is always rendered first so an unset value never falls back
+    to the browser's "select the first option" behaviour. A stored value that is
+    no longer available is kept as a selected ``(missing)`` option rather than
+    being silently dropped.
+    """
+
+    empty_label = ""
+
+    def __init__(self, attrs=None, choices=(), empty_label=""):
+        super().__init__(attrs, choices)
+        self.empty_label = empty_label
+
+    def get_field_choices(self):
+        """Return ``[{"name", "label"}]``; overridden by subclasses."""
+        raise NotImplementedError
 
     def optgroups(self, name, value, attrs=None):
-        groups = super().optgroups(name, value, attrs)
-        if any(options for _index, options, _subindex in groups):
-            return groups
-        selected = [item for item in value if item not in (None, "")]
-        if not selected:
-            return groups
-        return [
-            (
-                None,
-                [
-                    self.create_option(name, item, item, True, index)
-                    for index, item in enumerate(selected)
-                ],
-                0,
+        if self.choices:
+            return super().optgroups(name, value, attrs)
+
+        fields = self.get_field_choices()
+        values = value if isinstance(value, (list, tuple)) else [value]
+        current = next((str(item) for item in values if item not in (None, "")), "")
+
+        options = [self.create_option(name, "", self.empty_label, not current, 0)]
+        known = not current
+        index = 1
+        for field in fields:
+            selected = field["name"] == current
+            known = known or selected
+            options.append(
+                self.create_option(
+                    name,
+                    field["name"],
+                    field["label"] or field["name"],
+                    selected,
+                    index,
+                )
             )
-        ]
+            index += 1
+
+        if not known:
+            options.append(
+                self.create_option(name, current, f"{current} (missing)", True, index)
+            )
+        return [(None, options, 0)]
+
+
+class ModelFieldSelect(DaisieFieldSelect):
+    """The "Model field" select, populated from the page's bound model."""
+
+    def get_field_choices(self):
+        return get_current_model_fields()
+
+    @property
+    def media(self):
+        return forms.Media(js=["wagtail_daisIE/js/forms_admin.js"])
+
+    def build_attrs(self, base_attrs, extra_attrs=None):
+        attrs = super().build_attrs(base_attrs, extra_attrs)
+        attrs["data-controller"] = "daisie-form-model-field"
+        attrs["data-daisie-form-model-field-empty-value"] = str(self.empty_label)
+        return attrs
+
+
+class InstanceModelSelect(forms.Select):
+    """The "Model to create" select, wired to the form-fields Stimulus hub.
+
+    Carries the editable fields of every configured context model so the
+    "Model field" selects and the help panel can update when the chosen model
+    changes without a page reload.
+    """
+
+    @property
+    def media(self):
+        return forms.Media(js=["wagtail_daisIE/js/forms_admin.js"])
+
+    def build_attrs(self, base_attrs, extra_attrs=None):
+        attrs = super().build_attrs(base_attrs, extra_attrs)
+        attrs["data-controller"] = "daisie-form-instance-model"
+        attrs["data-action"] = "change->daisie-form-instance-model#refresh"
+        attrs["data-daisie-form-instance-model-context-models-value"] = json.dumps(
+            {key: config.form_fields() for key, config in get_context_models().items()}
+        )
+        attrs["data-daisie-form-instance-model-daisie-form-model-field-outlet"] = (
+            '[data-controller~="daisie-form-model-field"]'
+        )
+        return attrs
 
 
 class DaisieFormField(AbstractFormField):
@@ -82,7 +158,7 @@ class DaisieFormField(AbstractFormField):
         *AbstractFormField.panels,
         FieldPanel(
             "model_field",
-            widget=ModelFieldSelect(attrs={"data-daisie-model-field": ""}),
+            widget=ModelFieldSelect(empty_label=_("Use the field name")),
         ),
         FieldPanel("input_design"),
         FieldPanel("label_design"),

@@ -73,8 +73,10 @@ their `insert_global_admin_js` hooks and observer fallbacks to be removed:
 
 - `static/wagtail_daisIE/js/context_binding_block.js` — context binding block:
   field visibility, help panel and instance chooser. Largest of the three.
-- `static/wagtail_daisIE/js/forms_admin.js` — form-page model-field selects and
-  the "form field" body-block selects.
+- ~~`static/wagtail_daisIE/js/forms_admin.js`~~ — done: the model-field selects
+  and the "form field" block select now render server-side, and the remaining
+  `instance_model` refresh is a Stimulus controller (loaded through the widget
+  `Media`) with no observer or global state.
 - `static/wagtail_daisIE/js/feed_help.js` — Feed model help panel.
 
 - **Risk:** medium (context binding is the largest).

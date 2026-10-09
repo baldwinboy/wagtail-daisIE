@@ -14,8 +14,8 @@ from wagtail.admin.menu import MenuItem
 from wagtail.snippets.models import register_snippet
 
 from .context import (
-    get_current_form_fields,
     set_current_form_fields,
+    set_current_model_fields,
     set_current_theme,
     theme_from_instance,
 )
@@ -155,14 +155,27 @@ def _form_page_fields(page):
     ]
 
 
+def _form_page_model_fields(page):
+    from .dynamic.registry import get_context_model
+    from .forms.models import DaisieFormPage
+
+    if not isinstance(page, DaisieFormPage):
+        return []
+    key = getattr(page, "instance_model", "") or ""
+    config = get_context_model(key) if key else None
+    return config.form_fields() if config is not None else []
+
+
 @hooks.register("before_create_page")
 def _set_form_fields_before_create_page(request, parent_page, page_class):
     set_current_form_fields(())
+    set_current_model_fields(())
 
 
 @hooks.register("before_edit_page")
 def _set_form_fields_before_edit_page(request, page):
     set_current_form_fields(_form_page_fields(page))
+    set_current_model_fields(_form_page_model_fields(page))
 
 
 # -- END --
@@ -300,23 +313,6 @@ def register_dynamic_link_context_js():
     return format_html(
         "<script type='text/javascript'>{}</script>",
         mark_safe(script),  # noqa: S308
-    )
-
-
-@hooks.register("insert_global_admin_js")
-def register_forms_admin_js():
-    return format_html(
-        '<script src="{}"></script>',
-        static("wagtail_daisIE/js/forms_admin.js"),
-    )
-
-
-@hooks.register("insert_global_admin_js")
-def register_form_fields_js():
-    state_json = json.dumps(get_current_form_fields())
-    return format_html(
-        "<script type='text/javascript'>window.WAGTAIL_DAISIE_FORM_FIELDS = {};</script>",
-        mark_safe(state_json),  # noqa: S308
     )
 
 

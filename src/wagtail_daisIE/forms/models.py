@@ -21,6 +21,7 @@ from ..dynamic.registry import get_context_model, get_context_model_choices
 from ..pages import StyledPageMixin
 from .blocks import FormContentBlock, duplicate_field_names, placed_field_names
 from .builder import DaisyUIFormBuilder
+from .fields import InstanceModelSelect
 from .panels import FormModelFieldsHelpPanel
 from .registry import get_default_upload_handler, get_form_field_type
 
@@ -121,7 +122,7 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
         *StyledPageMixin.content_panels,
         MultiFieldPanel(
             [
-                FieldPanel("instance_model"),
+                FieldPanel("instance_model", widget=InstanceModelSelect()),
                 FieldPanel("require_approval"),
                 FieldPanel("approval_field"),
             ],

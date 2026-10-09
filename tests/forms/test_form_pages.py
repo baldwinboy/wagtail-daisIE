@@ -13,7 +13,11 @@ from wagtail_daisIE.forms.blocks import (
     placed_field_names,
 )
 from wagtail_daisIE.forms.builder import DaisyUIFormBuilder
-from wagtail_daisIE.forms.fields import DaisieFormField
+from wagtail_daisIE.forms.fields import (
+    DaisieFormField,
+    InstanceModelSelect,
+    ModelFieldSelect,
+)
 from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.forms.registry import (
     FIELD_TYPE_MAX_LENGTH,
@@ -349,10 +353,59 @@ class TestFormFieldBlock:
         context = FormFieldBlock().get_context("title", {"form": form})
         assert context["bound_field"].name == "title"
 
-        html = str(FormFieldBlock().field.widget.render("title", "notes"))
-        assert "notes" in html and "data-daisie-form-field" in html
+        from wagtail_daisIE.context import (
+            set_current_form_fields,
+            set_current_model_fields,
+        )
+        from wagtail_daisIE.dynamic.registry import get_context_model
 
-        from wagtail_daisIE.templatetags.wagtail_daisIE_tags import unplaced_form_fields
+        # Only concrete, editable model fields are offered (never the pk).
+        names = [f["name"] for f in get_context_model("member").form_fields()]
+        assert "username" in names and "id" not in names
+
+        set_current_form_fields(
+            [
+                {"name": "title", "label": "Title"},
+                {"name": "notes", "label": "Notes"},
+            ]
+        )
+        set_current_model_fields(
+            [
+                {"name": "title", "label": "Title"},
+                {"name": "description", "label": "Description"},
+            ]
+        )
+        try:
+            form_select = FormFieldBlock().field.widget
+            blank = str(form_select.render("field", ""))
+            assert '<option value="" selected>' in blank
+            assert 'value="title"' in blank and "Title" in blank
+            chosen = str(form_select.render("field", "notes"))
+            assert 'value="notes" selected' in chosen
+            assert 'value="" selected' not in chosen
+
+            model_select = ModelFieldSelect(empty_label="Use the field name")
+            model_html = str(model_select.render("model_field", ""))
+            assert '<option value="" selected>' in model_html
+            assert 'value="title"' in model_html
+            assert 'value="id"' not in model_html
+            stale = str(model_select.render("model_field", "gone"))
+            assert 'value="gone" selected' in stale
+
+            hub = InstanceModelSelect()
+            hub_attrs = hub.build_attrs({})
+            assert hub_attrs["data-controller"] == "daisie-form-instance-model"
+            assert (
+                '"member"'
+                in hub_attrs["data-daisie-form-instance-model-context-models-value"]
+            )
+        finally:
+            set_current_form_fields(())
+            set_current_model_fields(())
+
+        from wagtail_daisIE.templatetags.wagtail_daisIE_tags import (
+            unplaced_form_fields,
+        )
 
         page = SimpleNamespace(get_placed_field_names=lambda: ["title"])
         assert [f.name for f in unplaced_form_fields(page, form)] == ["notes"]

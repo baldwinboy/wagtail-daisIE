@@ -1,122 +1,43 @@
-/* Form pages: populate model-field selects from the bound model, keep the
- * "fields available to link" help panel in sync, and offer the page's own form
- * fields as choices for the "form field" body block. */
+/* Form pages: Stimulus controllers for the "Model to create" hub, the per-field
+ * "Model field" selects and the "Fields available to link" help panel.
+ *
+ * The selects render their options server-side, so the one case that needs a
+ * client-side update is a model change (which is not saved yet). Stimulus
+ * auto-connects to dynamically added InlinePanel rows through outlets, so no
+ * manual DOM scanning or MutationObserver is required. */
 (function () {
-  function stateFor(key) {
-    var state = window.WAGTAIL_DAISIE_CONTEXT_MODELS || {};
-    return state[key] || null;
-  }
+  'use strict';
 
-  function instanceModelSelect() {
-    return document.getElementById('id_instance_model');
-  }
+  var Controller = window.StimulusModule.Controller;
 
-  function populate(select, fields) {
+  /* Rebuild a select's options: a blank placeholder first (selected when there
+   * is no stored value), then the fields, then the stored value as a "(missing)"
+   * option when it is no longer available. */
+  function buildOptions(select, fields, emptyLabel) {
     var current = select.value;
     select.innerHTML = '';
+
+    var blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = emptyLabel || '';
+    if (!current) {
+      blank.selected = true;
+    }
+    select.appendChild(blank);
+
+    var known = !current;
     fields.forEach(function (field) {
       var option = document.createElement('option');
       option.value = field.name;
       option.textContent = field.label || field.name;
       if (field.name === current) {
         option.selected = true;
-      }
-      select.appendChild(option);
-    });
-    if (
-      current &&
-      !fields.some(function (field) {
-        return field.name === current;
-      })
-    ) {
-      select.value = current;
-    }
-  }
-
-  function renderHelp(panel, key) {
-    var meta = stateFor(key);
-    var body = panel.querySelector('[data-daisie-model-fields-body]');
-    var empty = panel.querySelector('[data-daisie-model-fields-empty]');
-    if (!body) {
-      return;
-    }
-    var fields = (meta && meta.fields) || [];
-    body.innerHTML = fields
-      .map(function (field) {
-        return (
-          '<tr><td><code>' +
-          field.name +
-          '</code></td><td>' +
-          (field.label || '') +
-          '</td></tr>'
-        );
-      })
-      .join('');
-    if (empty) {
-      empty.hidden = fields.length > 0;
-    }
-  }
-
-  function update() {
-    var keySelect = instanceModelSelect();
-    var key = keySelect ? keySelect.value : '';
-    var meta = stateFor(key);
-    var fields = (meta && meta.fields) || [];
-    document
-      .querySelectorAll('[data-daisie-model-field]')
-      .forEach(function (select) {
-        populate(select, fields);
-      });
-    document
-      .querySelectorAll('[data-daisie-model-fields]')
-      .forEach(function (panel) {
-        renderHelp(panel, key);
-      });
-  }
-
-  function init() {
-    var keySelect = instanceModelSelect();
-    if (keySelect) {
-      keySelect.addEventListener('change', update);
-    }
-    update();
-    initFormFieldSelects();
-  }
-
-  /* "Form field" body blocks: the select is rendered server-side without
-   * choices, so fill it from the page's form fields. Wagtail re-renders
-   * StreamField blocks as the author works, hence the MutationObserver. */
-  function formFields() {
-    return window.WAGTAIL_DAISIE_FORM_FIELDS || [];
-  }
-
-  function populateFormFieldSelect(select) {
-    if (select.dataset.daisieFormFieldReady) {
-      return;
-    }
-    select.dataset.daisieFormFieldReady = '1';
-    var fields = formFields();
-    if (!fields.length) {
-      return;
-    }
-    var current = select.value;
-    var known = false;
-    select.innerHTML = '';
-    fields.forEach(function (field) {
-      var option = document.createElement('option');
-      option.value = field.name;
-      option.textContent = field.label
-        ? field.label + ' (' + field.name + ')'
-        : field.name;
-      if (field.name === current) {
-        option.selected = true;
         known = true;
       }
       select.appendChild(option);
     });
-    if (current && !known) {
-      // The stored field no longer exists; keep the value so the author can
-      // see and fix it rather than losing it silently.
+
+    if (!known) {
       var stale = document.createElement('option');
       stale.value = current;
       stale.textContent = current + ' (missing)';
@@ -125,29 +46,70 @@
     }
   }
 
-  function initFormFieldSelects() {
-    document
-      .querySelectorAll('[data-daisie-form-field]')
-      .forEach(populateFormFieldSelect);
+  function fieldsFor(contextModels, key) {
+    var meta = contextModels[key];
+    return (meta && meta.fields) || [];
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
+  class ModelFieldController extends Controller {
+    static values = { empty: String };
+
+    setFields(fields) {
+      buildOptions(this.element, fields, this.emptyValue);
+    }
   }
 
-  if (window.MutationObserver) {
-    var pending = false;
-    new MutationObserver(function () {
-      if (pending) {
+  class InstanceModelController extends Controller {
+    static values = { contextModels: Object };
+
+    static outlets = ['daisie-form-model-field'];
+
+    refresh() {
+      var fields = fieldsFor(this.contextModelsValue, this.element.value);
+      this.daisieFormModelFieldOutlets.forEach(function (outlet) {
+        outlet.setFields(fields);
+      });
+      this.renderHelp(fields);
+    }
+
+    daisieFormModelFieldOutletConnected() {
+      this.refresh();
+    }
+
+    /* Keep the "Fields available to link" panel in sync with the chosen model.
+     * The panel is server-rendered for the saved model; its table body is
+     * rebuilt here on change (values are set as text, never innerHTML). */
+    renderHelp(fields) {
+      var panel = document.querySelector('[data-daisie-model-fields]');
+      if (!panel) {
         return;
       }
-      pending = true;
-      window.requestAnimationFrame(function () {
-        pending = false;
-        initFormFieldSelects();
-      });
-    }).observe(document.body, { childList: true, subtree: true });
+      var body = panel.querySelector('[data-daisie-model-fields-body]');
+      var empty = panel.querySelector('[data-daisie-model-fields-empty]');
+      if (body) {
+        body.textContent = '';
+        fields.forEach(function (field) {
+          var row = document.createElement('tr');
+          var name = document.createElement('td');
+          var code = document.createElement('code');
+          code.textContent = field.name;
+          name.appendChild(code);
+          var label = document.createElement('td');
+          label.textContent = field.label || '';
+          row.appendChild(name);
+          row.appendChild(label);
+          body.appendChild(row);
+        });
+      }
+      if (empty) {
+        empty.hidden = fields.length > 0;
+      }
+    }
   }
+
+  window.wagtail.app.register('daisie-form-model-field', ModelFieldController);
+  window.wagtail.app.register(
+    'daisie-form-instance-model',
+    InstanceModelController,
+  );
 })();

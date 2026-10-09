@@ -173,6 +173,36 @@ class ContextModel:
             docs.append({"name": model_field.name, "label": str(label)})
         return docs
 
+    def form_fields(self):
+        """Return ``{"name", "label"}`` for the model's concrete editable fields.
+
+        These are the fields a form input can be linked to: they can be passed
+        to the model constructor. The auto-created primary key, non-editable
+        fields (e.g. ``auto_now`` timestamps) and many-to-many fields are
+        excluded because they cannot be assigned there.
+        """
+        model = self.model
+        if model is None:
+            return []
+        fields = []
+        for model_field in model._meta.get_fields():
+            if not getattr(model_field, "editable", False):
+                continue
+            if getattr(model_field, "auto_created", False):
+                continue
+            if not getattr(model_field, "concrete", False):
+                continue
+            fields.append(
+                {
+                    "name": model_field.name,
+                    "label": str(
+                        getattr(model_field, "verbose_name", model_field.name)
+                        or model_field.name
+                    ),
+                }
+            )
+        return fields
+
     def examples(self, limit=4):
         items = [f"{{{{ {self.key} }}}}"]
         if self.url_source or self.supports_url:
