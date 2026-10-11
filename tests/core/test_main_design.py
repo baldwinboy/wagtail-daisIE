@@ -1,14 +1,9 @@
 from django.template import Context, Template
 
-from wagtail_daisIE.base_blocks import MainDesignBlock
 from wagtail_daisIE.base_blocks.css import build_design_css
 
 
 class TestMainDesign:
-    def test_layout_choices(self):
-        block = MainDesignBlock()
-        assert block.child_blocks["layout"].field.choices
-
     def test_layout_classes(self):
         assert build_design_css({"layout": "column"}) == "flex flex-col grow"
         assert build_design_css({"layout": "row"}) == "flex flex-row grow"

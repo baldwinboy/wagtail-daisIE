@@ -21,6 +21,7 @@ from wagtail.models import PreviewableMixin
 from ..base_blocks import BackgroundStreamBlock, PageDesignBlock
 from .blocks import ALLAUTH_FORM_ID, ALLAUTH_PAGE_BLOCKS
 from .catalogue import get_allauth_view_choices, sample_form
+from .panels import InlineMarkupHelpPanel
 
 
 class AllauthPageOverride(PreviewableMixin, ClusterableModel):
@@ -99,6 +100,7 @@ class AllauthPageOverride(PreviewableMixin, ClusterableModel):
     )
 
     panels = [
+        InlineMarkupHelpPanel(),
         FieldPanel("view"),
         MultiFieldPanel(
             [FieldPanel("is_active"), FieldPanel("site")],

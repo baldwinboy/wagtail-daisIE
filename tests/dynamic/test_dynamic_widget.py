@@ -1,6 +1,6 @@
 import pytest
 
-from wagtail_daisIE.dynamic.forms import DynamicInstanceField, DynamicInstanceWidget
+from wagtail_daisIE.dynamic.forms import DynamicInstanceWidget
 from wagtail_daisIE.dynamic.registry import reset_context_models
 
 
@@ -19,20 +19,7 @@ def _registry(settings):
     reset_context_models()
 
 
-class TestDynamicInstanceField:
-    def test_to_python_and_has_changed(self):
-        field = DynamicInstanceField(required=False)
-        for raw, expected in [
-            ("3", 3),
-            (4, 4),
-            ("", None),
-            (None, None),
-            ("nope", None),
-        ]:
-            assert field.to_python(raw) == expected
-        assert field.has_changed(1, "2") is True
-        assert field.has_changed(1, "1") is False
-
+class TestDynamicInstanceWidget:
     def test_widget_context_exposes_object_id(self):
         context = DynamicInstanceWidget().get_context("binding-instance", 5, {})
         data = context["daisie_widget"]

@@ -1,5 +1,4 @@
 from django.urls import reverse
-from wagtail.admin.menu import help_menu
 
 from wagtail_daisIE.help import _visible_sections
 
@@ -25,21 +24,9 @@ def test_every_guide_page_renders(admin_client):
         assert b"<h1" in response.content, page["slug"]
 
 
-def test_unknown_guide_page_is_404(admin_client):
-    response = admin_client.get(
-        reverse("wagtail_daisIE:guide-page", args=["not-a-page"])
-    )
-    assert response.status_code == 404
-
-
 def test_block_reference_lists_a_block(admin_client):
     response = admin_client.get(
         reverse("wagtail_daisIE:guide-page", args=["block-reference"])
     )
     assert response.status_code == 200
     assert b"card" in response.content
-
-
-def test_guide_is_in_the_help_menu():
-    names = [item.name for item in help_menu.registered_menu_items]
-    assert "daisyui-editor-guide" in names

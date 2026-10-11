@@ -1,0 +1,46 @@
+{% load i18n wagtailadmin_tags %}
+<fieldset>
+    <div class="help-block help-info">
+        {% icon name="help" %}
+        <h3>{% trans "Inline markup" %}</h3>
+        <p>
+            {% blocktrans trimmed %}
+                Labels, help text and button labels accept a short, safe subset
+                of Markdown. Type the markup directly — no toolbar needed.
+            {% endblocktrans %}
+        </p>
+        <ul>
+            <li><code>**{% trans "bold" %}**</code></li>
+            <li><code>_{% trans "italic" %}_</code></li>
+            <li><code>__{% trans "underline" %}__</code></li>
+            <li><code>~~{% trans "strikethrough" %}~~</code></li>
+            <li>
+                <code>[{% trans "text" %}](https://example.com)</code> —
+                {% trans "a link." %} {% trans "Add" %}
+                <code>{target=_blank}</code> {% trans "to open it in a new tab." %}
+            </li>
+            <li>
+                <code>[{% trans "text" %}]{color=primary}</code> —
+                {% blocktrans trimmed %}
+                    colour from the theme (for example
+                    <code>primary</code>, <code>secondary</code>,
+                    <code>accent</code>, <code>info</code>,
+                    <code>success</code>, <code>warning</code>,
+                    <code>error</code>), or use a hex value such as
+                    <code>{color=#e11d48}</code>.
+                {% endblocktrans %}
+            </li>
+            <li>
+                <code>{style="font-size: 2em"}</code> /
+                <code>{.class}</code> —
+                {% trans "extra inline styling (safely filtered)." %}
+            </li>
+        </ul>
+        <p>
+            <p>{% trans "Double braces insert a context value, for example" %} <code>{% verbatim %}{{ bread.name }}{% endverbatim %}</code> {% trans "or" %} <code>{% verbatim %}{{ user.username }}{% endverbatim %}</code>.</p>
+            {% blocktrans trimmed %}
+            See the <strong>DaisyUI Editor Guide</strong> for the full reference.
+            {% endblocktrans %}
+        </p>
+    </div>
+</fieldset>

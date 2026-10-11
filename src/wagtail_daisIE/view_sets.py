@@ -24,3 +24,4 @@ class DaisyUIViewSetGroup(SnippetViewSetGroup):
     menu_label = "Design"
     menu_name = "design"
     add_to_admin_menu = True
+    submenu_hook = "register_daisyui_design_menu_item"

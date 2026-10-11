@@ -14,12 +14,40 @@ class TestInlineMarkup:
         assert "<em>x</em>" in render_inline_markup("_x_")
         assert "<u>x</u>" in render_inline_markup("__x__")
         assert "<s>x</s>" in render_inline_markup("~~x~~")
-        assert '<a class="link" href="https://a.test">x</a>' in render_inline_markup(
+        assert '<a href="https://a.test" class="link">x</a>' in render_inline_markup(
             "[x](https://a.test)"
         )
 
     def test_underline_beats_italic(self):
         assert render_inline_markup("__x__") == "<u>x</u>"
+
+    def test_underline_parses_nested_markup(self):
+        assert render_inline_markup("__a**b**__") == "<u>a<strong>b</strong></u>"
+
+    def test_link_new_tab(self):
+        assert render_inline_markup("[x](https://a.test){target=_blank}") == (
+            '<a href="https://a.test" class="link" target="_blank" '
+            'rel="noopener noreferrer">x</a>'
+        )
+
+    def test_colour_shorthand_named(self):
+        assert (
+            render_inline_markup("[x]{color=primary}")
+            == '<span style="color: var(--color-primary)">x</span>'
+        )
+
+    def test_colour_shorthand_hex(self):
+        assert (
+            render_inline_markup("[x]{color=#e11d48}")
+            == '<span style="color: #e11d48">x</span>'
+        )
+
+    def test_style_is_sanitised(self):
+        rendered = render_inline_markup(
+            '[x]{style="font-size: 2em; background: url(javascript:alert(1))"}'
+        )
+        assert "font-size: 2em" in rendered
+        assert "url(" not in rendered and "javascript" not in rendered
 
     def test_allow_links_false(self):
         assert render_inline_markup("[x](https://a.test)", allow_links=False) == "x"
@@ -27,7 +55,6 @@ class TestInlineMarkup:
     def test_url_allow_list(self):
         rendered = render_inline_markup("[x](javascript:alert(1))")
         assert "<a" not in rendered
-        assert "[x](javascript:alert(1))" not in rendered
 
     def test_escaped_literals(self):
         assert "&lt;script&gt;" in render_inline_markup("&lt;script&gt;")

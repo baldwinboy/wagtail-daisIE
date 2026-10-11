@@ -73,6 +73,13 @@ class TypographyBlock(DaisieStructBlock):
         required=False,
         widget=DaisyUISwatchWidget(prefix="text"),
     )
+    placeholder_color = ColorChoiceBlock(
+        choices=DAISYUI_TEXT_COLOR_CHOICES,
+        default="",
+        required=False,
+        label=_("Placeholder colour"),
+        widget=DaisyUISwatchWidget(prefix="text"),
+    )
     font_family = FontFamilyChoiceBlock(
         default="",
         required=False,
@@ -136,6 +143,7 @@ class TypographyBlock(DaisieStructBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "text_color",
+                "placeholder_color",
                 "font_family",
                 "font_size",
                 "font_weight",

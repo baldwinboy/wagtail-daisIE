@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from django import template
 from django.forms import (
     CheckboxInput,
@@ -19,6 +21,8 @@ from django.utils.safestring import mark_safe
 
 register = template.Library()
 
+logger = logging.getLogger(__name__)
+
 
 def _widget_classes(widget):
     if isinstance(widget, (CheckboxInput, CheckboxSelectMultiple)):
@@ -34,8 +38,9 @@ def _widget_classes(widget):
     return "input w-full validator"
 
 
-def _label_markup(field, unlabeled, extra_class=""):
-    if unlabeled or not field.label:
+def _label_markup(field, unlabeled, extra_class="", label_html=None):
+    content = label_html or field.label
+    if unlabeled or not content:
         return ""
     required = ""
     if field.field.required:
@@ -45,7 +50,7 @@ def _label_markup(field, unlabeled, extra_class=""):
         '<label class="{}" for="{}">{}{}</label>',
         classes,
         field.id_for_label,
-        field.label,
+        content,
         mark_safe(required),  # noqa: S308
     )
 
@@ -85,22 +90,22 @@ def _otp_markup(field, attrs, size="", color="", joined=False):
     return format_html('<label class="{}">{} {}</label>', classes, spans, widget_html)
 
 
-def _field_extras(body, field, errors):
-    help_html = ""
-    if field.help_text:
-        help_html = format_html(
+def _field_extras(body, field, errors, help_html=None):
+    help_content = help_html or field.help_text
+    extras = ""
+    if help_content:
+        extras += format_html(
             '<p class="label" id="{}-help">{}</p>',
             field.id_for_label,
-            field.help_text,
+            help_content,
         )
-    error_html = ""
     if errors:
-        error_html = format_html(
+        extras += format_html(
             '<p class="label text-error" id="{}-error" role="alert">{}</p>',
             field.id_for_label,
             " ".join(errors),
         )
-    return mark_safe(body + help_html + error_html)  # noqa: S308
+    return mark_safe(body + extras)  # noqa: S308
 
 
 @register.simple_tag
@@ -114,13 +119,21 @@ def daisie_form_field(
     otp_size="",
     otp_color="",
     otp_joined=False,
+    label_html=None,
+    help_html=None,
 ):
-    """Render a bound form field with DaisyUI markup and accessibility wiring."""
+    """Render a bound form field with DaisyUI markup and accessibility wiring.
+
+    ``label_html`` / ``help_html`` carry pre-rendered inline markup (see the
+    ``daisie_markup`` tag); when omitted the field's own label/help text is used.
+    """
     widget = field.field.widget
     css = _widget_classes(widget)
     if input_class:
         css = f"{css} {input_class}".strip()
     errors = [str(error) for error in field.errors]
+    label_content = label_html or field.label
+    help_content = help_html or field.help_text
 
     attrs = {"class": css}
     if form_id:
@@ -130,7 +143,7 @@ def daisie_form_field(
         attrs["aria-invalid"] = "true"
         if field.id_for_label:
             described_by.append(f"{field.id_for_label}-error")
-    if field.help_text and field.id_for_label:
+    if help_content and field.id_for_label:
         described_by.append(f"{field.id_for_label}-help")
     if described_by:
         attrs["aria-describedby"] = " ".join(described_by)
@@ -139,45 +152,31 @@ def daisie_form_field(
         body = _otp_markup(
             field, attrs, size=otp_size, color=otp_color, joined=otp_joined
         )
-        return _field_extras(body, field, errors)
+        return _field_extras(body, field, errors, help_html=help_content)
 
     widget_html = field.as_widget(attrs=attrs)
-    label_html = _label_markup(field, unlabeled, extra_class=label_class)
+    label_markup = _label_markup(
+        field, unlabeled, extra_class=label_class, label_html=label_content
+    )
 
     if isinstance(widget, CheckboxInput):
         body = format_html(
             '<label class="label cursor-pointer justify-start gap-3">'
             '{}<span class="label-text">{}</span></label>',
             widget_html,
-            field.label,
+            label_content,
         )
     elif isinstance(widget, (RadioSelect, CheckboxSelectMultiple)):
         body = format_html(
             '<fieldset class="fieldset w-full">'
             '<legend class="fieldset-legend">{}</legend>{}</fieldset>',
-            field.label,
+            label_content,
             widget_html,
         )
     else:
-        body = format_html("{}{}", label_html, widget_html)
+        body = format_html("{}{}", label_markup, widget_html)
 
-    help_html = ""
-    if field.help_text:
-        help_html = format_html(
-            '<p class="label" id="{}-help">{}</p>',
-            field.id_for_label,
-            field.help_text,
-        )
-
-    error_html = ""
-    if errors:
-        error_html = format_html(
-            '<p class="label text-error" id="{}-error" role="alert">{}</p>',
-            field.id_for_label,
-            " ".join(errors),
-        )
-
-    return mark_safe(body + help_html + error_html)  # noqa: S308
+    return _field_extras(body, field, errors, help_html=help_content)
 
 
 @register.simple_tag(takes_context=True)
@@ -214,6 +213,7 @@ def daisie_allauth_page(context, override=None, form=None):
     if override is None:
         return {"override": None}
     from ..allauth_ui.blocks import ALLAUTH_FORM_ID
+    from ..dynamic.resolvers import resolve_context_models
 
     data = {
         "override": override,
@@ -224,4 +224,10 @@ def daisie_allauth_page(context, override=None, form=None):
         "page_background_css": override.get_background_css(),
     }
     data.update(override.get_page_design_css())
+    # Expose configured context models so ``{{ … }}`` values resolve in the
+    # override body and in markup labels/help text.
+    try:
+        data.update(resolve_context_models(request))
+    except Exception:  # pragma: no cover - never break account rendering
+        logger.debug("Could not resolve context models for allauth page", exc_info=True)
     return data

@@ -146,6 +146,12 @@ def build_typography_state_css(value, variant=""):
     )
 
 
+def build_placeholder_css(value):
+    """Placeholder colour as a ``placeholder:`` utility (``::placeholder``)."""
+    token = value.get("placeholder_color", "") if value else ""
+    return f"placeholder:{token}" if token else ""
+
+
 def build_typography_css(value):
     if not value:
         return ""
@@ -154,6 +160,7 @@ def build_typography_css(value):
         font_family = f"font-{font_family}"
     return build_class(
         value.get("text_color", ""),
+        build_placeholder_css(value),
         font_family,
         value.get("font_size", ""),
         value.get("font_weight", ""),

@@ -71,6 +71,42 @@ python manage.py check_allauth_templates --write  # regenerate
 `--write` regenerates the overrides from the installed allauth templates; review
 the diff before committing.
 
+## Which fields appear in the picker
+
+The **Form field** block's field picker lists every input the page's form
+actually exposes:
+
+* The form class is resolved from your project's `ACCOUNT_FORMS` for the view
+  first, then falls back to the form allauth ships. So a custom signup form
+  (e.g. `ACCOUNT_FORMS = {"signup": "myapp.forms.UserSignupForm"}`) contributes
+  its own fields.
+* Fields allauth adds in `__init__` — `email2`, `password1`, `password2`, … —
+  are included, because the picker reads a form *instance* rather than the
+  class-level field declaration. Forms that need constructor arguments fall
+  back to their declared fields.
+* allauth's captcha and the signup honeypot
+  (`ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD`) are never offered, since they are
+  implementation details rather than author-controllable inputs.
+
+The picker is intentionally view-agnostic (a block cannot see its parent
+snippet's view), so it offers the union of every account form's fields; a field
+that is not present on the current page's form simply renders nothing.
+
+## Labels, help text and button labels
+
+The **Label override**, **Help text override** and **Submit label** fields
+accept the same short inline markup as the rest of the editor:
+
+* `**bold**`, `_italic_`, `__underline__`, `~~strikethrough~~`
+* `[text](https://example.com)` links, optionally `{target=_blank}`
+* `[text]{color=primary}` (a theme colour) or `[text]{color=#e11d48}`
+* `{style="…"}` / `{.class}` inline styling (safely filtered)
+* `{{ … }}` context values, once the page's context models are configured
+
+A concise reference is shown on the **Allauth page override** editor, and the
+full list is in the **DaisyUI Editor Guide → Markup and placeholders**. The
+placeholder field is a plain HTML attribute, so it accepts text only.
+
 ## Field blocks are look-only
 
 `auth_field` cannot add or remove fields and cannot change `required`,

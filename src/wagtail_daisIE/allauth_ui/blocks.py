@@ -19,9 +19,11 @@ from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from ..base_blocks.button import ButtonAppearanceBlock
 from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.css import build_design_css
-from ..base_blocks.design import TypographyDesignBlock
+from ..base_blocks.design import SpacedDesignBlock, TypographyDesignBlock
+from ..base_blocks.markup import InlineMarkupBlock, strip_inline_markup
 from ..blocks.content import ALL_CONTENT_BLOCKS
 from ..choicelist import ChoiceList
 from ..choices import OTP_COLOR_CHOICES, OTP_SIZE_CHOICES
@@ -51,13 +53,13 @@ class AllauthFieldBlock(DaisieStructBlock):
         choices=get_all_account_field_choices,
         help_text=_("An input from the account form for this page."),
     )
-    label = blocks.CharBlock(
+    label = InlineMarkupBlock(
         required=False,
         blank=True,
         label=_("Label override"),
         help_text=_("Shown instead of the field's default label."),
     )
-    help_text = blocks.CharBlock(
+    help_text = InlineMarkupBlock(
         required=False,
         blank=True,
         label=_("Help text override"),
@@ -95,12 +97,13 @@ class AllauthFieldBlock(DaisieStructBlock):
         bound_field = None
         if form is not None and name in getattr(form, "fields", {}):
             bound_field = form[name]
-            if value.get("label"):
-                bound_field.label = value["label"]
-            if value.get("help_text"):
-                bound_field.field.help_text = value["help_text"]
+            # Labels and help text are rendered as markup in the template (so
+            # they can use ``{{ … }}`` context values and inline styling); only
+            # the placeholder is an attribute and must stay plain text.
             if value.get("placeholder"):
-                bound_field.field.widget.attrs["placeholder"] = value["placeholder"]
+                bound_field.field.widget.attrs["placeholder"] = strip_inline_markup(
+                    value["placeholder"]
+                )
         context["bound_field"] = bound_field
         context["form_id"] = parent_context.get("form_id", ALLAUTH_FORM_ID)
         context["input_css"] = build_design_css(value.get("input_design"))
@@ -135,16 +138,25 @@ class AllauthFieldBlock(DaisieStructBlock):
 class AllauthFormBlock(DaisieStructBlock):
     """Render the allauth form (and any unplaced fields) plus the submit."""
 
-    submit_label = blocks.CharBlock(
+    submit_label = InlineMarkupBlock(
         max_length=64,
         required=False,
         blank=True,
         help_text=_("Defaults to the allauth button label."),
     )
+    submit_appearance = ButtonAppearanceBlock(
+        required=False,
+        label=_("Submit button"),
+    )
+    container_design = SpacedDesignBlock(
+        required=False,
+        label=_("Form design"),
+    )
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         parent_context = parent_context or {}
+        value = value or {}
         form = parent_context.get("form")
         body = parent_context.get("body")
         placed = set(placed_field_names(body))
@@ -157,7 +169,12 @@ class AllauthFormBlock(DaisieStructBlock):
         context["form_id"] = ALLAUTH_FORM_ID
         context["hidden_fields"] = list(form.hidden_fields()) if form else []
         context["visible_fields"] = visible
-        context["submit_label"] = (value or {}).get("submit_label", "")
+        context["submit_label"] = value.get("submit_label", "")
+        context["submit_css"] = (
+            build_design_css({"button_appearance": value.get("submit_appearance")})
+            or "btn btn-primary w-full"
+        )
+        context["container_css"] = build_design_css(value.get("container_design"))
         return context
 
     class Meta:
@@ -165,7 +182,9 @@ class AllauthFormBlock(DaisieStructBlock):
         label = _("Form")
         collapsed = True
         template = "wagtail_daisIE/allauth/auth_form.html"
-        form_layout = blocks.BlockGroup(children=["submit_label"])
+        form_layout = blocks.BlockGroup(
+            children=["submit_label", "submit_appearance", "container_design"]
+        )
 
 
 def placed_field_names(body):

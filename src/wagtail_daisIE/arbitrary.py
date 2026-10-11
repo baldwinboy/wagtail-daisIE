@@ -18,7 +18,7 @@ import re
 
 #: Arbitrary colour utilities accepted on the design blocks.
 COLOR_PATTERN = re.compile(
-    r"((?:hover:|active:)?)(bg|text|border|decoration)-\[(#[0-9a-fA-F]{3,8})\]"
+    r"((?:hover:|active:|placeholder:)?)(bg|text|border|decoration)-\[(#[0-9a-fA-F]{3,8})\]"
 )
 
 #: Utility prefix -> CSS property.
@@ -30,7 +30,12 @@ PROPERTY = {
 }
 
 #: Variant prefix -> pseudo-class.
-VARIANT_PSEUDO = {"": "", "hover:": ":hover", "active:": ":active"}
+VARIANT_PSEUDO = {
+    "": "",
+    "hover:": ":hover",
+    "active:": ":active",
+    "placeholder:": "::placeholder",
+}
 
 #: Cache key prefix for the generated arbitrary-colour CSS.
 CACHE_PREFIX = "daisie:arbitrary:css:"

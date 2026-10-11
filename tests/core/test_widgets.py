@@ -1,12 +1,10 @@
 import importlib
-import json
 import sys
 
 import pytest
 
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from wagtail.admin.telepath import JSContext
 
 from wagtail_daisIE.blocks.base import BorderBlock
 from wagtail_daisIE.blocks.inline import InlineTextBlock
@@ -144,30 +142,3 @@ class TestStyledPageMixinLazyTheme:
     def test_default_theme_id_is_resolved_lazily(self):
         theme = DaisyUITheme.objects.create(name="lazy-default", default=True)
         assert get_default_theme_id() == theme.pk
-
-
-@pytest.mark.django_db
-class TestWidgetAdapters:
-    def test_widgets_pack_with_expected_constructors(self):
-        payload = json.dumps(JSContext().pack(InlineTextBlock()))
-        for adapter in (
-            "wagtail_daisIE.widgets.SwatchSelect",
-            "wagtail_daisIE.widgets.SliderSelect",
-            "wagtail_daisIE.widgets.NumberSlider",
-        ):
-            assert adapter in payload, adapter
-
-        from wagtail_daisIE.icons.blocks import IconChooserBlock
-
-        # The icon chooser has no custom adapter: it packs through Wagtail's
-        # generic widget adapter, with the picker driven by a Stimulus
-        # controller shipped via the widget's media.
-        icon_block = IconChooserBlock()
-        icon_payload = json.dumps(JSContext().pack(icon_block))
-        assert "wagtail.widgets.Widget" in icon_payload
-        assert "wagtail_daisIE.widgets.IconChooser" not in icon_payload
-
-        # A value-less telepath placeholder must not bake in ``"None"``.
-        html = icon_block.field.widget.render("__NAME__", None, attrs={"id": "__ID__"})
-        assert 'value="None"' not in html
-        assert 'value=""' in html

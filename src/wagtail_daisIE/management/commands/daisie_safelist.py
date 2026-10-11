@@ -70,6 +70,10 @@ class Command(BaseCommand):
                 classes.add(f"hover:{value}")
                 classes.add(f"active:{value}")
 
+        # Placeholder colours render through the ``::placeholder`` variant.
+        for value in _values(getattr(choices, "DAISYUI_TEXT_COLOR_CHOICES", [])):
+            classes.add(f"placeholder:{value}")
+
         # Runtime-built layout classes (feed containers).
         for value in feeds.GRID_COLUMNS.values():
             classes.update(part for part in value.split() if part)

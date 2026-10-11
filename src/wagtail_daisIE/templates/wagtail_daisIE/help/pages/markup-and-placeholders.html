@@ -1,11 +1,48 @@
 {% load i18n %}
 <h2>{% trans "Simple markup" %}</h2>
+<p>
+    {% blocktrans trimmed %}
+        Text fields accept a short, safe subset of Markdown. Type it directly —
+        no toolbar needed.
+    {% endblocktrans %}
+</p>
 <ul>
     <li><code>**{% trans "bold" %}**</code></li>
     <li><code>_{% trans "italic" %}_</code></li>
     <li><code>__{% trans "underline" %}__</code></li>
     <li><code>~~{% trans "strikethrough" %}~~</code></li>
     <li><code>[{% trans "text" %}](https://example.com)</code></li>
+    <li>
+        <code>[{% trans "text" %}](https://example.com){target=_blank}</code> —
+        {% trans "opens the link in a new tab." %}
+    </li>
+</ul>
+<h2>{% trans "Colour" %}</h2>
+<p>
+    {% blocktrans trimmed %}
+        Wrap text in square brackets and add a colour: named values come from
+        the active theme, or use a hex value.
+    {% endblocktrans %}
+</p>
+<ul>
+    <li>
+        <code>[{% trans "text" %}]{color=primary}</code> —
+        <code>primary</code>, <code>secondary</code>, <code>accent</code>,
+        <code>neutral</code>, <code>info</code>, <code>success</code>,
+        <code>warning</code>, <code>error</code> {% trans "(and their content variants)." %}
+    </li>
+    <li><code>[{% trans "text" %}]{color=#e11d48}</code></li>
+</ul>
+<h2>{% trans "Inline styling" %}</h2>
+<p>
+    {% blocktrans trimmed %}
+        Add a style block or class to a bracketed span. Styling is safely
+        filtered, so only a small set of properties takes effect.
+    {% endblocktrans %}
+</p>
+<ul>
+    <li><code>[{% trans "text" %}]{style="font-size: 2em"}</code></li>
+    <li><code>[{% trans "text" %}]{.badge}</code></li>
 </ul>
 <h2>{% trans "Placeholders" %}</h2>
 <p>{% trans "Double braces insert a context value, for example" %} <code>{% verbatim %}{{ bread.name }}{% endverbatim %}</code> {% trans "or" %} <code>{% verbatim %}{{ user.username }}{% endverbatim %}</code>.</p>
