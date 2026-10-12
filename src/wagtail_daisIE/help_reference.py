@@ -83,6 +83,7 @@ BLOCK_DESCRIPTIONS = {
     "file": _("A file upload."),
     "fieldset": _("A group of inputs with a legend."),
     "newsletter": _("A newsletter sign-up form."),
+    "reusable": _("Import a saved reusable block."),
 }
 
 #: Block group -> how-to page slug.
@@ -107,6 +108,7 @@ GROUP_HOWTO = {
     "Menu": "menus",
     "Data": "feeds",
     "Newsletter": "emails",
+    "Reusable": "build-a-page",
 }
 
 

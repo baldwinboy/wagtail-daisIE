@@ -13,6 +13,7 @@ from .fonts import (
     DaisyUIThemeFontFamily,
     DaisyUIThemeFonts,
 )
+from .reusable import ReusableBlock
 from .theme import DaisyUITheme
 
 
@@ -39,4 +40,5 @@ __all__ = [
     "DaisyUIThemeRadii",
     "DaisyUIThemeSizes",
     "GradientStop",
+    "ReusableBlock",
 ]

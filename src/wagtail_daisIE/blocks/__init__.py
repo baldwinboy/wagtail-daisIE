@@ -35,6 +35,8 @@ _LAZY_EXPORTS = {
     "CONTENT_BLOCK": ".content",
     "CONTENT_BLOCKS": ".content",
     "LIST_CONTENT_BLOCKS": ".content",
+    "REUSABLE_CONTENT_BLOCKS": ".content_blocks",
+    "ReusableBlockBlock": ".reusable",
 }
 
 
@@ -63,6 +65,8 @@ __all__ = [
     "CONTENT_BLOCKS",
     "CONTENT_BLOCK",
     "LIST_CONTENT_BLOCKS",
+    "REUSABLE_CONTENT_BLOCKS",
+    "ReusableBlockBlock",
     "AccordionBlock",
     "MENU_ITEM_BLOCKS",
     "MenuBranding",

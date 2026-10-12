@@ -121,7 +121,8 @@ class LoadInitialDataTests(WagtailPageTestCase):
             sort_order=4,
             model_field="tags",
         )
-
+        form_page.save()
+        form_page.save_revision().publish()
         content = self.client.get(form_page.url).content.decode()
         heading = content.index("Suggest a bread")
         title_input = content.index('name="title"')

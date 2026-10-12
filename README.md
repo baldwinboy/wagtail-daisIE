@@ -12,13 +12,18 @@ them to pages, and build navigation menus from the same block components.
 ## Links
 
 - [Documentation](https://github.com/baldwinboy/wagtail-daisIE/blob/main/README.md)
-- [Developer docs](docs/architecture.md) · [CSS pipeline](docs/assets.md)
-- [Emails](docs/emails.md) · [Context models](docs/context-models.md) ·
-  [Error pages](docs/error-pages.md) · [Forms](docs/forms.md) ·
-  [Approval workflows](docs/approval.md) ·
-  [Data components](docs/data-components.md) · [htmx](docs/htmx.md) ·
-  [Notifications](docs/notifications.md) · [django-allauth](docs/allauth.md) ·
-  [Allauth pages](docs/allauth-pages.md)
+- [Developer docs](docs/architecture.md)
+- [CSS pipeline](docs/assets.md)
+- [Emails](docs/emails.md)
+- [Context models](docs/context-models.md)
+- [Error pages](docs/error-pages.md)
+- [Forms](docs/forms.md)
+- [Approval workflows](docs/approval.md)
+- [Data components](docs/data-components.md)
+- [htmx](docs/htmx.md)
+- [Notifications](docs/notifications.md)
+- [django-allauth](docs/allauth.md)
+- [Allauth pages](docs/allauth-pages.md)
 - [Changelog](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CHANGELOG.md)
 - [Contributing](https://github.com/baldwinboy/wagtail-daisIE/blob/main/CONTRIBUTING.md)
 
@@ -218,6 +223,16 @@ Each menu has:
 - **Menu items** — links, buttons, search boxes, inline cards, accordions, link
   lists, headers, text, and newsletters.
 
+## Reusable blocks
+
+A **Reusable block** (**Design → Reusable blocks**) is a saved, admin-designed
+section of page content. Import it anywhere page content is allowed — pages,
+forms, menus and feed item cards — with a **Reusable block** block. It is a live
+reference: editing the saved entry updates every place that imports it. Entries
+cannot contain other entries, so references never recurse. Emails have their own
+**Reusable content** entries (**Emails → Reusable content**) holding MJML
+components. See [docs/reusable-blocks.md](docs/reusable-blocks.md).
+
 ## Blocks and design
 
 Design primitives live in `wagtail_daisIE.base_blocks` and are composed into the
@@ -290,6 +305,9 @@ Render project data and trigger actions with reusable components:
 - **Feeds** — a snippet (Design → Feeds) that lists a context model with
   admin-designed item cards, typed filters (choice/multi, boolean, date, date
   range, price range, search), AJAX filtering and optional infinite scroll.
+  **Item variants** let different instances use alternate designs chosen by a
+  condition (basic operators, or a named rule in
+  `WAGTAIL_DAISIE_FEED_CONDITIONS`).
 - **Action** — a struct of a themed button and an optional confirmation alert
   that posts to a developer-defined action (`WAGTAIL_DAISIE_ACTIONS`), e.g.
   *Add to basket*. Inside a card it can make the whole card clickable.

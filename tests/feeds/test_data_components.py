@@ -180,7 +180,7 @@ class TestFilters:
 _feed_seq = itertools.count()
 
 
-def _feed(**kwargs):
+def _feed(*, item=None, item_variants=None, **kwargs):
     defaults = {
         "name": f"Users {next(_feed_seq)}",
         "context_model": "user",
@@ -189,12 +189,22 @@ def _feed(**kwargs):
     }
     defaults.update(kwargs)
     feed = Feed.objects.create(**defaults)
-    feed.item = [
-        {
-            "type": "header",
-            "value": {"text": "{{ user.username }}", "design": {}, "audience": {}},
-        }
-    ]
+    feed.item = (
+        item
+        if item is not None
+        else [
+            {
+                "type": "header",
+                "value": {
+                    "text": "{{ user.username }}",
+                    "design": {},
+                    "audience": {},
+                },
+            }
+        ]
+    )
+    if item_variants is not None:
+        feed.item_variants = item_variants
     feed.save()
     return feed
 
@@ -275,6 +285,69 @@ class TestFeedRendering:
         data = render_feed(_feed(), RequestFactory().get("/"))
         assert "staffonly" in data["items_html"]
         assert "regularonly" not in data["items_html"]
+
+    def test_item_variants_select_design_by_condition(self, settings):
+        USER_MODEL.objects.create(username="ada", is_staff=True)
+        USER_MODEL.objects.create(username="bob")
+
+        def variant(expression, operator, value="", rule="", text=""):
+            return {
+                "type": "variant",
+                "value": {
+                    "label": "",
+                    "expression": expression,
+                    "operator": operator,
+                    "compare_value": value,
+                    "rule": rule,
+                    "item": [
+                        {
+                            "type": "header",
+                            "value": {"text": text, "design": {}, "audience": {}},
+                        }
+                    ],
+                },
+            }
+
+        # The first matching variant wins; a later match is not used.
+        feed = _feed(
+            item_variants=[
+                variant("user.is_staff", "is_true", text="STAFF {{ user.username }}"),
+                variant("user.username", "in", "ada,bob", text="MEMBER"),
+            ]
+        )
+        html = render_feed(feed, RequestFactory().get("/"))["items_html"]
+        assert "STAFF ada" in html
+        assert "MEMBER" in html
+        assert "bob" not in html  # default design is not used when a variant matches
+
+        # A named condition delegates to a registered callable (audience style).
+        settings.WAGTAIL_DAISIE_FEED_CONDITIONS = {
+            "featured": {"label": "Featured", "rule": lambda obj, request: obj.is_staff}
+        }
+        bridged = _feed(
+            item_variants=[variant("", "custom", rule="featured", text="FEATURED")]
+        )
+        assert (
+            "FEATURED" in render_feed(bridged, RequestFactory().get("/"))["items_html"]
+        )
+
+        # An empty expression is a catch-all.
+        catch_all = _feed(item_variants=[variant("", "is_true", text="ALL")])
+        assert "ALL" in render_feed(catch_all, RequestFactory().get("/"))["items_html"]
+
+        # An expression that cannot be compared fails safe to the default design.
+        unsafe = _feed(item_variants=[variant("user.missing", "gt", "5", text="NEVER")])
+        html = render_feed(unsafe, RequestFactory().get("/"))["items_html"]
+        assert "NEVER" not in html
+        assert "ada" in html
+
+        # Date/datetime values are coerced so ordering comparisons work.
+        dated = _feed(
+            item_variants=[
+                variant("user.date_joined", "lt", "2999-01-01", text="RECENT")
+            ]
+        )
+        assert "RECENT" in render_feed(dated, RequestFactory().get("/"))["items_html"]
 
 
 class TestFeedEndpoint:
@@ -369,26 +442,9 @@ class TestDateTransform:
         )
 
 
-_feed_seq = itertools.count()
-
-
 class TestFeedLayout:
-    def _feed(self, **kwargs):
-        kwargs.setdefault("name", f"layout {next(_feed_seq)}")
-        defaults = {"context_model": "user", "order_by": "username"}
-        defaults.update(kwargs)
-        feed = Feed.objects.create(**defaults)
-        feed.item = [
-            {
-                "type": "header",
-                "value": {"text": "{{ user.username }}", "design": {}, "audience": {}},
-            }
-        ]
-        feed.save()
-        return feed
-
     def _render(self, **kwargs):
-        return render_feed(self._feed(**kwargs), RequestFactory().get("/"))
+        return render_feed(_feed(**kwargs), RequestFactory().get("/"))
 
     def test_container_classes_and_clamping(self):
         grid = self._render(layout="grid", layout_columns=4, layout_gap="gap-6")[
@@ -409,14 +465,12 @@ class TestFeedLayout:
     def test_block_override_and_query_override(self):
         from wagtail_daisIE.dynamic.feeds import resolve_layout
 
-        feed = self._feed(layout="grid", layout_columns=2)
+        feed = _feed(layout="grid", layout_columns=2)
         ctx = resolve_layout(feed, {"layout": "list", "columns": 5}, None)
         assert ctx["layout"] == "list"
         assert "lg:grid-cols-5" in ctx["layout_classes"]["grid"]
 
-        feed = self._feed(
-            layout="grid", allow_layout_toggle=True, toggle_layouts="grid_row"
-        )
+        feed = _feed(layout="grid", allow_layout_toggle=True, toggle_layouts="grid_row")
         assert [
             o["value"] for o in resolve_layout(feed, None, None)["toggle_options"]
         ] == [
@@ -443,9 +497,7 @@ class TestFeedLayout:
         block = FeedBlock()
         value = block.to_python(
             {
-                "feed": self._feed(
-                    allow_layout_toggle=True, toggle_layouts="grid_list"
-                ).pk,
+                "feed": _feed(allow_layout_toggle=True, toggle_layouts="grid_list").pk,
                 "design": {},
                 "audience": {},
             }
@@ -458,7 +510,7 @@ class TestFeedLayout:
         assert "daisie-feed--grid" in html
         assert html.count("btn-active") == 1
 
-        listed = render_feed(self._feed(layout="list"), RequestFactory().get("/"))
+        listed = render_feed(_feed(layout="list"), RequestFactory().get("/"))
         assert (
             "divide-y divide-base-300 daisie-feed--list"
             in listed["layout_container_css"]
@@ -482,3 +534,9 @@ class TestFeedLayout:
         assert TOGGLE_OVERRIDE_CHOICES[1:] == [
             (k, str(v)) for k, v in feeds.TOGGLE_CHOICES
         ]
+
+        from wagtail_daisIE.dynamic.conditions import FEED_CONDITION_OPERATOR_CHOICES
+
+        # Variant operators are a lazy ChoiceList (kept out of migrations).
+        assert callable(FEED_CONDITION_OPERATOR_CHOICES)
+        assert FEED_CONDITION_OPERATOR_CHOICES[-1][0] == "custom"

@@ -54,6 +54,7 @@ from .mockups import (
     MockupWindowBlock,
 )
 from .registry import content_block_contributions, register_content_block
+from .reusable import ReusableBlockBlock
 from .spaced import LIST_CONTENT_BLOCKS
 from .table import TableBlock
 
@@ -111,6 +112,14 @@ if "wagtail_daisIE.notifications" in settings.INSTALLED_APPS:
 
 PAGE_CONTENT_BLOCKS.extend(content_block_contributions())
 
+#: The blocks an admin may compose into a reusable library entry. Captured
+#: before the reusable chooser is appended, so the library cannot reference
+#: itself (no nesting and therefore no render recursion).
+REUSABLE_CONTENT_BLOCKS = list(PAGE_CONTENT_BLOCKS)
+
+#: Referencing a saved library entry is itself a top-level page-content block.
+PAGE_CONTENT_BLOCKS.append(("reusable", ReusableBlockBlock()))
+
 
 __all__ = [
     "BreadcrumbsBlock",
@@ -118,4 +127,5 @@ __all__ = [
     "CONTENT_BLOCKS",
     "INLINE_CARD_CONTENT",
     "PAGE_CONTENT_BLOCKS",
+    "REUSABLE_CONTENT_BLOCKS",
 ]

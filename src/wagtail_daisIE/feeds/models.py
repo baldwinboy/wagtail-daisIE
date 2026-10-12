@@ -21,7 +21,7 @@ from ..dynamic.feeds import (
 )
 from ..dynamic.panels import FeedContextModelHelpPanel
 from ..dynamic.registry import get_context_model_choices, get_filter_choices
-from .blocks_data import ITEM_BLOCKS
+from .blocks_data import ITEM_BLOCKS, FeedItemVariantBlock
 
 
 class FeedFilterBlock(DaisieStructBlock):
@@ -139,6 +139,17 @@ class Feed(ClusterableModel):
         verbose_name=_("Item design"),
         collapsed=True,
     )
+    item_variants = StreamField(
+        [("variant", FeedItemVariantBlock())],
+        blank=True,
+        use_json_field=True,
+        verbose_name=_("Item variants"),
+        help_text=_(
+            "Alternate item designs. The first variant whose condition matches "
+            "an item is used; otherwise the default item design applies."
+        ),
+        collapsed=True,
+    )
     submit_appearance = StreamField(
         [("appearance", ButtonAppearanceBlock())],
         blank=True,
@@ -177,6 +188,7 @@ class Feed(ClusterableModel):
         ),
         FieldPanel("filters"),
         FieldPanel("item"),
+        FieldPanel("item_variants"),
     ]
 
     class Meta:

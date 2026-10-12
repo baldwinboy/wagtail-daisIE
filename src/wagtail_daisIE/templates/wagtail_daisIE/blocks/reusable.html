@@ -1,0 +1,6 @@
+{% load wagtailcore_tags %}
+{% if audience_allowed and value.reusable and value.reusable.content %}
+<div class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+  {% for child in value.reusable.content %}{% include_block child %}{% endfor %}
+</div>
+{% endif %}

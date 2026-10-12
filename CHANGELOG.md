@@ -71,6 +71,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   load-more, action forms and newsletter signup. Controlled by
   `WAGTAIL_DAISIE_HTMX` (default on) and `WAGTAIL_DAISIE_HTMX_VERSION`
   (default 2); `{% daisie_htmx %}` adds the script to a base template.
+* **Reusable blocks**: save a designed section of page content (**Design →
+  Reusable blocks**) and import it live into pages, forms, menus and feed item
+  cards; a separate **Emails → Reusable content** library holds MJML sections.
+* **Feed item variants**: give items alternate designs chosen by a per-instance
+  condition — basic operators or a named rule registered in
+  `WAGTAIL_DAISIE_FEED_CONDITIONS` (audience-style bridge).
 
 ### Bug Fixes
 

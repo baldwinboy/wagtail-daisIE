@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import InlinePanel, ObjectList, TabbedInterface
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
-from .models import Audience, EmailCampaign, EmailTemplate
+from .models import Audience, EmailCampaign, EmailReusableBlock, EmailTemplate
 
 
 class EmailViewSetGroup(SnippetViewSetGroup):
@@ -25,6 +25,15 @@ class EmailTemplateViewSet(SnippetViewSet):
             ObjectList(EmailTemplate.styling_panels, heading=_("Settings")),
         ]
     )
+
+
+class EmailReusableBlockViewSet(SnippetViewSet):
+    icon = "doc-full-inverse"
+    menu_label = "Reusable content"
+    model = EmailReusableBlock
+    menu_hook = "register_email_submenu"
+    search_fields = ["name"]
+    list_display = ["name"]
 
 
 class AudienceViewSet(SnippetViewSet):

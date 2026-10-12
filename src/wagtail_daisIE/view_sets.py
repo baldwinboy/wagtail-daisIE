@@ -4,6 +4,7 @@ from .assets.view_sets import DaisyUIFaviconViewSet, DaisyUIIconSourceViewSet
 from .feeds.view_sets import FeedViewSet
 from .menus.view_sets import DaisyUIMenuViewSet
 from .models import DaisyUITheme
+from .models.reusable import ReusableBlock
 
 
 class DaisyUIThemeViewSet(SnippetViewSet):
@@ -12,10 +13,19 @@ class DaisyUIThemeViewSet(SnippetViewSet):
     model = DaisyUITheme
 
 
+class ReusableBlockViewSet(SnippetViewSet):
+    icon = "doc-full-inverse"
+    menu_label = "Reusable blocks"
+    model = ReusableBlock
+    search_fields = ["name"]
+    list_display = ["name"]
+
+
 class DaisyUIViewSetGroup(SnippetViewSetGroup):
     items = (
         DaisyUIThemeViewSet,
         DaisyUIMenuViewSet,
+        ReusableBlockViewSet,
         DaisyUIIconSourceViewSet,
         DaisyUIFaviconViewSet,
         FeedViewSet,

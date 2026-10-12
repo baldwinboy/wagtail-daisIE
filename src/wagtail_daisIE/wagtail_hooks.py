@@ -65,6 +65,15 @@ def register_email_template_viewset():
 
 
 @hooks.register("register_admin_viewset")
+def register_email_reusable_viewset():
+    if not apps.is_installed("wagtail_daisIE.notifications"):
+        return []
+    from .notifications.view_sets import EmailReusableBlockViewSet
+
+    return EmailReusableBlockViewSet()
+
+
+@hooks.register("register_admin_viewset")
 def register_audience_viewset():
     if not apps.is_installed("wagtail_daisIE.notifications"):
         return []

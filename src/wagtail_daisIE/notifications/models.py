@@ -19,7 +19,7 @@ from ..base_blocks.audience import (
 from ..base_blocks.design import PageDesignBlock
 from .blocks import EmailVariableBlock
 from .context import build_context
-from .email_blocks import EmailContentBlock
+from .email_blocks import EMAIL_REUSABLE_CONTENT_BLOCKS, EmailContentBlock
 from .email_rendering import (
     body_background_color,
     category_classes,
@@ -240,6 +240,37 @@ class EmailTemplate(
             site=site,
             from_email=from_email,
         )
+
+
+class EmailReusableBlock(ClusterableModel):
+    """A saved, designed section of MJML email content, referenced by a block."""
+
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Name"),
+        help_text=_('A unique name, e.g. "Standard footer".'),
+    )
+    content = StreamField(
+        EMAIL_REUSABLE_CONTENT_BLOCKS,
+        blank=True,
+        use_json_field=True,
+        verbose_name=_("Content"),
+        help_text=_("Design the email components to reuse."),
+    )
+
+    panels = [
+        FieldPanel("name"),
+        FieldPanel("content"),
+    ]
+
+    class Meta:
+        verbose_name = _("Reusable email content")
+        verbose_name_plural = _("Reusable email content")
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
 
 
 class Audience(ClusterableModel):

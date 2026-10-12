@@ -10,7 +10,8 @@ base_blocks/    Reusable design primitives and the block CSS pipeline
                 (compact.py = registry-key block serialization for migrations)
 blockref.py     Stable block registry keys + RegisteredBlock resolver
 blocks/         Public block composition built on base_blocks
-models/         DaisyUITheme + theme orderables/fields (core app)
+                (reusable.py = live reference to a saved ReusableBlock snippet)
+models/         DaisyUITheme + theme orderables/fields + ReusableBlock (core app)
 assets/         DaisyUIIconSource, DaisyUIFavicon snippets + view sets
 menus/          DaisyUIMenu snippet + view set
 feeds/          Feed snippet, data blocks + view set

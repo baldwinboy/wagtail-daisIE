@@ -124,3 +124,40 @@ class TestAccordion:
         assert names_a == ["accordion-a", "accordion-a"]  # items share one group
         assert names_b == ["accordion-b"]  # different accordion, different group
         assert names_a[0] != names_b[0]  # the cross-accordion bug is fixed
+
+
+class TestReusableBlock:
+    def test_renders_referenced_content_with_inherited_design(self):
+        from wagtail_daisIE.blocks.reusable import ReusableBlockBlock
+        from wagtail_daisIE.models import ReusableBlock
+
+        reusable = ReusableBlock.objects.create(name="promo")
+        reusable.content = [
+            {
+                "type": "text",
+                "value": {
+                    "text": "Hello",
+                    "design": {"typography": {"text_color": "text-primary"}},
+                    "audience": {},
+                },
+            }
+        ]
+        reusable.save()
+
+        block = ReusableBlockBlock()
+        value = block.to_python({"reusable": reusable.pk, "design": {}, "audience": {}})
+        html = block.render(
+            value,
+            context={"container_css": "p-4", "menu_default_css": "font-body"},
+        )
+        assert "Hello" in html
+        assert "p-4" in html  # the wrapper inherits the container channel
+        assert "font-body" in html  # menu item defaults flow through
+        assert "text-primary" in html  # the saved block's own design
+
+    def test_missing_snippet_renders_nothing(self):
+        from wagtail_daisIE.blocks.reusable import ReusableBlockBlock
+
+        block = ReusableBlockBlock()
+        value = block.to_python({"reusable": None, "design": {}, "audience": {}})
+        assert block.render(value, context={}).strip() == ""

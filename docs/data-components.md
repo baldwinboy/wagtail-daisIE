@@ -145,6 +145,39 @@ applied automatically.
 
 A **Feed block** in a page or menu references a Feed snippet.
 
+### Item variants
+
+By default every item uses one **Item design**. **Item variants** add alternate
+designs chosen per instance: the first variant whose condition matches an item
+is used, otherwise the default **Item design** applies.
+
+Each variant has a **When** expression (a value from the item, e.g.
+`{{ article.featured }}`), an **Operator** and a **Value**. An empty expression
+matches every item (a catch-all). Basic operators cover the common cases
+(`is true`, `equals`, `is one of`, `contains`, `greater than`, …), and any that
+cannot be evaluated fail safe to the default design.
+
+For complex logic, set the operator to **Named condition** and pick a rule
+registered in `WAGTAIL_DAISIE_FEED_CONDITIONS` — the same settings-driven bridge
+shape as `WAGTAIL_DAISIE_AUDIENCE_RULES`:
+
+```python
+WAGTAIL_DAISIE_FEED_CONDITIONS = {
+    "featured": {
+        "label": "Featured",
+        "rule": "myapp.conditions.is_featured",  # or a callable
+    },
+}
+
+
+def is_featured(obj, request):
+    return obj.featured or obj.publish_at <= timezone.now()
+```
+
+A rule receives the model instance and the current request (a one-argument
+`rule(obj)` is also accepted) and returns truthy on a match. Missing rules and
+errors are treated as "no match".
+
 ### Layout
 
 Each feed has a **Layout**: **Grid**, **Row** or **List**.

@@ -1,0 +1,2 @@
+{% load wagtailcore_tags %}
+{% if value.reusable %}{% for child in value.reusable.content %}{% include_block child %}{% endfor %}{% endif %}
