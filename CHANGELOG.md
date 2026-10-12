@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.1.1...v3.2.0) (2026-10-12)
+
+
+### Features
+
+* add reusable blocks ([81a7b52](https://github.com/baldwinboy/wagtail-daisIE/commit/81a7b5298191ac69f989a04767538226d0784daf))
+
 ## [3.1.1](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.1.0...v3.1.1) (2026-10-11)
 
 
