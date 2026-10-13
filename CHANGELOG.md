@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.3.0...v3.4.0) (2026-10-13)
+
+
+### Features
+
+* honour designs in menus/cards/search, expose input blocks ([605f17a](https://github.com/baldwinboy/wagtail-daisIE/commit/605f17a01e4eb349d85f9509f41edb0c96a8d1fe))
+* layout control and editor styling improvements ([feddf38](https://github.com/baldwinboy/wagtail-daisIE/commit/feddf38f11cf8a0d21fbd62a7b7f337fb2227ab8))
+
 ## [Unreleased]
 
 ### Added
