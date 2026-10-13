@@ -235,8 +235,11 @@ COUNTDOWN_SIZE_CHOICES = ChoiceList(
 # Main container layout
 MAIN_LAYOUT_CHOICES = ChoiceList(
     [
+        ("", _("Inherit")),
         ("column", _("Column")),
         ("row", _("Row")),
+        ("row-wrap", _("Wrapping row")),
+        ("column-wrap", _("Wrapping column")),
         ("grid", _("Grid")),
     ],
     "MAIN_LAYOUT_CHOICES",
@@ -244,11 +247,48 @@ MAIN_LAYOUT_CHOICES = ChoiceList(
 MAIN_LAYOUT_CLASSES = {
     "column": "flex flex-col grow",
     "row": "flex flex-row grow",
+    "row-wrap": "flex flex-row flex-wrap grow",
+    "column-wrap": "flex flex-col flex-wrap grow",
     "grid": "grid grow",
 }
 MAIN_LAYOUT_CLASS_TOKENS = [
     token for value in MAIN_LAYOUT_CLASSES.values() for token in value.split()
 ]
+
+# Responsive grid-column classes, 1-6, mirroring the feed grid pattern.
+GRID_COLUMNS = {
+    1: "grid-cols-1",
+    2: "grid-cols-1 sm:grid-cols-2",
+    3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+    4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+    5: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5",
+    6: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6",
+}
+GRID_COLUMN_CHOICES = ChoiceList(
+    [(str(n), str(n)) for n in GRID_COLUMNS],
+    "GRID_COLUMN_CHOICES",
+)
+GRID_COLUMN_CLASS_TOKENS = [
+    token for value in GRID_COLUMNS.values() for token in value.split()
+]
+
+# Structural ordering of an autocomplete's input and token tray (DOM order).
+AUTOCOMPLETE_ARRANGEMENT_CHOICES = ChoiceList(
+    [
+        ("tokens_input", _("Tokens above input")),
+        ("input_tokens", _("Input above tokens")),
+    ],
+    "AUTOCOMPLETE_ARRANGEMENT_CHOICES",
+)
+
+# Where an autocomplete's options list opens relative to the input.
+OPTIONS_POSITION_CHOICES = ChoiceList(
+    [
+        ("below", _("Below input")),
+        ("above", _("Above input")),
+    ],
+    "OPTIONS_POSITION_CHOICES",
+)
 
 # Flex-container wrapping for trays/toolbars.
 FLEX_WRAP_CHOICES = ChoiceList(
@@ -275,13 +315,18 @@ __all__ = [
     "DIVIDER_ORIENTATION_CHOICES",
     "DIVIDER_POSITION_CHOICES",
     "DROPDOWN_POSITION_CHOICES",
+    "AUTOCOMPLETE_ARRANGEMENT_CHOICES",
     "FLEX_WRAP_CHOICES",
+    "GRID_COLUMNS",
+    "GRID_COLUMN_CHOICES",
+    "GRID_COLUMN_CLASS_TOKENS",
     "INDICATOR_COLOR_CHOICES",
     "INDICATOR_POSITION_CHOICES",
     "MAIN_LAYOUT_CHOICES",
     "MAIN_LAYOUT_CLASSES",
     "MAIN_LAYOUT_CLASS_TOKENS",
     "MASK_SHAPE_CHOICES",
+    "OPTIONS_POSITION_CHOICES",
     "OTP_COLOR_CHOICES",
     "OTP_SIZE_CHOICES",
     "SKELETON_SHAPE_CHOICES",

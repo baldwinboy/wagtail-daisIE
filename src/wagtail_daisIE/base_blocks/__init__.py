@@ -42,6 +42,7 @@ from .design import (
     TypographyDesignBlock,
 )
 from .fields import ColorChoiceBlock
+from .form_layout import collapsed_group
 from .input_widget import (
     FALLBACK_CHOICES,
     RENDER_CHOICES,
@@ -50,6 +51,7 @@ from .input_widget import (
     ItemDesignBlock,
     TrayDesignBlock,
 )
+from .layout_design import LayoutBlock
 from .link import AbstractLinkBlock, LinkDestinationBlock
 from .markup import InlineMarkupBlock
 from .size import BlockSizeBlock, InlineSizeBlock
@@ -69,6 +71,7 @@ __all__ = [
     "ColorChoiceBlock",
     "CompactBlockMetaclass",
     "CompactBlockMixin",
+    "collapsed_group",
     "ContentAlignmentBlock",
     "DaisieStreamBlock",
     "DaisieStructBlock",
@@ -84,6 +87,7 @@ __all__ = [
     "InlineMarkupBlock",
     "InlineSizeBlock",
     "InlineSpacedDesignBlock",
+    "LayoutBlock",
     "LinkDestinationBlock",
     "MainDesignBlock",
     "MarginBlock",

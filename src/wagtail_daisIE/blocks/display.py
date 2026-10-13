@@ -4,7 +4,12 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 
-from ..base_blocks import InlineMarkupBlock, ThemedBlock, ThemedTypographyBlock
+from ..base_blocks import (
+    InlineMarkupBlock,
+    ThemedBlock,
+    ThemedTypographyBlock,
+    collapsed_group,
+)
 from ..base_blocks.compact import DaisieStructBlock
 from ..choicelist import ChoiceList
 from ..choices import (
@@ -84,7 +89,7 @@ class DividerBlock(ThemedBlock):
     )
 
     class Meta:
-        icon = "horizontalrule"
+        icon = "minus"
         group = _("Display")
         collapsed = True
         template = "wagtail_daisIE/blocks/display/divider.html"
@@ -175,7 +180,7 @@ class TextRotateBlock(ThemedBlock):
     )
 
     class Meta:
-        icon = "repeat"
+        icon = "rotate"
         group = _("Display")
         collapsed = True
         template = "wagtail_daisIE/blocks/display/text_rotate.html"
@@ -225,6 +230,13 @@ class TimelineItemBlock(DaisieStructBlock):
         icon = "time"
         label = _("Event")
         collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=[
+                "start",
+                "end",
+                collapsed_group(_("Marker icon"), "icon", icon="image"),
+            ],
+        )
 
 
 class TimelineBlock(ThemedBlock):

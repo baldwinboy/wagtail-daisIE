@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* Reusable `LayoutBlock` design primitive (row/column/wrapping row and column,
+  1-6 column grid, wrap, justify, align, gap) and layout control on the
+  autocomplete (`arrangement`, `options position`, `layout design`).
+* `columns` (1-6 grid) on `TrayDesignBlock`; `wrap`/`gap` on `RowBlock`/
+  `ColumnBlock`; configurable submit buttons on the newsletter signup blocks
+  and the FAB trigger.
+* Collapsed "Icon" and "Options" groups in block edit forms.
+
+### Fixed
+
+* Corrected invalid Wagtail admin `Meta.icon` names on 18 blocks.
+* Autocomplete enhanced input now honours the editor's colour, size, error
+  state, tray/item design and layout.
+* `HeaderBlock` typography is no longer overridden by hardcoded heading classes;
+  list headings render through the `HeaderBlock` template.
+* Form pages apply the page background and page-level button design.
+* Sidebar menu honours the `css_class` argument; tab panels are designable;
+  feed layout toggles and action confirmation dialogs use the configured design;
+  allauth OTP fields keep the input design.
+* File input colour/size reached the image and attachment displays.
+
+### Removed
+
+* Inert `collapsed` option on `IconChooserBlock.Meta` (FieldBlocks ignore it).
+
 ## [3.3.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.2.0...v3.3.0) (2026-10-13)
 
 

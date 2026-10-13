@@ -75,7 +75,7 @@ def _otp_markup(field, attrs, size="", color="", joined=False):
         "maxlength": count,
         "pattern": f"[0-9]{{{count}}}",
     }
-    for key in ("form", "aria-invalid", "aria-describedby"):
+    for key in ("form", "class", "aria-invalid", "aria-describedby"):
         if key in attrs:
             otp_attrs[key] = attrs[key]
     widget_html = field.as_widget(attrs=otp_attrs)

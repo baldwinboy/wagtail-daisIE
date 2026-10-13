@@ -2,7 +2,7 @@
 {% if audience_allowed %}
   <div class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     {% if value.heading.text %}
-      <h2 class="text-2xl font-bold mb-4">{% daisie_markup value.heading.text %}</h2>
+      {% include_block value.heading %}
     {% endif %}
     <ul class="{{ value.ordering|default:"list-none" }}">
       {% for child in value.content %}

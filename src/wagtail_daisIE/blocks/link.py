@@ -7,6 +7,7 @@ from wagtail_daisIE.base_blocks import (
     LinkDestinationBlock,
     ThemedButtonBlock,
     ThemedTypographyBlock,
+    collapsed_group,
 )
 from wagtail_daisIE.icons.blocks import IconChooserBlock
 
@@ -48,7 +49,12 @@ class LabelLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/link.html"
         form_layout = blocks.BlockGroup(
-            children=["text", "icon", "icon_after", "destination", "open_in_new_tab"],
+            children=[
+                "text",
+                collapsed_group(_("Icon"), "icon", "icon_after", icon="image"),
+                "destination",
+                "open_in_new_tab",
+            ],
             settings=["design", "audience"],
         )
 
@@ -92,11 +98,14 @@ class ButtonBlock(AbstractLinkBlock, ThemedButtonBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "text",
-                "icon",
-                "icon_after",
+                collapsed_group(_("Icon"), "icon", "icon_after", icon="image"),
                 "destination",
-                "open_in_new_tab",
-                "make_parent_clickable",
+                collapsed_group(
+                    _("Link options"),
+                    "open_in_new_tab",
+                    "make_parent_clickable",
+                    icon="link",
+                ),
             ],
             settings=["design", "audience"],
         )

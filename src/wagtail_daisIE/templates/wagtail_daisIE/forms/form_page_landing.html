@@ -10,7 +10,7 @@
         {% daisyui_all_themes_css %}
         {% daisyui_favicon %}
     </head>
-    <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
+    <body class="flex min-h-screen flex-col bg-base-100 text-base-content"{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
         <main id="main-content"{% daisyui_main_attrs daisyui_theme %}>
             <div class="alert alert-success" role="status">
                 {% trans "Thank you — your submission was received." %}

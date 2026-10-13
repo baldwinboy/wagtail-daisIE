@@ -5,7 +5,7 @@
     {% if audience_id %}<input type="hidden" name="audience" value="{{ audience_id }}" />{% endif %}
     <label for="newsletter-{{ block.id }}" class="sr-only">{{ value.placeholder }}</label>
     <input id="newsletter-{{ block.id }}" type="email" name="{{ value.email_field }}" placeholder="{{ value.placeholder }}" autocomplete="email" required class="input input-bordered join-item w-full" />
-    <button type="submit" class="btn btn-primary join-item">{% daisie_markup value.button_label allow_links=False %}</button>
+    <button type="submit" class="{% if newsletter_button_css %}{{ newsletter_button_css }}{% else %}btn btn-primary{% endif %} join-item">{% daisie_markup value.button_label allow_links=False %}</button>
   </form>
   {% if value.success_message and request.GET.subscribed %}
     <p class="mt-2 text-sm" role="status">{{ value.success_message }}</p>

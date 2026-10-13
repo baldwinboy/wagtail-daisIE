@@ -17,7 +17,7 @@
           <option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.label }}</option>
         {% endfor %}
       </select>
-      {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=autocomplete_options placeholder=autocomplete_placeholder %}
+      {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=autocomplete_options placeholder=autocomplete_placeholder input_css=autocomplete_input_css layout_css=autocomplete_layout_css tray_css=autocomplete_tray_css item_css=autocomplete_item_css arrangement=autocomplete_arrangement options_position=autocomplete_options_position %}
     </div>
     {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{% daisie_markup value.helper_text %}</p>{% endif %}
     {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{% daisie_markup value.error_text %}</p>{% endif %}

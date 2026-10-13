@@ -7,7 +7,7 @@
                 <select name="filter_{{ filter.key }}" multiple class="select w-full {{ filter.input_css }}">
                     {% for option in filter.options %}<option value="{{ option.value }}"{% if option.value in filter.values %} selected{% endif %}>{{ option.label }}</option>{% endfor %}
                 </select>
-                {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=filter.options placeholder=filter.label %}
+                {% include "wagtail_daisIE/blocks/inputs/_autocomplete_ui.html" with options=filter.options placeholder=filter.label input_css=filter.input_css %}
             </div>
             <script src="{% static 'wagtail_daisIE/js/daisyui_autocomplete.js' %}"></script>
         {% elif filter.multi %}

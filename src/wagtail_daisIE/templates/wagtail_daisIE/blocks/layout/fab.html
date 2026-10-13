@@ -1,7 +1,7 @@
 {% load wagtail_daisIE_tags %}
 {% if audience_allowed %}
   <div class="fab {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    <div tabindex="0" role="button" class="btn btn-lg btn-circle btn-primary" aria-label="{{ value.trigger_label }}">
+    <div tabindex="0" role="button" class="{% if fab_trigger_css %}{{ fab_trigger_css }}{% else %}btn btn-lg btn-circle btn-primary{% endif %}" aria-label="{{ value.trigger_label }}">
       {% if value.trigger_icon %}{% daisyui_icon value.trigger_icon %}{% else %}+{% endif %}
     </div>
     {% for item in items %}

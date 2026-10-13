@@ -4,7 +4,7 @@
     <label class="fieldset-legend" for="daisie-{{ block.id }}">{% daisie_markup value.label %}</label>
     {% if file_display == "image" %}
       <div class="daisie-file-image" data-daisie-file-image>
-        <label class="daisie-file-image__label">
+        <label class="daisie-file-image__label {{ value.color }} {{ value.size }}">
           <input
             id="daisie-{{ block.id }}"
             type="file"
@@ -20,7 +20,7 @@
           class="daisie-file-attachments__preview{% if file_tray_css %} {{ file_tray_css }}{% endif %}"
           data-daisie-file-preview
         ></div>
-        <label class="daisie-file-attachments__add">
+        <label class="daisie-file-attachments__add {{ value.color }} {{ value.size }}">
           <input
             id="daisie-{{ block.id }}"
             type="file"

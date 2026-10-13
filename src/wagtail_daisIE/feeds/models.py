@@ -50,7 +50,7 @@ class FeedFilterBlock(DaisieStructBlock):
     )
 
     class Meta:
-        icon = "funnel"
+        icon = "sliders"
         label = _("Filter")
         collapsed = True
         form_layout = blocks.BlockGroup(

@@ -18,7 +18,7 @@
         {% if value.confirm.title %}<h3 class="text-lg font-bold">{% daisie_markup value.confirm.title %}</h3>{% endif %}
         {% if value.confirm.text %}<p class="py-4">{% daisie_markup value.confirm.text %}</p>{% endif %}
         <div class="modal-action">
-          <button type="submit" class="btn btn-error">
+          <button type="submit" class="{% if block_css %}{{ block_css }}{% else %}btn btn-error{% endif %}">
             {% if value.confirm.confirm_label %}{{ value.confirm.confirm_label }}{% else %}{% trans "Confirm" %}{% endif %}
           </button>
           <a href="#" class="btn">{% trans "Cancel" %}</a>

@@ -23,7 +23,7 @@
         {% if allow_layout_toggle and toggle_options %}
           <div class="join" role="radiogroup" aria-label="{% translate 'Layout' %}">
             {% for option in toggle_options %}
-              <label class="btn btn-sm join-item{% if option.value == layout %} btn-active{% endif %}">
+              <label class="{{ submit_css|default:'btn btn-sm' }} join-item{% if option.value == layout %} btn-active{% endif %}">
                 <input
                   type="radio"
                   name="layout"

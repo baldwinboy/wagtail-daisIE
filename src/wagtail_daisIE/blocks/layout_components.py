@@ -4,9 +4,16 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
 
-from ..base_blocks import InlineMarkupBlock, ThemedBlock
+from ..base_blocks import (
+    ButtonAppearanceBlock,
+    DesignBlock,
+    InlineMarkupBlock,
+    ThemedBlock,
+    collapsed_group,
+)
 from ..base_blocks.audience import AudienceBlock, evaluate_audience
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
+from ..base_blocks.css import build_design_css
 from ..base_blocks.link import LinkDestinationBlock, link_url
 from ..choicelist import ChoiceList
 from ..choices import (
@@ -47,7 +54,7 @@ JOIN_ITEM_TYPE_CHOICES = ChoiceList(
 class StackBlock(SpacedBlock):
     class Meta:
         abstract = False
-        icon = "stack"
+        icon = "bars"
         group = _("Layout")
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/stack.html"
@@ -82,7 +89,7 @@ class IndicatorBlock(SpacedBlock):
 
     class Meta:
         abstract = False
-        icon = "dot"
+        icon = "radio-full"
         group = _("Layout")
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/indicator.html"
@@ -139,7 +146,7 @@ class SwapBlock(ThemedBlock):
     effect = blocks.ChoiceBlock(choices=SWAP_EFFECT_CHOICES, default="", required=False)
 
     class Meta:
-        icon = "repeat"
+        icon = "resubmit"
         group = _("Actions")
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/swap.html"
@@ -175,6 +182,15 @@ class TabItemBlock(DaisieStructBlock):
         icon = "doc-full"
         label = _("Tab")
         collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=[
+                "label",
+                "key",
+                collapsed_group(_("Icon"), "icon", icon="image"),
+                "content",
+            ],
+            settings=["audience"],
+        )
 
 
 class TabsBlock(ThemedBlock):
@@ -184,6 +200,7 @@ class TabsBlock(ThemedBlock):
     placement = blocks.ChoiceBlock(
         choices=TABS_PLACEMENT_CHOICES, default="", required=False
     )
+    panel_design = DesignBlock()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -211,6 +228,7 @@ class TabsBlock(ThemedBlock):
                     tab["checked"] = True
                     break
         context["tabs"] = tabs
+        context["tab_panel_css"] = build_design_css(value.get("panel_design"))
         return context
 
     class Meta:
@@ -220,7 +238,7 @@ class TabsBlock(ThemedBlock):
         template = "wagtail_daisIE/blocks/layout/tabs.html"
         form_layout = blocks.BlockGroup(
             children=["tabs", "style", "size", "placement"],
-            settings=["design", "audience"],
+            settings=["design", "panel_design", "audience"],
         )
 
 
@@ -305,16 +323,27 @@ class FabItemBlock(DaisieStructBlock):
         icon = "link"
         label = _("Action")
         collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=[
+                "label",
+                "destination",
+                collapsed_group(_("Icon"), "icon", icon="image"),
+            ],
+        )
 
 
 class FabBlock(ThemedBlock):
     trigger_icon = IconChooserBlock(required=False)
     trigger_label = blocks.CharBlock(max_length=64, required=False, blank=True)
+    trigger_appearance = ButtonAppearanceBlock(required=False)
     items = blocks.ListBlock(FabItemBlock(), label=_("Actions"))
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
+        context["fab_trigger_css"] = build_design_css(
+            {"button_appearance": value.get("trigger_appearance")}
+        )
         context["items"] = [
             {
                 "label": item.get("label", ""),
@@ -331,8 +360,12 @@ class FabBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/fab.html"
         form_layout = blocks.BlockGroup(
-            children=["trigger_icon", "trigger_label", "items"],
-            settings=["design", "audience"],
+            children=[
+                collapsed_group(_("Trigger icon"), "trigger_icon", icon="image"),
+                "trigger_label",
+                "items",
+            ],
+            settings=["design", "trigger_appearance", "audience"],
         )
 
 
@@ -351,7 +384,7 @@ class HeroBlock(SpacedBlock):
 
     class Meta:
         abstract = False
-        icon = "photo"
+        icon = "image"
         group = _("Layout")
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/hero.html"
@@ -383,7 +416,7 @@ class FilterBlock(ThemedBlock):
     options = blocks.ListBlock(blocks.CharBlock(max_length=64, label=_("Option")))
 
     class Meta:
-        icon = "funnel"
+        icon = "sliders"
         group = _("Data input")
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/filter.html"

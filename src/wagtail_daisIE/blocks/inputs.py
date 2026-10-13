@@ -19,12 +19,18 @@ from ..base_blocks import (
     ColorChoiceBlock,
     InlineMarkupBlock,
     ItemDesignBlock,
+    LayoutBlock,
     ThemedBlock,
     TrayDesignBlock,
 )
 from ..base_blocks.compact import DaisieStreamBlock
-from ..base_blocks.css import build_design_css
-from ..choices import DAISYUI_BG_COLOR_CHOICES, MASK_SHAPE_CHOICES
+from ..base_blocks.css import build_class, build_design_css
+from ..choices import (
+    AUTOCOMPLETE_ARRANGEMENT_CHOICES,
+    DAISYUI_BG_COLOR_CHOICES,
+    MASK_SHAPE_CHOICES,
+    OPTIONS_POSITION_CHOICES,
+)
 from ..choices.inputs import (
     CHOICE_COLOR_CHOICES,
     CHOICE_SIZE_CHOICES,
@@ -326,7 +332,7 @@ class RangeBlock(ThemedBlock):
     size = blocks.ChoiceBlock(choices=RANGE_SIZE_CHOICES, required=False)
 
     class Meta:
-        icon = "horizontalrule"
+        icon = "minus"
         group = _("Data input")
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/range.html"
@@ -404,7 +410,7 @@ class RatingBlock(ThemedBlock):
         return context
 
     class Meta:
-        icon = "star"
+        icon = "pick"
         group = _("Data input")
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/rating.html"
@@ -546,12 +552,39 @@ class AutocompleteSelectMultipleBlock(ThemedBlock):
     required = blocks.BooleanBlock(default=False, required=False)
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
     error_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    arrangement = blocks.ChoiceBlock(
+        choices=AUTOCOMPLETE_ARRANGEMENT_CHOICES,
+        default="tokens_input",
+        required=False,
+        label=_("Arrangement"),
+        help_text=_("Which part comes first when the field is not inline."),
+    )
+    options_position = blocks.ChoiceBlock(
+        choices=OPTIONS_POSITION_CHOICES,
+        default="below",
+        required=False,
+        label=_("Options position"),
+    )
+    layout_design = LayoutBlock()
     tray_design = TrayDesignBlock()
     item_design = ItemDesignBlock()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
+        context["autocomplete_input_css"] = build_class(
+            "input input-bordered w-full",
+            value.get("color"),
+            value.get("size"),
+            "input-error" if value.get("error_text") else "",
+        )
+        context["autocomplete_layout_css"] = build_design_css(
+            value.get("layout_design")
+        )
+        context["autocomplete_arrangement"] = value.get("arrangement") or "tokens_input"
+        context["autocomplete_options_position"] = (
+            value.get("options_position") or "below"
+        )
         context["autocomplete_tray_css"] = build_design_css(value.get("tray_design"))
         context["autocomplete_item_css"] = build_design_css(value.get("item_design"))
         source = (value.get("options_source") or "").strip()
@@ -597,8 +630,16 @@ class AutocompleteSelectMultipleBlock(ThemedBlock):
                 "required",
                 "helper_text",
                 "error_text",
+                "arrangement",
+                "options_position",
             ],
-            settings=["design", "tray_design", "item_design", "audience"],
+            settings=[
+                "design",
+                "layout_design",
+                "tray_design",
+                "item_design",
+                "audience",
+            ],
         )
 
 

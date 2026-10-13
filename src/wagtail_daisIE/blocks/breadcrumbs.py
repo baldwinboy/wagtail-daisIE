@@ -15,7 +15,7 @@ from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import ThemedTypographyBlock
+from ..base_blocks import ThemedTypographyBlock, collapsed_group
 from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.link import LinkDestinationBlock, link_url
 from ..icons.blocks import IconChooserBlock
@@ -32,6 +32,13 @@ class BreadcrumbItemBlock(DaisieStructBlock):
         icon = "link"
         label = _("Crumb")
         collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=[
+                "label",
+                "destination",
+                collapsed_group(_("Icon"), "icon", icon="image"),
+            ],
+        )
 
 
 class BreadcrumbsBlock(ThemedTypographyBlock):
@@ -113,7 +120,10 @@ class BreadcrumbsBlock(ThemedTypographyBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/breadcrumbs.html"
         form_layout = blocks.BlockGroup(
-            children=["items", "icon", "home_icon"],
+            children=[
+                collapsed_group(_("Icons"), "icon", "home_icon", icon="image"),
+                "items",
+            ],
             settings=["design", "audience"],
         )
 

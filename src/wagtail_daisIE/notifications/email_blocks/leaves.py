@@ -117,7 +117,7 @@ class EmailDividerBlock(EmailThemedMixin, ThemedBlock):
 
     class Meta:
         abstract = False
-        icon = "horizontalrule"
+        icon = "minus"
         label = _("Divider")
         collapsed = True
         template = "wagtail_daisIE/emails/blocks/divider.html"

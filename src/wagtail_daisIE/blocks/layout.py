@@ -2,7 +2,11 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from wagtail_daisIE.choicelist import ChoiceList
-from wagtail_daisIE.choices import ALIGNMENT_CHOICES, JUSTIFY_CHOICES
+from wagtail_daisIE.choices import (
+    ALIGNMENT_CHOICES,
+    FLEX_WRAP_CHOICES,
+    JUSTIFY_CHOICES,
+)
 from wagtail_daisIE.widgets import DaisyUIIntegerBlock, DaisyUINumberSliderWidget
 
 from .spaced import SpacedBlockWithList
@@ -41,6 +45,18 @@ class RowBlock(SpacedBlockWithList):
         required=False,
         help_text=_("Vertical alignment of items within the row."),
     )
+    wrap = blocks.ChoiceBlock(
+        choices=FLEX_WRAP_CHOICES,
+        default="flex-wrap",
+        required=False,
+        label=_("Wrap"),
+    )
+    gap = blocks.ChoiceBlock(
+        choices=GRID_GAP_CHOICES,
+        default="gap-4",
+        required=False,
+        label=_("Gap"),
+    )
 
     class Meta:
         icon = "expand-right"
@@ -49,7 +65,7 @@ class RowBlock(SpacedBlockWithList):
         template = "wagtail_daisIE/blocks/row.html"
         form_layout = _layout_form_layout(
             ["content"],
-            ["horizontal_alignment", "vertical_alignment"],
+            ["horizontal_alignment", "vertical_alignment", "wrap", "gap"],
         )
 
 
@@ -66,6 +82,12 @@ class ColumnBlock(SpacedBlockWithList):
         required=False,
         help_text=_("Vertical alignment of items within the column."),
     )
+    gap = blocks.ChoiceBlock(
+        choices=GRID_GAP_CHOICES,
+        default="gap-4",
+        required=False,
+        label=_("Gap"),
+    )
 
     class Meta:
         icon = "collapse-down"
@@ -74,7 +96,7 @@ class ColumnBlock(SpacedBlockWithList):
         template = "wagtail_daisIE/blocks/column.html"
         form_layout = _layout_form_layout(
             ["content"],
-            ["horizontal_alignment", "vertical_alignment"],
+            ["horizontal_alignment", "vertical_alignment", "gap"],
         )
 
 

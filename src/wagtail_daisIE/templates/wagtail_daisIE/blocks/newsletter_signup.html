@@ -24,7 +24,7 @@
         required
         class="input join-item w-full"
       />
-      <button type="submit" class="btn btn-primary join-item">{% daisie_markup value.button_label allow_links=False %}</button>
+      <button type="submit" class="{% if newsletter_button_css %}{{ newsletter_button_css }}{% else %}btn btn-primary{% endif %} join-item">{% daisie_markup value.button_label allow_links=False %}</button>
     </form>
 
     <div id="daisie-newsletter-status-{{ block.id }}" role="status" aria-live="polite">

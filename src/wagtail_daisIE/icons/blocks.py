@@ -20,4 +20,3 @@ class IconChooserBlock(FieldBlock):
         icon = "image"
         label = _("Icon")
         template = "wagtail_daisIE/blocks/icon.html"
-        collapsed = True

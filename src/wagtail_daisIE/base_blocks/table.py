@@ -87,7 +87,7 @@ class TableAppearanceBlock(DaisieStructBlock):
     )
 
     class Meta:
-        icon = "grid"
+        icon = "table"
         collapsed = True
         form_layout = blocks.BlockGroup(
             children=[

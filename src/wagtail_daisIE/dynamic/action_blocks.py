@@ -22,7 +22,7 @@ from django.urls import NoReverseMatch, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import InlineMarkupBlock
+from ..base_blocks import InlineMarkupBlock, collapsed_group
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from ..blocks.inputs import AUTOCOMPLETE_BLOCKS, FIELD_BLOCKS
 from ..blocks.link import ButtonBlock
@@ -97,7 +97,13 @@ class ActionConfirmationBlock(DaisieStructBlock):
         label = _("Confirmation")
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=["text", "icon", "color", "style", "direction"],
+            children=[
+                "text",
+                collapsed_group(_("Icon"), "icon", icon="image"),
+                "color",
+                "style",
+                "direction",
+            ],
             heading=_("Confirmation alert"),
         )
 
@@ -145,8 +151,7 @@ class ActionButtonBlock(ButtonBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "text",
-                "icon",
-                "icon_after",
+                collapsed_group(_("Icon"), "icon", "icon_after", icon="image"),
                 "make_parent_clickable",
                 "confirm",
             ],

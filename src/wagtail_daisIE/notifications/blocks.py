@@ -7,8 +7,9 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.snippets.blocks import SnippetChooserBlock
 
-from ..base_blocks import InlineMarkupBlock, ThemedBlock
+from ..base_blocks import ButtonAppearanceBlock, InlineMarkupBlock, ThemedBlock
 from ..base_blocks.compact import DaisieStructBlock
+from ..base_blocks.css import build_design_css
 from ..choicelist import ChoiceList
 
 
@@ -65,6 +66,7 @@ class NewsletterSignupBlock(ThemedBlock):
     description = InlineMarkupBlock(max_length=255, required=False, blank=True)
     placeholder = blocks.CharBlock(max_length=128, default="Enter your email")
     button_label = InlineMarkupBlock(max_length=64, default="Subscribe")
+    button_appearance = ButtonAppearanceBlock(required=False)
     success_message = blocks.CharBlock(
         max_length=255,
         required=False,
@@ -81,6 +83,9 @@ class NewsletterSignupBlock(ThemedBlock):
             context["subscribe_url"] = ""
         audience = value.get("target_audience")
         context["audience_id"] = getattr(audience, "pk", None)
+        context["newsletter_button_css"] = build_design_css(
+            {"button_appearance": value.get("button_appearance")}
+        )
         return context
 
     class Meta:
@@ -97,7 +102,7 @@ class NewsletterSignupBlock(ThemedBlock):
                 "button_label",
                 "success_message",
             ],
-            settings=["design", "audience"],
+            settings=["design", "button_appearance", "audience"],
         )
 
 
@@ -140,6 +145,7 @@ class MenuNewsletterBlock(ThemedBlock):
         max_length=64,
         default=_("Subscribe"),
     )
+    button_appearance = ButtonAppearanceBlock(required=False)
     success_message = blocks.CharBlock(
         max_length=255,
         required=False,
@@ -150,6 +156,9 @@ class MenuNewsletterBlock(ThemedBlock):
         context = super().get_context(value, parent_context)
         value = value or {}
         context["newsletter_action"] = value.get("action") or ""
+        context["newsletter_button_css"] = build_design_css(
+            {"button_appearance": value.get("button_appearance")}
+        )
         context["audience_id"] = None
         if (value.get("mode") or "external") == "daisie":
             try:
@@ -178,7 +187,7 @@ class MenuNewsletterBlock(ThemedBlock):
                 "button_label",
                 "success_message",
             ],
-            settings=["design", "audience"],
+            settings=["design", "button_appearance", "audience"],
         )
         template = "wagtail_daisIE/blocks/menu_newsletter.html"
         preview_template = "wagtail_daisIE/blocks/menu_newsletter.html"

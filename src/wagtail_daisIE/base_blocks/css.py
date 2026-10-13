@@ -7,7 +7,7 @@ both by the individual design blocks (in their :meth:`get_context`) and by
 the ``block_css`` template variable.
 """
 
-from wagtail_daisIE.choices import MAIN_LAYOUT_CLASSES
+from wagtail_daisIE.choices import GRID_COLUMNS, MAIN_LAYOUT_CLASSES
 
 from .utils import build_border_width, build_class
 
@@ -245,6 +245,17 @@ def build_layout_css(value):
     return MAIN_LAYOUT_CLASSES.get(value, "")
 
 
+def build_grid_css(value):
+    """Responsive grid-column classes for a stored column-count choice."""
+    if not value:
+        return ""
+    try:
+        columns = int(value)
+    except (TypeError, ValueError):
+        return ""
+    return GRID_COLUMNS.get(columns, "")
+
+
 def build_passthrough_css(value):
     """Return a choice value that is already a utility class (or ``""``).
 
@@ -265,6 +276,7 @@ _DESIGN_BUILDERS = {
     "button_appearance": build_button_css,
     "table_appearance": build_table_css,
     "layout": build_layout_css,
+    "columns": build_grid_css,
     "wrap": build_passthrough_css,
     "justify": build_passthrough_css,
     "align": build_passthrough_css,

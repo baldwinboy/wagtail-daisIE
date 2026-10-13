@@ -8,7 +8,7 @@
           {% if tab.icon %}{% daisyui_icon tab.icon %}{% endif %}
           <span>{{ tab.label }}</span>
         </label>
-        <div class="tab-content rounded-box border border-base-300 bg-base-100 p-6">
+        <div class="tab-content rounded-box border border-base-300 bg-base-100 p-6{% if tab_panel_css %} {{ tab_panel_css }}{% endif %}">
           {% for child in tab.content %}{% include_block child %}{% endfor %}
         </div>
       {% endif %}

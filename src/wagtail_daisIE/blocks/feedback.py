@@ -10,7 +10,7 @@ from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import ThemedBlock
+from ..base_blocks import ThemedBlock, collapsed_group
 from ..choicelist import ChoiceList
 from ..choices.feedback import (
     ALERT_COLOR_CHOICES,
@@ -58,7 +58,13 @@ class AlertBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/alert.html"
         form_layout = blocks.BlockGroup(
-            children=["content", "icon", "color", "style", "direction"],
+            children=[
+                "content",
+                collapsed_group(_("Icon"), "icon", icon="image"),
+                "color",
+                "style",
+                "direction",
+            ],
             settings=["design", "audience"],
         )
 
@@ -75,7 +81,7 @@ class StatusBlock(ThemedBlock):
     )
 
     class Meta:
-        icon = "circle"
+        icon = "radio-full"
         group = _("Feedback")
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/status.html"
@@ -125,7 +131,7 @@ class RadialProgressBlock(ThemedBlock):
     thickness = blocks.CharBlock(default="0.25rem", required=False)
 
     class Meta:
-        icon = "circle"
+        icon = "spinner"
         group = _("Feedback")
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/radial_progress.html"
@@ -188,7 +194,7 @@ class ModalBlock(ThemedBlock):
     )
 
     class Meta:
-        icon = "dialog"
+        icon = "placeholder"
         group = _("Feedback")
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/modal.html"
@@ -207,7 +213,7 @@ class TooltipBlock(ThemedBlock):
     )
 
     class Meta:
-        icon = "info"
+        icon = "info-circle"
         group = _("Feedback")
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/tooltip.html"

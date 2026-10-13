@@ -15,7 +15,7 @@ class MockupBrowserBlock(ThemedBlock):
     content = DaisieStreamBlock(LIST_CONTENT_BLOCKS)
 
     class Meta:
-        icon = "browser"
+        icon = "desktop"
         group = _("Mockups")
         collapsed = True
         template = "wagtail_daisIE/blocks/mockups/browser.html"

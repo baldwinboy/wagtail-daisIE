@@ -42,7 +42,7 @@ class MarqueeBlock(SectionBlock):
     )
 
     class Meta:
-        icon = "horizontalrule"
+        icon = "minus"
         group = _("Text")
         collapsed = True
         template = "wagtail_daisIE/blocks/marquee.html"

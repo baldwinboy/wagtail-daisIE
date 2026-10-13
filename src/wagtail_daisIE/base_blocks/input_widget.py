@@ -18,6 +18,7 @@ from wagtail_daisIE.choices import (
     AVATAR_SHAPE_CHOICES,
     FLEX_WRAP_CHOICES,
     GAP_CHOICES,
+    GRID_COLUMN_CHOICES,
     JUSTIFY_CHOICES,
     MAIN_LAYOUT_CHOICES,
 )
@@ -64,6 +65,12 @@ class TrayDesignBlock(SpacedDesignBlock):
         required=False,
         label=_("Layout"),
     )
+    columns = blocks.ChoiceBlock(
+        choices=GRID_COLUMN_CHOICES,
+        required=False,
+        label=_("Columns"),
+        help_text=_("Used when the layout is a grid."),
+    )
     wrap = blocks.ChoiceBlock(
         choices=FLEX_WRAP_CHOICES, required=False, label=_("Wrap")
     )
@@ -77,6 +84,7 @@ class TrayDesignBlock(SpacedDesignBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "layout",
+                "columns",
                 "wrap",
                 "justify",
                 "align",

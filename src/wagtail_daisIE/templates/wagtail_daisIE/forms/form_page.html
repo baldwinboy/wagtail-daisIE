@@ -12,7 +12,7 @@
         {% daisie_htmx %}
         {{ form.media }}
     </head>
-    <body class="flex min-h-screen flex-col bg-base-100 text-base-content">
+    <body class="flex min-h-screen flex-col bg-base-100 text-base-content"{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
         <main id="main-content"{% daisyui_main_attrs daisyui_theme %}>
             {% if page.title %}<h1 class="mb-6 text-4xl font-bold">{{ page.title }}</h1>{% endif %}
 
@@ -42,7 +42,7 @@
                     {% include "wagtail_daisIE/forms/form_field.html" with field=field %}
                 {% endfor %}
 
-                <button type="submit" class="{{ page.get_submit_css }} mt-2">{{ page.submit_label|default:"Submit" }}</button>
+                <button type="submit" class="{% if button_css %}{{ button_css }} {% endif %}{{ page.get_submit_css }} mt-2">{{ page.submit_label|default:"Submit" }}</button>
             </form>
         </main>
     </body>
