@@ -1,14 +1,61 @@
-{% load notifications %}
+{% load i18n static notifications %}
 {% if audience_allowed %}
   <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     <label class="fieldset-legend" for="daisie-{{ block.id }}">{% daisie_markup value.label %}</label>
-    <input
-      id="daisie-{{ block.id }}"
-      type="file"
-      {% if value.name %}name="{{ value.name }}"{% endif %}
-      {% if value.accept %}accept="{{ value.accept }}"{% endif %}
-      class="file-input {{ value.color }} {{ value.size }}"
-    />
+    {% if file_display == "image" %}
+      <div class="daisie-file-image" data-daisie-file-image>
+        <label class="daisie-file-image__label">
+          <input
+            id="daisie-{{ block.id }}"
+            type="file"
+            {% if value.name %}name="{{ value.name }}"{% endif %}
+            {% if value.accept %}accept="{{ value.accept }}"{% endif %}
+          />
+          <span class="daisie-file-image__preview" data-daisie-file-image-preview></span>
+        </label>
+      </div>
+    {% elif file_display == "attachments" or file_multiple %}
+      <div class="daisie-file-attachments" data-daisie-file-attachments>
+        <div
+          class="daisie-file-attachments__preview{% if file_tray_css %} {{ file_tray_css }}{% endif %}"
+          data-daisie-file-preview
+        ></div>
+        <label class="daisie-file-attachments__add">
+          <input
+            id="daisie-{{ block.id }}"
+            type="file"
+            {% if value.name %}name="{{ value.name }}"{% endif %}
+            {% if value.accept %}accept="{{ value.accept }}"{% endif %}
+            multiple
+          />
+          <span class="daisie-file-attachments__add-label">{% translate "Add files" %}</span>
+        </label>
+        <template data-daisie-file-template>
+          <div
+            class="daisie-file-attachments__item{% if file_item_css %} {{ file_item_css }}{% endif %}"
+            data-daisie-file-item
+          >
+            <span class="daisie-file-attachments__icon" data-daisie-file-icon aria-hidden="true"></span>
+            <span class="daisie-file-attachments__name" data-daisie-file-name></span>
+            <button
+              type="button"
+              class="daisie-file-attachments__remove"
+              data-daisie-file-remove
+              aria-label="{% translate 'Remove' %}"
+            >&times;</button>
+          </div>
+        </template>
+      </div>
+    {% else %}
+      <input
+        id="daisie-{{ block.id }}"
+        type="file"
+        {% if value.name %}name="{{ value.name }}"{% endif %}
+        {% if value.accept %}accept="{{ value.accept }}"{% endif %}
+        class="file-input {{ value.color }} {{ value.size }}"
+      />
+    {% endif %}
     {% if value.helper_text %}<p class="label">{% daisie_markup value.helper_text %}</p>{% endif %}
   </fieldset>
+  <script src="{% static 'wagtail_daisIE/js/file_input.js' %}"></script>
 {% endif %}

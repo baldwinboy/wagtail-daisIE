@@ -245,6 +245,15 @@ def build_layout_css(value):
     return MAIN_LAYOUT_CLASSES.get(value, "")
 
 
+def build_passthrough_css(value):
+    """Return a choice value that is already a utility class (or ``""``).
+
+    Used by the tray/item design groups (``wrap``/``justify``/``align``/
+    ``gap``/``shape``) whose stored values are the class names themselves.
+    """
+    return value or ""
+
+
 _DESIGN_BUILDERS = {
     "size": build_size_css,
     "spacing": build_spacing_css,
@@ -256,6 +265,11 @@ _DESIGN_BUILDERS = {
     "button_appearance": build_button_css,
     "table_appearance": build_table_css,
     "layout": build_layout_css,
+    "wrap": build_passthrough_css,
+    "justify": build_passthrough_css,
+    "align": build_passthrough_css,
+    "gap": build_passthrough_css,
+    "shape": build_passthrough_css,
 }
 
 

@@ -12,8 +12,18 @@ import re
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import ColorChoiceBlock, InlineMarkupBlock, ThemedBlock
+from ..base_blocks import (
+    FALLBACK_CHOICES,
+    RENDER_CHOICES,
+    UPLOAD_DISPLAY_CHOICES,
+    ColorChoiceBlock,
+    InlineMarkupBlock,
+    ItemDesignBlock,
+    ThemedBlock,
+    TrayDesignBlock,
+)
 from ..base_blocks.compact import DaisieStreamBlock
+from ..base_blocks.css import build_design_css
 from ..choices import DAISYUI_BG_COLOR_CHOICES, MASK_SHAPE_CHOICES
 from ..choices.inputs import (
     CHOICE_COLOR_CHOICES,
@@ -418,6 +428,30 @@ class FileInputBlock(ThemedBlock):
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
+    display = blocks.ChoiceBlock(
+        choices=UPLOAD_DISPLAY_CHOICES,
+        default="default",
+        required=False,
+        label=_("Presentation"),
+    )
+    multiple = blocks.BooleanBlock(
+        default=False,
+        required=False,
+        label=_("Allow multiple files"),
+        help_text=_("Shown as an attachment tray."),
+    )
+    render = blocks.ChoiceBlock(
+        choices=RENDER_CHOICES,
+        default="thumbnail",
+        required=False,
+        label=_("Item rendering"),
+    )
+    fallback = blocks.ChoiceBlock(
+        choices=FALLBACK_CHOICES,
+        default="icon",
+        required=False,
+        label=_("Empty fallback"),
+    )
     accept = blocks.CharBlock(
         max_length=255, required=False, blank=True, label=_("Accepted types")
     )
@@ -426,6 +460,22 @@ class FileInputBlock(ThemedBlock):
     )
     size = blocks.ChoiceBlock(choices=FILE_SIZE_CHOICES, required=False)
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    tray_design = TrayDesignBlock()
+    item_design = ItemDesignBlock()
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        value = value or {}
+        display = value.get("display") or "default"
+        context["file_display"] = display
+        context["file_multiple"] = display == "attachments" or bool(
+            value.get("multiple")
+        )
+        context["file_render"] = value.get("render") or "thumbnail"
+        context["file_fallback"] = value.get("fallback") or "icon"
+        context["file_tray_css"] = build_design_css(value.get("tray_design"))
+        context["file_item_css"] = build_design_css(value.get("item_design"))
+        return context
 
     class Meta:
         icon = "upload"
@@ -433,8 +483,19 @@ class FileInputBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/file.html"
         form_layout = blocks.BlockGroup(
-            children=["label", "name", "accept", "helper_text", "color", "size"],
-            settings=["design", "audience"],
+            children=[
+                "label",
+                "name",
+                "display",
+                "multiple",
+                "render",
+                "fallback",
+                "accept",
+                "helper_text",
+                "color",
+                "size",
+            ],
+            settings=["design", "tray_design", "item_design", "audience"],
         )
 
 
@@ -485,10 +546,14 @@ class AutocompleteSelectMultipleBlock(ThemedBlock):
     required = blocks.BooleanBlock(default=False, required=False)
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
     error_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    tray_design = TrayDesignBlock()
+    item_design = ItemDesignBlock()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
+        context["autocomplete_tray_css"] = build_design_css(value.get("tray_design"))
+        context["autocomplete_item_css"] = build_design_css(value.get("item_design"))
         source = (value.get("options_source") or "").strip()
         request = (parent_context or {}).get("request")
         page = (parent_context or {}).get("page") or (parent_context or {}).get("self")
@@ -533,7 +598,7 @@ class AutocompleteSelectMultipleBlock(ThemedBlock):
                 "helper_text",
                 "error_text",
             ],
-            settings=["design", "audience"],
+            settings=["design", "tray_design", "item_design", "audience"],
         )
 
 

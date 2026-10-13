@@ -42,6 +42,14 @@ from .design import (
     TypographyDesignBlock,
 )
 from .fields import ColorChoiceBlock
+from .input_widget import (
+    FALLBACK_CHOICES,
+    RENDER_CHOICES,
+    UPLOAD_DISPLAY_CHOICES,
+    InputWidgetDesignBlock,
+    ItemDesignBlock,
+    TrayDesignBlock,
+)
 from .link import AbstractLinkBlock, LinkDestinationBlock
 from .markup import InlineMarkupBlock
 from .size import BlockSizeBlock, InlineSizeBlock
@@ -65,7 +73,13 @@ __all__ = [
     "DaisieStreamBlock",
     "DaisieStructBlock",
     "DesignBlock",
+    "FALLBACK_CHOICES",
     "GradientStopBlock",
+    "InputWidgetDesignBlock",
+    "ItemDesignBlock",
+    "RENDER_CHOICES",
+    "TrayDesignBlock",
+    "UPLOAD_DISPLAY_CHOICES",
     "InlineDesignBlock",
     "InlineMarkupBlock",
     "InlineSizeBlock",

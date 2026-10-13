@@ -250,6 +250,17 @@ MAIN_LAYOUT_CLASS_TOKENS = [
     token for value in MAIN_LAYOUT_CLASSES.values() for token in value.split()
 ]
 
+# Flex-container wrapping for trays/toolbars.
+FLEX_WRAP_CHOICES = ChoiceList(
+    [
+        ("", _("No wrap")),
+        ("flex-wrap", _("Wrap")),
+        ("flex-wrap-reverse", _("Wrap (reverse)")),
+        ("flex-nowrap", _("No wrap (forced)")),
+    ],
+    "FLEX_WRAP_CHOICES",
+)
+
 
 __all__ = [
     "AVATAR_SHAPE_CHOICES",
@@ -264,6 +275,7 @@ __all__ = [
     "DIVIDER_ORIENTATION_CHOICES",
     "DIVIDER_POSITION_CHOICES",
     "DROPDOWN_POSITION_CHOICES",
+    "FLEX_WRAP_CHOICES",
     "INDICATOR_COLOR_CHOICES",
     "INDICATOR_POSITION_CHOICES",
     "MAIN_LAYOUT_CHOICES",

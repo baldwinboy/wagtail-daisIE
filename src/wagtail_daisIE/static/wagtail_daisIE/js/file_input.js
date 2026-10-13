@@ -44,6 +44,33 @@
 
     var selected = Array.prototype.slice.call(input.files || []);
     var objectUrls = [];
+    var render = root.dataset.daisieFileRender || 'thumbnail';
+    var fallback = root.dataset.daisieFileFallback || 'icon';
+
+    function paint(iconEl, file) {
+      iconEl.classList.remove('daisie-file-attachments__icon--image');
+      iconEl.style.backgroundImage = '';
+      iconEl.textContent = '';
+      if (render !== 'icon' && isImage(file)) {
+        var url = URL.createObjectURL(file);
+        objectUrls.push(url);
+        iconEl.classList.add('daisie-file-attachments__icon--image');
+        iconEl.style.backgroundImage = 'url("' + url + '")';
+        return;
+      }
+      if (fallback === 'none') {
+        return;
+      }
+      if (fallback === 'initials') {
+        iconEl.textContent = (file.name || '?').trim().charAt(0).toUpperCase();
+        return;
+      }
+      if (fallback === 'placeholder') {
+        iconEl.textContent = '\u2022\u2022\u2022';
+        return;
+      }
+      iconEl.textContent = extension(file.name);
+    }
 
     function releaseUrls() {
       objectUrls.forEach(function (url) {
@@ -72,14 +99,7 @@
         var nameEl = item.querySelector('[data-daisie-file-name]');
         var iconEl = item.querySelector('[data-daisie-file-icon]');
         nameEl.textContent = file.name;
-        if (isImage(file)) {
-          var url = URL.createObjectURL(file);
-          objectUrls.push(url);
-          iconEl.classList.add('daisie-file-attachments__icon--image');
-          iconEl.style.backgroundImage = 'url("' + url + '")';
-        } else {
-          iconEl.textContent = extension(file.name);
-        }
+        paint(iconEl, file);
         item
           .querySelector('[data-daisie-file-remove]')
           .addEventListener('click', function () {

@@ -4,10 +4,15 @@
    preview; file_input.js swaps the preview to the chosen file immediately.
    Clearable so an existing model image can be removed. #}
 {% endcomment %}
-<div class="daisie-file-image" data-daisie-file-image>
+<div
+  class="daisie-file-image"
+  data-daisie-file-image
+  data-daisie-file-render="{{ widget.render }}"
+  data-daisie-file-fallback="{{ widget.fallback }}"
+>
   <label class="daisie-file-image__label">
     <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
-    <span class="daisie-file-image__preview" data-daisie-file-image-preview>
+    <span class="daisie-file-image__preview{% if widget.item_css %} {{ widget.item_css }}{% endif %}" data-daisie-file-image-preview>
       {% if widget.is_initial %}<img src="{{ widget.value.url }}" alt="">{% endif %}
     </span>
   </label>

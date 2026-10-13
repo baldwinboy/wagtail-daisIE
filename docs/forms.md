@@ -63,6 +63,14 @@ builder applies the input design to the widget and the label design to its
 legend/label, so inputs and labels can be styled individually on top of the
 DaisyUI defaults.
 
+For upload fields, **Input design** additionally carries a **tray** and an
+**item** design (container layout/wrap/gap/justify/align and per-item
+size/shape/background/typography) plus **Item rendering** (thumbnail / icon /
+avatar) and **Empty fallback** (icon / initials / placeholder / blank). The
+same vocabulary is available to editors on the **File input** and
+**Autocomplete** data-input blocks, so designed forms can match form pages
+without template overrides.
+
 The page's **Submit button** field exposes the same button appearance
 (`ButtonAppearanceBlock`).
 
@@ -153,11 +161,18 @@ image uploads — in settings:
 
 ```python
 WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
-    "file": {
-        "label": _("File upload"),
-        "field": "django.forms.FileField",  # class or (field, options) -> Field
-        "widget": "django.forms.ClearableFileInput",
-        "css": "file-input w-full",
+    "avatar": {
+        "label": _("Profile picture"),
+        "display": "image",  # default | image | attachments
+        "is_upload": True,
+        "validators": ["myapp.validators.image_only"],
+        "handler": "myapp.uploads.store",
+    },
+    "attachments": {
+        "label": _("Attachments"),
+        "display": "attachments",
+        "multiple": True,
+        "collection_validators": ["myapp.validators.at_most_five"],
         "is_upload": True,
         "handler": "myapp.uploads.store",
     },
@@ -165,11 +180,53 @@ WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
 ```
 
 Every registered type appears in each form field’s **Field type** dropdown.
-`field` may be a Django form field class **or** a factory taking
-`(form_field, options)` and returning a bound field, so a project can supply
-its own multiple-file field. `widget`, `widget_attrs` and `css` are applied to
-the input; `options` are merged into the field constructor. Every dotted path
-is imported lazily.
+An upload type (`is_upload: True`) with no `field` is built from the package’s
+own `DaisieFileField`; `display` selects the widget (`default`, `image` or
+`attachments`), and `multiple` allows several files. `field` may still be a
+Django form field class **or** a factory taking `(form_field, options)`, so a
+project can supply its own; `widget`, `widget_attrs` and `css` are applied to
+the input and `options` are merged into the field constructor. Every dotted
+path is imported lazily.
+
+### Validation
+
+The package ships **no validators** and imports no imaging library — projects
+own validation and may use Pillow or anything else:
+
+* `validators` — a list of callables (or dotted paths) run **once per uploaded
+  file**, each `fn(uploaded_file) -> None` raising `ValidationError`;
+* `collection_validators` — a list run **once on the final value** (the list of
+  new uploads plus any kept edit-mode references), each `fn(files) -> None`.
+
+A validator that cannot be imported **fails closed** with
+`ImproperlyConfigured` rather than being skipped. Any exception other than
+`ValidationError` propagates. An example using Pillow:
+
+```python
+# myapp/validators.py
+from django.core.exceptions import ValidationError
+
+
+def at_least_128px(file):
+    from PIL import Image
+
+    try:
+        width, height = Image.open(file).size
+    finally:
+        file.seek(0)
+    if min(width, height) < 128:
+        raise ValidationError("Image must be at least 128x128.")
+```
+
+### Edit mode
+
+In edit mode, existing attachment references render as hidden
+`{field}-existing` inputs; removing a card removes its reference, so the
+submitted value is the kept references plus any new uploads. The handler runs
+only on genuinely new uploads (`UploadedFile`), so references are not
+re-sent to storage. A multiple-attachment value cannot bind to a single model
+`FileField`; persist via the handler, bind to a related model, or override
+`create_instance_from_submission`.
 
 Upload types (`is_upload: True`) **must** have a handler — the package ships no
 default storage. Set it per type (`handler`) or project-wide:

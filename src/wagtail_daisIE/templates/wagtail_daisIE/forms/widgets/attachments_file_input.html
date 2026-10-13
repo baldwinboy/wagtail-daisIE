@@ -6,7 +6,12 @@
    references render as hidden "{name}-existing" inputs so removing a card
    removes the reference from the submitted value. #}
 {% endcomment %}
-<div class="daisie-file-attachments" data-daisie-file-attachments>
+<div
+  class="daisie-file-attachments"
+  data-daisie-file-attachments
+  data-daisie-file-render="{{ widget.render }}"
+  data-daisie-file-fallback="{{ widget.fallback }}"
+>
   <div class="daisie-file-attachments__existing" data-daisie-file-existing>
     {% for ref in existing %}
       <div class="daisie-file-attachments__item" data-daisie-file-item>
@@ -17,13 +22,19 @@
       </div>
     {% endfor %}
   </div>
-  <div class="daisie-file-attachments__preview" data-daisie-file-preview></div>
+  <div
+    class="daisie-file-attachments__preview{% if widget.tray_css %} {{ widget.tray_css }}{% endif %}"
+    data-daisie-file-preview
+  ></div>
   <label class="daisie-file-attachments__add">
     <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
     <span class="daisie-file-attachments__add-label">{% translate "Add files" %}</span>
   </label>
   <template data-daisie-file-template>
-    <div class="daisie-file-attachments__item" data-daisie-file-item>
+    <div
+      class="daisie-file-attachments__item{% if widget.item_css %} {{ widget.item_css }}{% endif %}"
+      data-daisie-file-item
+    >
       <span class="daisie-file-attachments__icon" data-daisie-file-icon aria-hidden="true"></span>
       <span class="daisie-file-attachments__name" data-daisie-file-name></span>
       <button type="button" class="daisie-file-attachments__remove" data-daisie-file-remove aria-label="{% translate 'Remove' %}">&times;</button>

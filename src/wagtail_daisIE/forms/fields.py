@@ -15,6 +15,7 @@ from wagtail.fields import StreamField
 
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
+from ..base_blocks.input_widget import InputWidgetDesignBlock
 from ..context import get_current_model_fields
 from ..dynamic.registry import get_context_models
 from .registry import (
@@ -217,7 +218,7 @@ class DaisieFormField(AbstractFormField):
         ),
     )
     input_design = StreamField(
-        [("design", TypographyDesignBlock())],
+        [("design", InputWidgetDesignBlock())],
         blank=True,
         max_num=1,
         use_json_field=True,
@@ -259,6 +260,17 @@ class DaisieFormField(AbstractFormField):
         return build_design_css(
             self.input_design[0].value if self.input_design else None
         )
+
+    def get_widget_design(self):
+        """Return the tray/item/render/fallback design for the upload widget."""
+        value = self.input_design[0].value if self.input_design else None
+        value = value or {}
+        return {
+            "tray_css": build_design_css(value.get("tray")),
+            "item_css": build_design_css(value.get("item")),
+            "render": value.get("render") or "thumbnail",
+            "fallback": value.get("fallback") or "icon",
+        }
 
     def get_label_css(self):
         return build_design_css(

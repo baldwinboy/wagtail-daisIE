@@ -56,7 +56,17 @@ class AttachmentsFileInput(MultipleFileInput):
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         context["existing"] = self._existing_values(value)
+        context["widget"].update(self._design_context())
         return context
+
+    def _design_context(self):
+        design = getattr(self, "design", None) or {}
+        return {
+            "tray_css": design.get("tray_css", ""),
+            "item_css": design.get("item_css", ""),
+            "render": design.get("render", "thumbnail"),
+            "fallback": design.get("fallback", "icon"),
+        }
 
     @property
     def media(self):
@@ -72,6 +82,19 @@ class ImageFileInput(forms.ClearableFileInput):
     """
 
     template_name = "wagtail_daisIE/forms/widgets/image_file_input.html"
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        design = getattr(self, "design", None) or {}
+        context["widget"].update(
+            {
+                "tray_css": design.get("tray_css", ""),
+                "item_css": design.get("item_css", ""),
+                "render": design.get("render", "thumbnail"),
+                "fallback": design.get("fallback", "icon"),
+            }
+        )
+        return context
 
     @property
     def media(self):

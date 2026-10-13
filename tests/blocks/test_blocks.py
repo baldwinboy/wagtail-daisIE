@@ -161,3 +161,63 @@ class TestReusableBlock:
         block = ReusableBlockBlock()
         value = block.to_python({"reusable": None, "design": {}, "audience": {}})
         assert block.render(value, context={}).strip() == ""
+
+
+class TestInputWidgetDesign:
+    def test_file_block_renders_tray_and_item_design(self):
+        from wagtail_daisIE.blocks.inputs import FileInputBlock
+
+        block = FileInputBlock()
+        value = block.to_python(
+            {
+                "label": "Files",
+                "name": "files",
+                "display": "attachments",
+                "multiple": True,
+                "render": "thumbnail",
+                "fallback": "icon",
+                "accept": "",
+                "color": "",
+                "size": "",
+                "helper_text": "",
+                "tray_design": {"layout": "row", "gap": "gap-2", "wrap": "flex-wrap"},
+                "item_design": {"shape": "rounded-full"},
+                "design": {},
+                "audience": {},
+            }
+        )
+        html = block.render(value, context={})
+        assert "data-daisie-file-attachments" in html
+        assert "data-daisie-file-template" in html
+        assert "gap-2" in html
+        assert "rounded-full" in html
+
+    def test_autocomplete_block_renders_tray_and_token_design(self):
+        from wagtail_daisIE.blocks.inputs import AutocompleteSelectMultipleBlock
+
+        block = AutocompleteSelectMultipleBlock()
+        value = block.to_python(
+            {
+                "label": "Tags",
+                "name": "tags",
+                "options_source": "",
+                "options": "a,b",
+                "selected": "",
+                "value_field": "pk",
+                "label_field": "__str__",
+                "placeholder": "",
+                "color": "",
+                "size": "",
+                "required": False,
+                "helper_text": "",
+                "error_text": "",
+                "tray_design": {"justify": "justify-center"},
+                "item_design": {"shape": "rounded-full"},
+                "design": {},
+                "audience": {},
+            }
+        )
+        html = block.render(value, context={})
+        assert "data-daisyui-autocomplete-token" in html
+        assert "justify-center" in html
+        assert "rounded-full" in html

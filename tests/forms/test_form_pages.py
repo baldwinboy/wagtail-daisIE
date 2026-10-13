@@ -192,6 +192,27 @@ class TestBuilder:
         assert result.multiple is False
         assert isinstance(result.widget, ImageFileInput)
 
+    def test_widget_design_is_threaded_onto_the_widget(self):
+        class _DesignedUpload(_FakeField):
+            def get_widget_design(self):
+                return {
+                    "tray_css": "gap-4",
+                    "item_css": "rounded-full",
+                    "render": "icon",
+                    "fallback": "initials",
+                }
+
+        field = _DesignedUpload()
+        field.field_type = "upload"
+        create = DaisyUIFormBuilder([]).get_create_field_function("upload")
+        widget = create(field, {"required": False}).widget
+        assert widget.design == {
+            "tray_css": "gap-4",
+            "item_css": "rounded-full",
+            "render": "icon",
+            "fallback": "initials",
+        }
+
 
 CONFIG = {"member": {"label": "Member", "model": "auth.User"}}
 
@@ -613,6 +634,20 @@ class TestFileWidgets:
         html = ImageFileInput().render("photo", None, attrs={})
         assert "data-daisie-file-image" in html
         assert "data-daisie-file-image-preview" in html
+
+    def test_attachments_render_applies_widget_design(self):
+        widget = AttachmentsFileInput()
+        widget.design = {
+            "tray_css": "gap-4",
+            "item_css": "rounded-full",
+            "render": "icon",
+            "fallback": "initials",
+        }
+        html = widget.render("photo", None, attrs={})
+        assert "gap-4" in html
+        assert "rounded-full" in html
+        assert 'data-daisie-file-render="icon"' in html
+        assert 'data-daisie-file-fallback="initials"' in html
 
 
 class TestFormFieldBlock:

@@ -6,7 +6,7 @@
 {% endcomment %}
 <div class="daisyui-autocomplete__enhanced hidden" data-daisyui-autocomplete-enhanced>
   <div
-    class="daisyui-autocomplete__tokens mb-2 flex flex-wrap gap-1 empty:mb-0"
+    class="daisyui-autocomplete__tokens mb-2 flex flex-wrap gap-1 empty:mb-0{% if autocomplete_tray_css %} {{ autocomplete_tray_css }}{% endif %}"
     data-daisyui-autocomplete-tokens
   ></div>
   <input
@@ -27,4 +27,15 @@
       </li>
     {% endfor %}
   </ul>
+  <template data-daisyui-autocomplete-token>
+    <span class="badge badge-primary gap-1{% if autocomplete_item_css %} {{ autocomplete_item_css }}{% endif %}">
+      <span data-daisyui-autocomplete-token-label></span>
+      <button
+        type="button"
+        class="cursor-pointer font-bold"
+        data-daisyui-autocomplete-token-remove
+        aria-label="{% translate 'Remove' %}"
+      >&times;</button>
+    </span>
+  </template>
 </div>

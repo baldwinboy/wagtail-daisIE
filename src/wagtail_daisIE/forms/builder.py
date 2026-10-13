@@ -158,6 +158,11 @@ class DaisyUIFormBuilder(FormBuilder):
             widget.attrs["class"] = f"{existing} {input_css}".strip()
         django_field.input_css = input_css
         django_field.label_css = label_css
+        get_widget_design = getattr(form_field, "get_widget_design", None)
+        if callable(get_widget_design):
+            design = get_widget_design()
+            if design:
+                django_field.widget.design = design
         return django_field
 
     def create_singleline_field(self, field, options):

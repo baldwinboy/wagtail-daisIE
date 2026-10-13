@@ -35,22 +35,47 @@
     if (!select || !tokens) {
       return;
     }
+    var template = wrapper.querySelector(
+      'template[data-daisyui-autocomplete-token]',
+    );
     tokens.replaceChildren();
     selectedOptions(select).forEach(function (option) {
+      if (template) {
+        var node = template.content.cloneNode(true);
+        var label = node.querySelector(
+          '[data-daisyui-autocomplete-token-label]',
+        );
+        if (label) {
+          label.textContent = option.textContent;
+        }
+        var remove = node.querySelector(
+          '[data-daisyui-autocomplete-token-remove]',
+        );
+        if (remove) {
+          remove.setAttribute('aria-label', 'Remove ' + option.textContent);
+          remove.addEventListener('click', function () {
+            option.selected = false;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            renderTokens(wrapper);
+          });
+        }
+        tokens.appendChild(node);
+        return;
+      }
       var token = document.createElement('span');
       token.className = 'badge badge-primary gap-1';
       token.appendChild(document.createTextNode(option.textContent));
-      var remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'cursor-pointer font-bold';
-      remove.setAttribute('aria-label', 'Remove ' + option.textContent);
-      remove.textContent = '\u00d7';
-      remove.addEventListener('click', function () {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cursor-pointer font-bold';
+      button.setAttribute('aria-label', 'Remove ' + option.textContent);
+      button.textContent = '\u00d7';
+      button.addEventListener('click', function () {
         option.selected = false;
         select.dispatchEvent(new Event('change', { bubbles: true }));
         renderTokens(wrapper);
       });
-      token.appendChild(remove);
+      token.appendChild(button);
       tokens.appendChild(token);
     });
   }
