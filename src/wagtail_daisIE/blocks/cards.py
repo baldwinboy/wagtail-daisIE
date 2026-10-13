@@ -96,6 +96,11 @@ class CardBlock(SectionBlock):
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         context["card_clickable"] = _card_is_clickable((value or {}).get("content"))
+        design = (value or {}).get("design") or {}
+        # Keep the default shadow unless the editor set their own box shadow.
+        context["card_default_css"] = (
+            "" if (design.get("box") or {}).get("shadow") else "shadow"
+        )
         return context
 
     class Meta:

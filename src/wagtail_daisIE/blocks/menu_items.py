@@ -15,6 +15,7 @@ from ..base_blocks.compact import DaisieStreamBlock
 from ..base_blocks.fields import URLOrAbsolutePathBlock
 from ..base_blocks.markup import strip_inline_markup
 from ..choicelist import ChoiceList
+from ..choices.inputs import INPUT_COLOR_CHOICES
 from ..dynamic.action_blocks import ActionBlock
 from .cards import InlineCardBlock
 from .link import ButtonBlock, LabelLinkBlock
@@ -115,6 +116,11 @@ class MenuSearchBoxBlock(ThemedBlock):
         required=False,
         label=_("Form method"),
     )
+    input_color = blocks.ChoiceBlock(
+        choices=INPUT_COLOR_CHOICES,
+        required=False,
+        label=_("Colour"),
+    )
 
     class Meta:
         icon = "search"
@@ -128,6 +134,7 @@ class MenuSearchBoxBlock(ThemedBlock):
                 "search_parameter",
                 "search_placeholder",
                 "method",
+                "input_color",
             ],
             settings=["design", "audience"],
         )

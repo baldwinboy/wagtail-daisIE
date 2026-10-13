@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ColumnBlock`; configurable submit buttons on the newsletter signup blocks
   and the FAB trigger.
 * Collapsed "Icon" and "Options" groups in block edit forms.
+* Public imports for the autocomplete/file input blocks
+  (`AutocompleteSelectMultipleBlock`, `FileInputBlock`, `INPUT_BLOCKS`,
+  `AUTOCOMPLETE_BLOCKS`, ...) and docs for using them in a project's own
+  `StreamField`; a configurable colour on the menu search box.
+* `daisie_block_css` template tag for rendering a themed block's design classes
+  where `{% include_block %}` cannot be used.
 
 ### Fixed
 
@@ -29,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   feed layout toggles and action confirmation dialogs use the configured design;
   allauth OTP fields keep the input design.
 * File input colour/size reached the image and attachment displays.
+* Megamenu headings honour the `HeaderBlock` design; card shadow and marquee
+  padding defaults survive a partial design; navbar search uses the menu item
+  design.
 
 ### Removed
 

@@ -419,6 +419,23 @@ def daisie_htmx():
 
 
 @register.simple_tag(takes_context=True)
+def daisie_block_css(context, value):
+    """Return a themed block value's design classes for manual renders.
+
+    Use when a nested block cannot be rendered with ``{% include_block %}``
+    (for example inside a megamenu ``<button>``/``<span>``). Merges any
+    inherited ``menu_default_css`` from the parent context, matching
+    ``ThemedBlock.get_context``.
+    """
+    from ..base_blocks.css import build_class, build_design_css
+
+    return build_class(
+        (context or {}).get("menu_default_css", ""),
+        build_design_css((value or {}).get("design")),
+    )
+
+
+@register.simple_tag(takes_context=True)
 def daisyui_main_attrs(context, theme=None):
     """Render ``class``/``style`` attributes for the main container."""
     css = context.get("daisyui_main_css", "")

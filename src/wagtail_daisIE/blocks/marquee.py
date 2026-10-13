@@ -41,6 +41,14 @@ class MarqueeBlock(SectionBlock):
         help_text=_("Direction of the marquee animation."),
     )
 
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        design = (value or {}).get("design") or {}
+        padding = design.get("padding") or {}
+        # Keep the default padding unless the editor set their own.
+        context["marquee_default_css"] = "" if any(padding.values()) else "p-4"
+        return context
+
     class Meta:
         icon = "minus"
         group = _("Text")

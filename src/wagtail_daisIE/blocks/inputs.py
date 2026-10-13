@@ -680,4 +680,14 @@ class FieldsetBlock(ThemedBlock):
         )
 
 
+__all__ = [
+    "AUTOCOMPLETE_BLOCKS",
+    "AutocompleteSelectMultipleBlock",
+    "FIELD_BLOCKS",
+    "FileInputBlock",
+    "FieldsetBlock",
+    "INPUT_BLOCKS",
+]
+
+
 INPUT_BLOCKS = [*FIELD_BLOCKS, ("fieldset", FieldsetBlock())]

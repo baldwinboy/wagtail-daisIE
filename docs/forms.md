@@ -179,6 +179,13 @@ WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
 }
 ```
 
+The package ships **no default field types**: copy the entries you need. The
+demo registers a `file` upload and a `tags` multi-select that uses
+`wagtail_daisIE.widgets.DaisieAutocompleteSelectMultiple`. The same
+autocomplete control is available as the **Autocomplete** block for page
+bodies — see
+[data-components.md](data-components.md#autocomplete-and-attachments).
+
 Every registered type appears in each form field’s **Field type** dropdown.
 An upload type (`is_upload: True`) with no `field` is built from the package’s
 own `DaisieFileField`; `display` selects the widget (`default`, `image` or

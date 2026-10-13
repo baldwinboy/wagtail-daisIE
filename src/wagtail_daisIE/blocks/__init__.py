@@ -37,6 +37,12 @@ _LAZY_EXPORTS = {
     "LIST_CONTENT_BLOCKS": ".content",
     "REUSABLE_CONTENT_BLOCKS": ".content_blocks",
     "ReusableBlockBlock": ".reusable",
+    "AUTOCOMPLETE_BLOCKS": ".inputs",
+    "AutocompleteSelectMultipleBlock": ".inputs",
+    "FIELD_BLOCKS": ".inputs",
+    "FileInputBlock": ".inputs",
+    "FieldsetBlock": ".inputs",
+    "INPUT_BLOCKS": ".inputs",
 }
 
 
@@ -74,4 +80,10 @@ __all__ = [
     "MenuLogo",
     "MenuNewsletterBlock",
     "MenuSearchBoxBlock",
+    "AUTOCOMPLETE_BLOCKS",
+    "AutocompleteSelectMultipleBlock",
+    "FIELD_BLOCKS",
+    "FileInputBlock",
+    "FieldsetBlock",
+    "INPUT_BLOCKS",
 ]

@@ -333,6 +333,41 @@ Cally is loaded from a version-pinned URL you can override:
 WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally@0.9.2"
 ```
 
+## Autocomplete and attachments
+
+The **File input** and **Autocomplete** are data-input blocks. Because the
+top-level page palette is fixed — adding a block there changes every project's
+frozen `StreamField` and forces migrations — the autocomplete is offered inside
+the keyed nested streams: **Fieldset**, **Action form** fields and **Tab**
+content. The **File input** is also a top-level data-input block.
+
+To use them in a project's own `StreamField`, import the block set:
+
+```python
+from wagtail import blocks
+from wagtail_daisIE.blocks import AUTOCOMPLETE_BLOCKS, INPUT_BLOCKS
+
+
+class MyPage(Page):
+    body = blocks.StreamField(
+        [*INPUT_BLOCKS, *AUTOCOMPLETE_BLOCKS], use_json_field=True
+    )
+```
+
+Every block is a compact (`DaisieStructBlock`) block, so it serialises by a
+stable registry key; adding one to a project's own model is a project-owned
+migration that keeps `block_lookup` small (see [migrations.md](migrations.md)).
+
+The autocomplete's `daisyui_autocomplete.js` and the file input's
+`file_input.js` are loaded by the block templates (and by the admin widgets
+through their `Media`). Include `{% daisie_styles %}` in the base template as
+usual.
+
+For the same controls on **form pages** (file/image/attachment uploads and a
+searchable multi-select), register form field types — the package ships no
+defaults, so copy the demo's `WAGTAIL_DAISIE_FORM_FIELD_TYPES` and see
+[forms.md](forms.md#file-and-image-uploads).
+
 ## The demo
 
 `just demo` seeds a **Bread** model, a blog feed and pages that demonstrate these
