@@ -3,8 +3,10 @@ from types import SimpleNamespace
 import pytest
 
 from django import forms
-from django.core.exceptions import ImproperlyConfigured
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile, UploadedFile
+from django.http import QueryDict
+from django.utils.datastructures import MultiValueDict
 
 from wagtail_daisIE.dynamic.registry import reset_context_models
 from wagtail_daisIE.forms.blocks import (
@@ -14,19 +16,23 @@ from wagtail_daisIE.forms.blocks import (
 )
 from wagtail_daisIE.forms.builder import DaisyUIFormBuilder
 from wagtail_daisIE.forms.fields import (
+    DaisieFileField,
     DaisieFormField,
     InstanceModelSelect,
     ModelFieldSelect,
+    MultipleFileInput,
 )
 from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.forms.registry import (
     FIELD_TYPE_MAX_LENGTH,
+    get_default_upload_handler,
     get_form_field_type,
     get_form_field_type_choices,
     get_form_field_types,
     is_upload_field_type,
     reset_form_field_types,
 )
+from wagtail_daisIE.forms.widgets_file import AttachmentsFileInput, ImageFileInput
 from wagtail_daisIE.widgets import DaisieAutocompleteSelectMultiple
 
 
@@ -65,6 +71,19 @@ def _field_type_registry(settings):
         "multifile": {
             "label": "Multiple files",
             "field": _build_multiple_file_field,
+            "is_upload": True,
+            "handler": _store_file,
+        },
+        "upload": {
+            "label": "Upload",
+            "display": "attachments",
+            "multiple": True,
+            "is_upload": True,
+            "handler": _store_file,
+        },
+        "image": {
+            "label": "Image",
+            "display": "image",
             "is_upload": True,
             "handler": _store_file,
         },
@@ -154,6 +173,24 @@ class TestBuilder:
         create = DaisyUIFormBuilder([]).get_create_field_function("multifile")
         result = create(field, {"required": False})
         assert isinstance(result, _MultipleUploadField)
+
+    def test_upload_type_without_field_defaults_to_daisie_file_field(self):
+        field = _FakeField()
+        field.field_type = "upload"
+        create = DaisyUIFormBuilder([]).get_create_field_function("upload")
+        result = create(field, {"required": False})
+        assert isinstance(result, DaisieFileField)
+        assert result.multiple is True
+        assert isinstance(result.widget, AttachmentsFileInput)
+
+    def test_image_display_selects_image_widget(self):
+        field = _FakeField()
+        field.field_type = "image"
+        create = DaisyUIFormBuilder([]).get_create_field_function("image")
+        result = create(field, {"required": False})
+        assert isinstance(result, DaisieFileField)
+        assert result.multiple is False
+        assert isinstance(result.widget, ImageFileInput)
 
 
 CONFIG = {"member": {"label": "Member", "model": "auth.User"}}
@@ -306,6 +343,52 @@ class TestFieldTypeRegistry:
         for key in get_form_field_types():
             assert len(key) <= FIELD_TYPE_MAX_LENGTH
 
+    def test_upload_spec_parses_display_and_multiple(self, settings):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+            "files": {
+                "label": "Files",
+                "display": "attachments",
+                "multiple": True,
+                "is_upload": True,
+                "handler": _store_file,
+            }
+        }
+        reset_form_field_types()
+        spec = get_form_field_type("files")
+        assert spec.display == "attachments"
+        assert spec.multiple is True
+
+    def test_unknown_display_warns_and_falls_back(self, settings, caplog):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {"x": {"display": "nope"}}
+        reset_form_field_types()
+        with caplog.at_level("WARNING"):
+            get_form_field_types()
+        assert "unknown display" in caplog.text
+        assert get_form_field_type("x").display == "default"
+
+    def test_validators_resolve_callables_and_paths(self, settings):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+            "x": {
+                "validators": [
+                    _store_file,
+                    "wagtail_daisIE.forms.registry.get_default_upload_handler",
+                ],
+                "collection_validators": [_tag_choices],
+            }
+        }
+        reset_form_field_types()
+        spec = get_form_field_type("x")
+        assert spec.resolved_validators == [_store_file, get_default_upload_handler]
+        assert spec.resolved_collection_validators == [_tag_choices]
+
+    def test_unresolvable_validator_fails_closed(self, settings):
+        settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
+            "x": {"validators": ["not.a.real.validator"]}
+        }
+        reset_form_field_types()
+        with pytest.raises(ImproperlyConfigured):
+            _ = get_form_field_type("x").resolved_validators
+
     def test_overlong_key_warns(self, settings, caplog):
         settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
             "a" * (FIELD_TYPE_MAX_LENGTH + 1): {
@@ -374,6 +457,18 @@ class TestUploadSubmission:
         )
         assert data["photo"] == ["stored:a.txt", "stored:b.txt"]
 
+    def test_mixed_reference_and_upload_only_stores_new_files(self):
+        page = _UploadPage([_MultiUploadField()])
+        data = page.get_submission_form_data(
+            _upload_form(["stored:a.txt", SimpleUploadedFile("b.txt", b"b")])
+        )
+        assert data["photo"] == ["stored:a.txt", "stored:b.txt"]
+
+    def test_reference_string_is_not_sent_to_handler(self):
+        page = _UploadPage([_UploadField()])
+        data = page.get_submission_form_data(_upload_form("stored:x.txt"))
+        assert data["photo"] == "stored:x.txt"
+
     def test_missing_handler_raises(self, settings):
         settings.WAGTAIL_DAISIE_FORM_FIELD_TYPES = {
             "file": {
@@ -415,6 +510,109 @@ class TestUploadSubmission:
             _upload_form(SimpleUploadedFile("a.txt", b"hi"))
         )
         assert data["photo"] == "overridden"
+
+
+class TestDaisieFileField:
+    def test_single_returns_file(self):
+        upload = SimpleUploadedFile("a.txt", b"hi")
+        assert DaisieFileField().clean(upload) is upload
+
+    def test_multiple_returns_list(self):
+        a = SimpleUploadedFile("a.txt", b"a")
+        b = SimpleUploadedFile("b.txt", b"b")
+        assert DaisieFileField(multiple=True).clean([a, b]) == [a, b]
+
+    def test_multiple_empty_not_required(self):
+        assert DaisieFileField(multiple=True, required=False).clean([]) == []
+
+    def test_multiple_required_empty_raises(self):
+        with pytest.raises(ValidationError):
+            DaisieFileField(multiple=True, required=True).clean([])
+
+    def test_multiple_forces_multi_widget(self):
+        assert isinstance(DaisieFileField(multiple=True).widget, MultipleFileInput)
+
+    def test_per_file_validator_runs_per_item(self):
+        seen = []
+        field = DaisieFileField(multiple=True, validators=[seen.append])
+        a = SimpleUploadedFile("a.txt", b"a")
+        b = SimpleUploadedFile("b.txt", b"b")
+        field.clean([a, b])
+        assert seen == [a, b]
+
+    def test_per_file_validator_error_surfaces(self):
+        def reject(file):
+            raise ValidationError("nope")
+
+        with pytest.raises(ValidationError):
+            DaisieFileField(validators=[reject]).clean(
+                SimpleUploadedFile("a.txt", b"a")
+            )
+
+    def test_collection_validator_receives_list(self):
+        seen = []
+        field = DaisieFileField(multiple=True, collection_validators=[seen.append])
+        a = SimpleUploadedFile("a.txt", b"a")
+        field.clean([a])
+        assert seen == [[a]]
+
+    def test_reference_strings_pass_through(self):
+        seen = []
+        field = DaisieFileField(multiple=True, validators=[seen.append])
+        result = field.clean(["stored:a.txt", SimpleUploadedFile("b.txt", b"b")])
+        assert result[0] == "stored:a.txt"
+        assert isinstance(result[1], UploadedFile)
+        assert len(seen) == 1 and isinstance(seen[0], UploadedFile)
+
+
+class TestFileWidgets:
+    def test_attachments_merges_new_files_and_existing_refs(self):
+        widget = AttachmentsFileInput()
+        data = QueryDict("photo-existing=stored:a.txt&photo-existing=stored:b.txt")
+        files = MultiValueDict({"photo": [SimpleUploadedFile("c.txt", b"c")]})
+        value = widget.value_from_datadict(data, files, "photo")
+        assert value[0].name == "c.txt"
+        assert value[1:] == ["stored:a.txt", "stored:b.txt"]
+
+    def test_attachments_empty_value(self):
+        widget = AttachmentsFileInput()
+        assert (
+            widget.value_from_datadict(QueryDict(""), MultiValueDict(), "photo") == []
+        )
+
+    def test_attachments_not_omitted_when_existing_present(self):
+        widget = AttachmentsFileInput()
+        assert (
+            widget.value_omitted_from_data(
+                QueryDict("photo-existing=stored:a.txt"), MultiValueDict(), "photo"
+            )
+            is False
+        )
+
+    def test_attachments_omitted_when_empty(self):
+        widget = AttachmentsFileInput()
+        assert (
+            widget.value_omitted_from_data(QueryDict(""), MultiValueDict(), "photo")
+            is True
+        )
+
+    def test_attachments_context_lists_existing(self):
+        context = AttachmentsFileInput().get_context("photo", ["a", "b"], {})
+        assert context["existing"] == ["a", "b"]
+
+    def test_attachments_render_includes_existing_inputs_and_template(self):
+        html = AttachmentsFileInput().render("photo", ["stored:a.txt"], attrs={})
+        assert 'name="photo-existing"' in html
+        assert "stored:a.txt" in html
+        assert "data-daisie-file-template" in html
+
+    def test_image_widget_is_clearable(self):
+        assert isinstance(ImageFileInput(), forms.ClearableFileInput)
+
+    def test_image_widget_renders(self):
+        html = ImageFileInput().render("photo", None, attrs={})
+        assert "data-daisie-file-image" in html
+        assert "data-daisie-file-image-preview" in html
 
 
 class TestFormFieldBlock:

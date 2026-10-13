@@ -25,6 +25,7 @@ import logging
 
 from dataclasses import dataclass, field
 
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 
 from .conf import get_default_upload_handler_path, get_field_type_config
@@ -34,6 +35,12 @@ logger = logging.getLogger(__name__)
 
 #: ``field_type`` is a ``CharField`` of this length on ``DaisieFormField``.
 FIELD_TYPE_MAX_LENGTH = 16
+
+#: Supported ``display`` presentations for an upload field type.
+DISPLAY_DEFAULT = "default"
+DISPLAY_IMAGE = "image"
+DISPLAY_ATTACHMENTS = "attachments"
+DISPLAY_CHOICES = (DISPLAY_DEFAULT, DISPLAY_IMAGE, DISPLAY_ATTACHMENTS)
 
 _MISSING = object()
 
@@ -54,9 +61,15 @@ class FormFieldType:
     options: dict = field(default_factory=dict)
     is_upload: bool = False
     handler_path: object = ""
+    display: str = DISPLAY_DEFAULT
+    multiple: bool = False
+    validators: list = field(default_factory=list)
+    collection_validators: list = field(default_factory=list)
     _resolved_field: object = field(default=_MISSING, repr=False)
     _resolved_widget: object = field(default=_MISSING, repr=False)
     _resolved_handler: object = field(default=_MISSING, repr=False)
+    _resolved_validators: object = field(default=_MISSING, repr=False)
+    _resolved_collection_validators: object = field(default=_MISSING, repr=False)
 
     def __str__(self):
         return str(self.label or self.key)
@@ -82,6 +95,45 @@ class FormFieldType:
             self._resolved_handler = _resolve(self.handler_path)
         return self._resolved_handler
 
+    @property
+    def resolved_validators(self):
+        """Return the per-file validator callables, importing lazily.
+
+        Unlike :meth:`handler`, an unresolvable entry is not silently dropped:
+        a misconfigured validator must fail closed rather than skip a check.
+        """
+        if self._resolved_validators is _MISSING:
+            self._resolved_validators = _resolve_callables(
+                self.key, self.validators, label="validator"
+            )
+        return self._resolved_validators
+
+    @property
+    def resolved_collection_validators(self):
+        """Return the whole-list validator callables, importing lazily."""
+        if self._resolved_collection_validators is _MISSING:
+            self._resolved_collection_validators = _resolve_callables(
+                self.key, self.collection_validators, label="collection validator"
+            )
+        return self._resolved_collection_validators
+
+
+def _resolve_callables(key, entries, *, label):
+    """Resolve every entry to a callable, raising if one cannot be imported.
+
+    Entries may be callables or dotted paths. Failing closed prevents a typo
+    from silently disabling validation.
+    """
+    resolved = []
+    for entry in entries or ():
+        target = _resolve(entry)
+        if not callable(target):
+            raise ImproperlyConfigured(
+                f"Form field type {key!r} has an unresolvable {label} {entry!r}."
+            )
+        resolved.append(target)
+    return resolved
+
 
 def _resolve(target):
     """Resolve a dotted path or callable to a component, or ``None``."""
@@ -105,6 +157,15 @@ def _build_field_type(key, raw):
             key,
             FIELD_TYPE_MAX_LENGTH,
         )
+    display = raw.get("display") or DISPLAY_DEFAULT
+    if display not in DISPLAY_CHOICES:
+        logger.warning(
+            "Form field type %r has an unknown display %r; falling back to %r.",
+            key,
+            display,
+            DISPLAY_DEFAULT,
+        )
+        display = DISPLAY_DEFAULT
     return FormFieldType(
         key=key,
         label=raw.get("label") or key.replace("_", " ").title(),
@@ -116,6 +177,10 @@ def _build_field_type(key, raw):
         options=dict(raw.get("options") or {}),
         is_upload=bool(raw.get("is_upload", False)),
         handler_path=raw.get("handler", "") or "",
+        display=display,
+        multiple=bool(raw.get("multiple", False)),
+        validators=list(raw.get("validators") or []),
+        collection_validators=list(raw.get("collection_validators") or []),
     )
 
 

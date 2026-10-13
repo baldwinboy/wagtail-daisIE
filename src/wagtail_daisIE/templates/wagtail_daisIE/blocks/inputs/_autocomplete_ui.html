@@ -1,7 +1,9 @@
 {% load i18n %}
+{% comment %}
 {# Enhanced UI for an autocomplete control. The enclosing element must carry
    data-daisyui-autocomplete and contain the native <select multiple>. Rendered
    hidden; daisyui_autocomplete.js reveals it and hides the native select. #}
+{% endcomment %}
 <div class="daisyui-autocomplete__enhanced hidden" data-daisyui-autocomplete-enhanced>
   <div
     class="daisyui-autocomplete__tokens mb-2 flex flex-wrap gap-1 empty:mb-0"

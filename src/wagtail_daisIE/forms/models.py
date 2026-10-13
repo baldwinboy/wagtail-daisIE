@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -335,10 +336,16 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
             if isinstance(value, (list, tuple)):
                 data[name] = [
                     self._store_upload(handler, form, field, item, request)
+                    if isinstance(item, UploadedFile)
+                    else item
                     for item in value
                 ]
-            else:
+            elif isinstance(value, UploadedFile):
                 data[name] = self._store_upload(handler, form, field, value, request)
+            else:
+                # An edit-mode reference kept alongside (or instead of) new
+                # uploads is already storage-backed; nothing to persist.
+                data[name] = value
         return data
 
     def _store_upload(self, handler, form, field, uploaded_file, request):

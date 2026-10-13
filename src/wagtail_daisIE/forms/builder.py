@@ -12,7 +12,9 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.contrib.forms.forms import FormBuilder
 
 from ..context import get_current_form_context
-from .registry import get_form_field_type
+from .fields import DaisieFileField, MultipleFileInput
+from .registry import DISPLAY_ATTACHMENTS, DISPLAY_IMAGE, get_form_field_type
+from .widgets_file import AttachmentsFileInput, ImageFileInput
 
 
 def _normalise_choices(raw):
@@ -58,6 +60,17 @@ def _resolve_choices(spec, field):
     return _normalise_choices(raw)
 
 
+def _upload_widget(spec):
+    """Return the widget class to use for an upload field type."""
+    if spec.display == DISPLAY_IMAGE:
+        return ImageFileInput
+    if spec.display == DISPLAY_ATTACHMENTS:
+        return AttachmentsFileInput
+    if spec.multiple:
+        return MultipleFileInput
+    return None
+
+
 class DaisyUIFormBuilder(FormBuilder):
     """Adds DaisyUI classes and per-field design to Wagtail form fields."""
 
@@ -99,6 +112,17 @@ class DaisyUIFormBuilder(FormBuilder):
             if spec.widget is not None:
                 self._styled(options, spec.widget, spec.css, spec.widget_attrs)
             builder = spec.field
+            if builder is None and spec.is_upload:
+                builder = DaisieFileField
+                options.setdefault("multiple", spec.multiple)
+                options["validators"] = [
+                    *(options.get("validators") or []),
+                    *spec.resolved_validators,
+                ]
+                options["collection_validators"] = spec.resolved_collection_validators
+                widget_cls = _upload_widget(spec)
+                if widget_cls is not None:
+                    options.setdefault("widget", widget_cls)
             if builder is None:
                 raise ImproperlyConfigured(
                     _(

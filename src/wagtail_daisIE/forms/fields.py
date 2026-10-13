@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
+from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, FieldRowPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.fields import StreamField
 
@@ -116,6 +118,81 @@ class InstanceModelSelect(forms.Select):
         return attrs
 
 
+class MultipleFileInput(forms.FileInput):
+    """A ``FileInput`` that submits every selected file.
+
+    Django's ``FileInput`` already supports this via ``allow_multiple_selected``
+    (it adds the ``multiple`` attribute and reads ``files.getlist(name)``).
+    """
+
+    allow_multiple_selected = True
+
+
+class DaisieFileField(forms.FileField):
+    """A single or multiple file upload with app-supplied validation.
+
+    ``validators`` run once per uploaded file (edit-mode reference strings are
+    passed through untouched); ``collection_validators`` run once on the final
+    value. Both are supplied by the consuming app — the package ships no
+    validators and never imports an imaging library.
+    """
+
+    def __init__(
+        self,
+        *,
+        multiple=False,
+        validators=(),
+        collection_validators=(),
+        **kwargs,
+    ):
+        self.multiple = multiple
+        self.collection_validators = list(collection_validators)
+        existing = list(kwargs.pop("validators", None) or [])
+        kwargs["validators"] = [*existing, *validators]
+        if multiple and "widget" not in kwargs:
+            kwargs["widget"] = MultipleFileInput
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _is_upload(value):
+        return isinstance(value, UploadedFile)
+
+    @staticmethod
+    def _as_list(data):
+        if data is False or data in EMPTY_VALUES:
+            return []
+        if isinstance(data, (list, tuple)):
+            return list(data)
+        return [data]
+
+    def _run_collection_validators(self, value):
+        for validator in self.collection_validators:
+            validator(value)
+
+    def clean(self, data, initial=None):
+        if not self.multiple:
+            value = super().clean(data, initial)
+            self._run_collection_validators(value)
+            return value
+        files = self._as_list(data)
+        self.validate(files)
+        cleaned = [
+            super(DaisieFileField, self).clean(item, None)
+            if self._is_upload(item)
+            else item
+            for item in files
+        ]
+        self._run_collection_validators(cleaned)
+        return cleaned
+
+    def bound_data(self, data, initial):
+        if self.multiple:
+            # Existing references survive a re-render after a validation error
+            # (files cannot be repopulated client-side, so they are dropped).
+            return [item for item in self._as_list(data) if not self._is_upload(item)]
+        return super().bound_data(data, initial)
+
+
 class DaisieFormField(AbstractFormField):
     """A Wagtail form field that can be styled and linked to a model field.
 
@@ -160,8 +237,14 @@ class DaisieFormField(AbstractFormField):
             "model_field",
             widget=ModelFieldSelect(empty_label=_("Use the field name")),
         ),
-        FieldPanel("input_design"),
-        FieldPanel("label_design"),
+        FieldRowPanel(
+            [
+                FieldPanel("input_design"),
+                FieldPanel("label_design"),
+            ],
+            heading=_("Design"),
+            classname="collapsed",
+        ),
     ]
 
     class Meta(AbstractFormField.Meta):

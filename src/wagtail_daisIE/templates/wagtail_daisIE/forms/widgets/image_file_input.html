@@ -1,0 +1,20 @@
+{% load i18n %}
+{% comment %}
+{# Single image picker. The native file input is wrapped in a clickable
+   preview; file_input.js swaps the preview to the chosen file immediately.
+   Clearable so an existing model image can be removed. #}
+{% endcomment %}
+<div class="daisie-file-image" data-daisie-file-image>
+  <label class="daisie-file-image__label">
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+    <span class="daisie-file-image__preview" data-daisie-file-image-preview>
+      {% if widget.is_initial %}<img src="{{ widget.value.url }}" alt="">{% endif %}
+    </span>
+  </label>
+  {% if widget.is_initial and not widget.required %}
+    <label class="daisie-file-image__clear">
+      <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+      {{ widget.clear_checkbox_label }}
+    </label>
+  {% endif %}
+</div>
