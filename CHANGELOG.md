@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.2.0...v3.3.0) (2026-10-13)
+
+
+### Features
+
+* app-validated multi-attachment form fields ([f68257a](https://github.com/baldwinboy/wagtail-daisIE/commit/f68257a8feea054116fd7308ed70858740e19c4c))
+* editor-designed attachment and autocomplete widgets ([05f3edd](https://github.com/baldwinboy/wagtail-daisIE/commit/05f3edd060fea5d779929c4137cceb05bf00de7f))
+* trim tests ([4f0fdd8](https://github.com/baldwinboy/wagtail-daisIE/commit/4f0fdd8b4d7be92629f74a54bcad2b724d864909))
+
 ## [3.2.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.1.1...v3.2.0) (2026-10-12)
 
 
