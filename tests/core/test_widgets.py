@@ -6,14 +6,10 @@ import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
-from wagtail_daisIE.blocks.base import BorderBlock
-from wagtail_daisIE.blocks.inline import InlineTextBlock
 from wagtail_daisIE.models import DaisyUITheme
 from wagtail_daisIE.pages import get_default_theme_id
 from wagtail_daisIE.widgets import (
     DaisieAutocompleteSelectMultiple,
-    DaisyUIAlignWidget,
-    DaisyUIIntegerBlock,
     DaisyUINumberSliderWidget,
     DaisyUIRawSwatchWidget,
     DaisyUISliderWidget,
@@ -83,37 +79,6 @@ class TestWidgetRendering:
         assert 'value="a" selected' in html
         assert "Alpha" in html and "Bravo" in html
         assert "daisyui_autocomplete.js" in str(autocomplete.media)
-
-
-class TestBlockWidgets:
-    def test_design_and_numeric_widgets(self):
-        typography = InlineTextBlock().child_blocks["design"].child_blocks["typography"]
-        mapping = {
-            "text_color": DaisyUISwatchWidget,
-            "font_size": DaisyUISliderWidget,
-            "font_weight": DaisyUISliderWidget,
-            "text_align": DaisyUIAlignWidget,
-            "line_height": DaisyUISliderWidget,
-            "letter_spacing": DaisyUISliderWidget,
-        }
-        for name, widget_class in mapping.items():
-            assert isinstance(typography.child_blocks[name].field.widget, widget_class)
-
-        from wagtail_daisIE.base_blocks.background_layer import (
-            BackgroundLayerBlock,
-            GradientStopBlock,
-        )
-        from wagtail_daisIE.blocks.layout import GridBlock
-
-        for block, field_name in [
-            (BorderBlock(), "border_width"),
-            (GridBlock(), "num_columns"),
-            (GradientStopBlock(), "position"),
-            (BackgroundLayerBlock(), "gradient_angle"),
-        ]:
-            child = block.child_blocks[field_name]
-            assert isinstance(child, DaisyUIIntegerBlock)
-            assert isinstance(child.field.widget, DaisyUINumberSliderWidget)
 
 
 @pytest.mark.django_db

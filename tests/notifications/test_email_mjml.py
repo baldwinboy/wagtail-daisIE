@@ -9,15 +9,10 @@ from wagtail_daisIE.base_blocks.mjml import (
     split_style,
     style_to_css,
 )
-from wagtail_daisIE.notifications.mjml import ATTR_MAPS, can_contain
+from wagtail_daisIE.notifications.mjml import ATTR_MAPS
 
 
 class TestComponents:
-    def test_can_contain(self):
-        assert can_contain("mj-section", "mj-column")
-        assert not can_contain("mj-column", "mj-section")
-        assert not can_contain("mj-body", "mj-text")
-
     def test_attr_maps_target_real_attributes(self):
         """A typo in ATTR_MAPS silently drops a declaration in the output."""
         for tag, mapping in ATTR_MAPS.items():

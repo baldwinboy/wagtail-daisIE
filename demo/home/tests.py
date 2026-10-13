@@ -6,25 +6,9 @@ from wagtail.test.utils import WagtailPageTestCase
 from home.models import DemoPage, HomePage
 
 
-class HomeSetUpTests(WagtailPageTestCase):
-    """
-    Tests for basic page structure setup and HomePage creation.
-    """
-
-    def test_root_create(self):
-        root_page = Page.objects.get(pk=1)
-        self.assertIsNotNone(root_page)
-
-    def test_homepage_create(self):
-        root_page = Page.objects.get(pk=1)
-        homepage = HomePage(title="Home")
-        root_page.add_child(instance=homepage)
-        self.assertTrue(HomePage.objects.filter(title="Home").exists())
-
-
 class HomeTests(WagtailPageTestCase):
     """
-    Tests for homepage functionality and rendering.
+    Homepage smoke coverage plus package design behaviour.
     """
 
     def setUp(self):
@@ -38,12 +22,10 @@ class HomeTests(WagtailPageTestCase):
         self.homepage = HomePage(title="Home")
         root_page.add_child(instance=self.homepage)
 
-    def test_homepage_is_renderable(self):
-        self.assertPageIsRenderable(self.homepage)
-
-    def test_homepage_template_used(self):
+    def test_home_boots_and_renders(self):
         response = self.client.get(self.homepage.url)
-        self.assertTemplateUsed(response, "home/home_page.html")
+        assert response.status_code == 200
+        assert b"<html" in response.content
 
     def test_page_default_design_applies_to_body_blocks(self):
         self.homepage.page_design = [

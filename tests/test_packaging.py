@@ -39,3 +39,10 @@ def test_static_css_assets_present():
 
 def test_templates_are_present():
     assert (TEMPLATES_DIR / "wagtail_daisIE" / "tags" / "theme.html").is_file()
+
+
+def test_jit_source_declares_daisyui_and_type_scale():
+    """The compiled stylesheet's source must ship daisyUI and the type scale."""
+    source = (PACKAGE_DIR / "tailwind" / "input.css").read_text()
+    assert "daisyui" in source
+    assert "--text-42xl" in source

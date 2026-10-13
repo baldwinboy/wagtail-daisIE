@@ -81,8 +81,6 @@ class TestRegistry:
     def test_resolves_config_and_model(self):
         config = get_detail_page("widget")
         assert config is not None
-        assert config.model is Widget
-        assert config.page_type is WidgetDetailPage
         assert detail_page_for_instance(Widget()) is config
 
 

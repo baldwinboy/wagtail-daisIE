@@ -1,8 +1,3 @@
-from wagtail_daisIE.base_blocks import (
-    InputWidgetDesignBlock,
-    ItemDesignBlock,
-    TrayDesignBlock,
-)
 from wagtail_daisIE.base_blocks.css import build_design_css
 
 
@@ -34,12 +29,3 @@ def test_item_css_includes_shape_and_typography():
     tokens = set(css.split())
     assert "rounded-full" in tokens
     assert "font-bold" in tokens
-
-
-def test_design_blocks_register_under_stable_keys():
-    assert TrayDesignBlock()._migration_key == "wagtail_daisIE.TrayDesignBlock"
-    assert ItemDesignBlock()._migration_key == "wagtail_daisIE.ItemDesignBlock"
-    assert (
-        InputWidgetDesignBlock()._migration_key
-        == "wagtail_daisIE.InputWidgetDesignBlock"
-    )

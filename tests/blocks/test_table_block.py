@@ -1,7 +1,3 @@
-from pathlib import Path
-
-import wagtail_daisIE
-
 from wagtail_daisIE.base_blocks.css import build_table_css
 from wagtail_daisIE.blocks.table import TableBlock
 
@@ -91,13 +87,3 @@ class TestTableBlockRender:
         assert "table-zebra" not in html
         assert "table-pin-rows" not in html and "table-pin-cols" not in html
         assert "table-sm" in html
-
-
-class TestJITInputCSS:
-    def test_input_css_declares_daisyui_and_extended_typography(self):
-        """The JIT source must ship daisyUI and the extended type scale."""
-        source = (
-            Path(wagtail_daisIE.__file__).parent / "tailwind" / "input.css"
-        ).read_text()
-        assert "daisyui" in source
-        assert "--text-42xl" in source

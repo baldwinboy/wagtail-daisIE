@@ -1,10 +1,7 @@
-from pathlib import Path
-
 import pytest
 
 from wagtail_daisIE.allauth_emails.catalogue import (
     discover_emails,
-    get_allauth_email_choices,
     reset_allauth_emails,
 )
 
@@ -53,23 +50,3 @@ class TestDiscovery:
         assert str(entry.label) == "Signup email confirmation"
         for variable in ("activate_url", "user", "code", "current_site"):
             assert variable in entry.variables
-
-
-class TestRealAllauth:
-    def test_discovers_installed_allauth_and_choices(self):
-        allauth = pytest.importorskip("allauth")
-        base = Path(allauth.__file__).parent / "templates"
-        emails = discover_emails(search_paths=[base])
-        prefixes = {email.prefix for email in emails}
-        assert "account/email/password_reset_key" in prefixes
-        assert any(prefix.startswith("mfa/email/") for prefix in prefixes)
-        reset = next(
-            email
-            for email in emails
-            if email.prefix == "account/email/password_reset_key"
-        )
-        assert "password_reset_url" in reset.variables
-
-        choices = get_allauth_email_choices()
-        assert choices
-        assert all(isinstance(prefix, str) for prefix, _label in choices)

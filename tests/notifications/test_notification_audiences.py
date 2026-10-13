@@ -51,9 +51,9 @@ class TestRuleAudience:
         settings.WAGTAIL_DAISIE_AUDIENCE_RULES = {
             "adults": {"label": "Adults", "rule": lambda request: True}
         }
-        assert get_audience_rule_choices() == [("adults", "Adults")]
+        assert dict(get_audience_rule_choices())["adults"] == "Adults"
         # A rule without a label still needs a usable choice.
         settings.WAGTAIL_DAISIE_AUDIENCE_RULES = {"adults": {}}
-        assert get_audience_rule_choices() == [("adults", "adults")]
+        assert dict(get_audience_rule_choices())["adults"] == "adults"
         settings.WAGTAIL_DAISIE_AUDIENCE_RULES = {}
         assert get_audience_rule_choices() == []

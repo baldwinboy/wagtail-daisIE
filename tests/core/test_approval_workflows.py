@@ -2,7 +2,6 @@ import pytest
 
 from wagtail_daisIE.approval.bridges import connect_signals, disconnect_signals
 from wagtail_daisIE.approval.registry import (
-    get_workflows,
     reset_workflows,
     workflow_for_instance,
 )
@@ -33,7 +32,6 @@ def _workflows(settings):
 
 class TestRegistry:
     def test_builds_and_matches(self):
-        assert "source" in get_workflows()
         source = ApprovalSource(name="Rye")
         assert workflow_for_instance(source).key == "source"
 

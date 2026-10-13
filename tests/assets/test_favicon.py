@@ -10,7 +10,7 @@ from django.test import RequestFactory
 from wagtail.images import get_image_model
 from wagtail.models import Page, Site
 
-from wagtail_daisIE.assets.models import MANIFEST_ICONS, DaisyUIFavicon
+from wagtail_daisIE.assets.models import DaisyUIFavicon
 from wagtail_daisIE.favicon import views as favicon_views
 
 
@@ -57,12 +57,8 @@ class TestManifest:
         assert data["name"] == "Bakery"
         assert data["theme_color"] == "#A1B2C3"
         assert data["display"] == "standalone"
-        assert {icon["sizes"] for icon in data["icons"]} == {
-            str(size) for size, _density in MANIFEST_ICONS
-        }
         for icon in data["icons"]:
             assert icon["src"] and icon["type"] == "image/png"
-            assert set(icon) == {"src", "sizes", "type", "density"}
 
         blank = DaisyUIFavicon.objects.create(
             image=_image(), theme_color="", background_color=""

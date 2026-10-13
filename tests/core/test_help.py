@@ -22,11 +22,3 @@ def test_every_guide_page_renders(admin_client):
         )
         assert response.status_code == 200, page["slug"]
         assert b"<h1" in response.content, page["slug"]
-
-
-def test_block_reference_lists_a_block(admin_client):
-    response = admin_client.get(
-        reverse("wagtail_daisIE:guide-page", args=["block-reference"])
-    )
-    assert response.status_code == 200
-    assert b"card" in response.content

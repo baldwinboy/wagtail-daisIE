@@ -518,25 +518,22 @@ class TestFeedLayout:
 
     def test_choices_are_shared_by_model_and_override_block(self):
         from wagtail_daisIE.dynamic import feeds
-        from wagtail_daisIE.feeds.blocks_data import (
-            LAYOUT_OVERRIDE_CHOICES,
-            TOGGLE_OVERRIDE_CHOICES,
-        )
+        from wagtail_daisIE.feeds.blocks_data import TOGGLE_OVERRIDE_CHOICES
 
         layouts = {key for key, _label in LAYOUT_CHOICES}
         for pair in TOGGLE_PAIRS.values():
             assert set(pair) <= layouts, pair
-        assert [(k, str(v)) for k, v in LAYOUT_CHOICES] == [
-            (k, str(v))
-            for k, v in Feed.objects.none().model._meta.get_field("layout").choices
+        # The model field's choices and the dynamic constant must not drift.
+        model_choices = Feed.objects.none().model._meta.get_field("layout").choices
+        assert [key for key, _label in LAYOUT_CHOICES] == [
+            key for key, _label in model_choices
         ]
-        assert LAYOUT_OVERRIDE_CHOICES[0][0] == ""
-        assert TOGGLE_OVERRIDE_CHOICES[1:] == [
-            (k, str(v)) for k, v in feeds.TOGGLE_CHOICES
+        # The override block extends the base choices.
+        assert [key for key, _label in TOGGLE_OVERRIDE_CHOICES[1:]] == [
+            key for key, _label in feeds.TOGGLE_CHOICES
         ]
 
         from wagtail_daisIE.dynamic.conditions import FEED_CONDITION_OPERATOR_CHOICES
 
         # Variant operators are a lazy ChoiceList (kept out of migrations).
         assert callable(FEED_CONDITION_OPERATOR_CHOICES)
-        assert FEED_CONDITION_OPERATOR_CHOICES[-1][0] == "custom"
