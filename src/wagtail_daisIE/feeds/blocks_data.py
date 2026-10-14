@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from collections import OrderedDict
 from datetime import date
 
@@ -82,7 +84,20 @@ class FeedLayoutOverrideBlock(DaisieStructBlock):
         choices=LAYOUT_OVERRIDE_CHOICES, required=False, default=""
     )
     columns = blocks.IntegerBlock(
-        required=False, min_value=1, max_value=6, label=_("Grid columns")
+        required=False,
+        min_value=1,
+        max_value=6,
+        label=_("Grid columns"),
+        form_attrs={
+            "data-w-rules-target": "show enable",
+            "data-w-rules": json.dumps(
+                {
+                    "layout": ["grid"],
+                    "toggle_layouts": ["grid_list", "grid_row"],
+                },
+            ),
+            "data-w-rules-match": "any",
+        },
     )
     gap = blocks.ChoiceBlock(choices=GAP_OVERRIDE_CHOICES, required=False, default="")
     row_mode = blocks.ChoiceBlock(
@@ -90,6 +105,16 @@ class FeedLayoutOverrideBlock(DaisieStructBlock):
         required=False,
         default="",
         label=_("Row behaviour"),
+        form_attrs={
+            "data-w-rules-target": "show enable",
+            "data-w-rules": json.dumps(
+                {
+                    "layout": ["row"],
+                    "toggle_layouts": ["grid_row", "row_list"],
+                },
+            ),
+            "data-w-rules-match": "any",
+        },
     )
     show_toggle = blocks.ChoiceBlock(
         choices=FEED_TOGGLE_CHOICES,
@@ -111,13 +136,17 @@ class FeedLayoutOverrideBlock(DaisieStructBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "layout",
-                "columns",
                 "gap",
+                "columns",
                 "row_mode",
                 "show_toggle",
                 "toggle_layouts",
             ],
             heading=_("Layout override"),
+            attrs={
+                "data-controller": "w-rules",
+                "data-action": "change->w-rules#resolve",
+            },
         )
 
 

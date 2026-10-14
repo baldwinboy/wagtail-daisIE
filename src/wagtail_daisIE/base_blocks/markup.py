@@ -202,10 +202,26 @@ class InlineMarkupBlock(blocks.CharBlock):
     """Single-line text with rudimentary markup."""
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "help_text",
+        # Build the help text that will appear inside the tooltip.
+        tooltip_content = (
             "Supports **bold**, _italic_, __underline__, ~~strikethrough~~, "
             "[links](https://example.com) and {color=…} text. See the DaisyUI "
             "Editor Guide → Markup and placeholders.",
         )
+
+        # 1. Suppress the default help text (it would otherwise appear below the field).
+        kwargs.setdefault("help_text", "")
+
+        # 2. Attach the tooltip attributes to the field's wrapper.
+        kwargs.setdefault("form_attrs", {})
+        kwargs["form_attrs"].update(
+            {
+                "data-controller": "w-tooltip",
+                # The content is plain text here; HTML links will not be clickable.
+                "data-w-tooltip-content-value": tooltip_content,
+                # Optional: adjust placement (top, bottom, left, right, etc.)
+                "data-w-tooltip-placement-value": "top",
+            }
+        )
+
         super().__init__(*args, **kwargs)

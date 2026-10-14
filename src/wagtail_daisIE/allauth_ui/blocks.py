@@ -126,9 +126,17 @@ class AllauthFieldBlock(DaisieStructBlock):
                 "help_text",
                 "placeholder",
                 "presentation",
-                "otp_size",
-                "otp_color",
-                "otp_joined",
+                blocks.BlockGroup(
+                    heading=_("Design presets"),
+                    children=[
+                        "otp_size",
+                        "otp_color",
+                        "otp_joined",
+                    ],
+                    classname="collapsed",
+                ),
+            ],
+            settings=[
                 "input_design",
                 "label_design",
             ],
@@ -183,7 +191,11 @@ class AllauthFormBlock(DaisieStructBlock):
         collapsed = True
         template = "wagtail_daisIE/allauth/auth_form.html"
         form_layout = blocks.BlockGroup(
-            children=["submit_label", "submit_appearance", "container_design"]
+            children=["submit_label"],
+            settings=[
+                "submit_appearance",
+                "container_design",
+            ],
         )
 
 

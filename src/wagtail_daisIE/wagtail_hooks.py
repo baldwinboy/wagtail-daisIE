@@ -16,6 +16,7 @@ from wagtail.snippets.models import register_snippet
 from .context import (
     set_current_form_fields,
     set_current_model_fields,
+    set_current_model_key,
     set_current_theme,
     theme_from_instance,
 )
@@ -175,16 +176,26 @@ def _form_page_model_fields(page):
     return config.form_fields() if config is not None else []
 
 
+def _form_page_model_key(page):
+    from .forms.models import DaisieFormPage
+
+    if not isinstance(page, DaisieFormPage):
+        return ""
+    return getattr(page, "instance_model", "") or ""
+
+
 @hooks.register("before_create_page")
 def _set_form_fields_before_create_page(request, parent_page, page_class):
     set_current_form_fields(())
     set_current_model_fields(())
+    set_current_model_key("")
 
 
 @hooks.register("before_edit_page")
 def _set_form_fields_before_edit_page(request, page):
     set_current_form_fields(_form_page_fields(page))
     set_current_model_fields(_form_page_model_fields(page))
+    set_current_model_key(_form_page_model_key(page))
 
 
 # -- END --

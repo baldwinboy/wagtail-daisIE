@@ -1,36 +1,44 @@
 {% load i18n wagtailadmin_tags %}
 <fieldset>
-    <div class="help-block help-info" data-daisie-model-fields data-model-key="{{ bound_model.key }}">
+    <div class="help-block help-info"
+         data-controller="w-rules"
+         data-action="change@window->w-rules#resolve">
         {% icon name="help" %}
         <h3>{% trans "Fields available to link" %}</h3>
-        {% if bound_model.key %}
-            <p>
-                {% trans "Inputs can be linked to any editable field on" %}
-                <strong>{{ bound_model.label }}</strong>.
-            </p>
-            {% if bound_model.fields %}
-                <table class="listing">
-                    <thead>
-                        <tr>
-                            <th>{% trans "Field" %}</th>
-                            <th>{% trans "Label" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody data-daisie-model-fields-body>
-                        {% for field in bound_model.fields %}
-                            <tr>
-                                <td><code>{{ field.name }}</code></td>
-                                <td>{{ field.label }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <p data-daisie-model-fields-empty hidden>{% trans "This model has no editable fields." %}</p>
-            {% else %}
-                <p data-daisie-model-fields-empty>{% trans "This model has no editable fields." %}</p>
-            {% endif %}
+        {% if bound_model.models %}
+            <p>{% trans "Inputs can be linked to any editable field on the selected model." %}</p>
+            {% for model in bound_model.models %}
+                <div data-w-rules-target="show"
+                     data-w-rules='{"instance_model": ["{{ model.key|escapejs }}"]}'
+                     {% if not model.active %}hidden{% endif %}>
+                    <p>
+                        {% trans "Fields on" %} <strong>{{ model.label }}</strong>
+                        {% if model.model_label %}(<code>{{ model.model_label }}</code>){% endif %}:
+                    </p>
+                    {% if model.fields %}
+                        <table class="listing">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Field" %}</th>
+                                    <th>{% trans "Label" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field in model.fields %}
+                                    <tr>
+                                        <td><code>{{ field.name }}</code></td>
+                                        <td>{{ field.label }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>{% trans "This model has no editable fields." %}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
         {% else %}
-            <p>{% trans "Choose a model to see the fields you can link inputs to." %}</p>
+            <p>{% trans "No context models are configured." %}</p>
         {% endif %}
     </div>
 </fieldset>

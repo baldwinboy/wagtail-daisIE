@@ -21,6 +21,11 @@ class FormFieldSelect(DaisieFieldSelect):
     def get_field_choices(self):
         return get_current_form_fields()
 
+    def missing_label(self, value):
+        return _("%(value)s (not a field on this form — choose an existing field)") % {
+            "value": value
+        }
+
 
 class FormFieldBlock(blocks.FieldBlock):
     """Render one of the page's bound form fields at this point in the body.

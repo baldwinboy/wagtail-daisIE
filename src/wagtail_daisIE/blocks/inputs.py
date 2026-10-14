@@ -142,16 +142,28 @@ class InputBlock(ThemedBlock):
         template = "wagtail_daisIE/blocks/inputs/input.html"
         form_layout = blocks.BlockGroup(
             children=[
-                "label",
                 "input_type",
-                "name",
-                "placeholder",
-                "value",
                 "required",
-                "helper_text",
-                "error_text",
-                "color",
-                "size",
+                "label",
+                "name",
+                blocks.BlockGroup(
+                    heading=_("Field helpers"),
+                    children=[
+                        "placeholder",
+                        "value",
+                        "helper_text",
+                        "error_text",
+                    ],
+                    classname="collapsed",
+                ),
+                blocks.BlockGroup(
+                    heading=_("Design presets"),
+                    children=[
+                        "color",
+                        "size",
+                    ],
+                    classname="collapsed",
+                ),
             ],
             settings=["design", "audience"],
         )

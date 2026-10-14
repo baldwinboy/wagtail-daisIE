@@ -8,16 +8,19 @@ from django import forms
 from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, FieldRowPanel
+from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.fields import StreamField
 
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
 from ..base_blocks.input_widget import InputWidgetDesignBlock
-from ..context import get_current_model_fields
+from ..context import get_current_model_key
 from ..dynamic.registry import get_context_models
+from .panels import PrefixedRulesPanel
 from .registry import (
     FIELD_TYPE_MAX_LENGTH,
     get_form_field_type_choices,
@@ -25,15 +28,42 @@ from .registry import (
 )
 
 
-class DaisieFieldSelect(forms.Select):
-    """A ``Select`` whose options are the fields available for the current
-    admin request (resolved lazily from a contextvar).
+#: ``field_type`` values that use the "Choices" box.
+CHOICE_FIELD_TYPES = [
+    "checkbox",
+    "checkboxes",
+    "dropdown",
+    "multiselect",
+    "radio",
+]
 
-    A blank option is always rendered first so an unset value never falls back
-    to the browser's "select the first option" behaviour. A stored value that is
-    no longer available is kept as a selected ``(missing)`` option rather than
-    being silently dropped.
+#: ``field_type`` values that use the "Default value" box.
+DEFAULT_VALUE_FIELD_TYPES = [
+    "checkbox",
+    "dropdown",
+    "radio",
+]
+
+
+def field_option_choices(fields, value, empty_label, missing_label):
+    """Return ``[(value, label)]`` for a model's editable fields.
+
+    A blank option always comes first. A non-empty ``value`` that is no longer
+    among the field names is appended as a ``missing_label`` option so a stored
+    value is never silently dropped.
     """
+    choices = [("", empty_label)]
+    names = set()
+    for field in fields:
+        names.add(field["name"])
+        choices.append((field["name"], field["label"] or field["name"]))
+    if value and value not in names:
+        choices.append((value, missing_label(value)))
+    return choices
+
+
+class DaisieFieldSelect(forms.Select):
+    """... (docstring updated to drop the literal ``(missing)`` mention) ..."""
 
     empty_label = ""
 
@@ -42,8 +72,10 @@ class DaisieFieldSelect(forms.Select):
         self.empty_label = empty_label
 
     def get_field_choices(self):
-        """Return ``[{"name", "label"}]``; overridden by subclasses."""
         raise NotImplementedError
+
+    def missing_label(self, value):
+        return _("%(value)s (not an available option)") % {"value": value}
 
     def optgroups(self, name, value, attrs=None):
         if self.choices:
@@ -72,51 +104,61 @@ class DaisieFieldSelect(forms.Select):
 
         if not known:
             options.append(
-                self.create_option(name, current, f"{current} (missing)", True, index)
+                self.create_option(
+                    name, current, self.missing_label(current), True, index
+                )
             )
         return [(None, options, 0)]
 
 
 class ModelFieldSelect(DaisieFieldSelect):
-    """The "Model field" select, populated from the page's bound model."""
+    """Render one "Model field" select per configured context model.
 
-    def get_field_choices(self):
-        return get_current_model_fields()
-
-    @property
-    def media(self):
-        return forms.Media(js=["wagtail_daisIE/js/forms_admin.js"])
-
-    def build_attrs(self, base_attrs, extra_attrs=None):
-        attrs = super().build_attrs(base_attrs, extra_attrs)
-        attrs["data-controller"] = "daisie-form-model-field"
-        attrs["data-daisie-form-model-field-empty-value"] = str(self.empty_label)
-        return attrs
-
-
-class InstanceModelSelect(forms.Select):
-    """The "Model to create" select, wired to the form-fields Stimulus hub.
-
-    Carries the editable fields of every configured context model so the
-    "Model field" selects and the help panel can update when the chosen model
-    changes without a page reload.
+    Wagtail's ``w-rules`` controller reveals and enables the select whose model
+    matches the page's ``instance_model`` field and leaves the others ``hidden``
+    and ``disabled``, so only the active model's select is submitted. Every
+    select — and its blank and ``(missing)`` options — is rendered server-side,
+    so the option list has a single source of truth.
     """
 
-    @property
-    def media(self):
-        return forms.Media(js=["wagtail_daisIE/js/forms_admin.js"])
+    def missing_label(self, value):
+        return _(
+            "%(value)s (not a field on this model — choose a field "
+            "or clear to use the field name)"
+        ) % {"value": value}
 
-    def build_attrs(self, base_attrs, extra_attrs=None):
-        attrs = super().build_attrs(base_attrs, extra_attrs)
-        attrs["data-controller"] = "daisie-form-instance-model"
-        attrs["data-action"] = "change->daisie-form-instance-model#refresh"
-        attrs["data-daisie-form-instance-model-context-models-value"] = json.dumps(
-            {key: config.form_fields() for key, config in get_context_models().items()}
+    def render(self, name, value, attrs=None, renderer=None):
+        attrs = self.build_attrs(self.attrs, attrs)
+        value = "" if value is None else str(value)
+        active_key = get_current_model_key()
+        base_id = attrs.get("id") or f"id_{name}"
+
+        selects = []
+        for key, config in get_context_models().items():
+            is_active = key == active_key
+            select_attrs = dict(attrs)
+            select_attrs["id"] = base_id if is_active else f"{base_id}_{key}"
+            select_attrs["data-w-rules-target"] = "show enable"
+            select_attrs["data-w-rules"] = json.dumps({"instance_model": [key]})
+            if not is_active:
+                select_attrs["hidden"] = True
+                select_attrs["disabled"] = True
+
+            widget = forms.Select(
+                choices=field_option_choices(
+                    config.form_fields(),
+                    value,
+                    self.empty_label,
+                    self.missing_label,
+                )
+            )
+            selects.append(widget.render(name, value, select_attrs, renderer))
+
+        return format_html(
+            '<div data-controller="w-rules" '
+            'data-action="change@window->w-rules#resolve">{}</div>',
+            mark_safe("".join(selects)),  # noqa: S308
         )
-        attrs["data-daisie-form-instance-model-daisie-form-model-field-outlet"] = (
-            '[data-controller~="daisie-form-model-field"]'
-        )
-        return attrs
 
 
 class MultipleFileInput(forms.FileInput):
@@ -233,18 +275,52 @@ class DaisieFormField(AbstractFormField):
     )
 
     panels = [
-        *AbstractFormField.panels,
-        FieldPanel(
-            "model_field",
-            widget=ModelFieldSelect(empty_label=_("Use the field name")),
-        ),
-        FieldRowPanel(
+        MultiFieldPanel(
             [
-                FieldPanel("input_design"),
-                FieldPanel("label_design"),
+                # field_type must be populated for previews to build the form field.
+                # Set required_on_save=True on the field panel in case the model field
+                # has been overridden.
+                FieldPanel(
+                    "field_type",
+                    classname="formbuilder-type",
+                    required_on_save=True,
+                ),
+                FieldPanel("required"),
+                FieldPanel(
+                    "model_field",
+                    widget=ModelFieldSelect(empty_label=_("Use the field name")),
+                ),
+                FieldPanel("label"),
+                FieldPanel("help_text"),
+                PrefixedRulesPanel(
+                    "choices",
+                    classname="formbuilder-choices",
+                    match="any",
+                    rules={
+                        "field_type": CHOICE_FIELD_TYPES,
+                    },
+                ),
+                PrefixedRulesPanel(
+                    "default_value",
+                    classname="formbuilder-default",
+                    match="any",
+                    rules={
+                        "field_type": DEFAULT_VALUE_FIELD_TYPES,
+                    },
+                ),
+                FieldRowPanel(
+                    [
+                        FieldPanel("input_design"),
+                        FieldPanel("label_design"),
+                    ],
+                    heading=_("Design"),
+                    classname="collapsed",
+                ),
             ],
-            heading=_("Design"),
-            classname="collapsed",
+            attrs={
+                "data-controller": "w-rules",
+                "data-action": "change->w-rules#resolve",
+            },
         ),
     ]
 
@@ -260,17 +336,6 @@ class DaisieFormField(AbstractFormField):
         return build_design_css(
             self.input_design[0].value if self.input_design else None
         )
-
-    def get_widget_design(self):
-        """Return the tray/item/render/fallback design for the upload widget."""
-        value = self.input_design[0].value if self.input_design else None
-        value = value or {}
-        return {
-            "tray_css": build_design_css(value.get("tray")),
-            "item_css": build_design_css(value.get("item")),
-            "render": value.get("render") or "thumbnail",
-            "fallback": value.get("fallback") or "icon",
-        }
 
     def get_label_css(self):
         return build_design_css(

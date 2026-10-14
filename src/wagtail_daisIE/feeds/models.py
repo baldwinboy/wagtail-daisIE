@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel
@@ -58,6 +60,8 @@ class FeedFilterBlock(DaisieStructBlock):
                 "key",
                 "label",
                 "collapsed",
+            ],
+            settings=[
                 "button_appearance",
                 "input_design",
                 "label_design",
@@ -177,14 +181,60 @@ class Feed(ClusterableModel):
         MultiFieldPanel(
             [
                 FieldPanel("layout"),
-                FieldPanel("layout_columns"),
                 FieldPanel("layout_gap"),
-                FieldPanel("row_mode"),
-                FieldPanel("allow_layout_toggle"),
-                FieldPanel("toggle_layouts"),
+                FieldPanel(
+                    "layout_columns",
+                    attrs={
+                        "data-w-rules-target": "show enable",
+                        "data-w-rules": json.dumps(
+                            {
+                                "layout": ["grid"],
+                                "toggle_layouts": ["grid_list", "grid_row"],
+                            },
+                        ),
+                        "data-w-rules-match": "any",
+                    },
+                ),
+                FieldPanel(
+                    "row_mode",
+                    attrs={
+                        "data-w-rules-target": "show enable",
+                        "data-w-rules": json.dumps(
+                            {
+                                "layout": ["row"],
+                                "toggle_layouts": ["grid_row", "row_list"],
+                            },
+                        ),
+                        "data-w-rules-match": "any",
+                    },
+                ),
+                FieldPanel(
+                    "allow_layout_toggle",
+                    attrs={
+                        "data-controller": "w-sync",
+                        "data-w-sync-name-value": "allow-layout-toggle",
+                        "data-w-sync-target": "#id_toggle_layouts",
+                        "data-action": "change->w-sync#clear",
+                    },
+                ),
+                FieldPanel(
+                    "toggle_layouts",
+                    attrs={
+                        "data-w-rules-target": "show enable",
+                        "data-w-rules": json.dumps(
+                            {
+                                "allow_layout_toggle": ["on"],
+                            },
+                        ),
+                    },
+                ),
             ],
             heading=_("Layout"),
             classname="collapsed",
+            attrs={
+                "data-controller": "w-rules",
+                "data-action": "change->w-rules#resolve",
+            },
         ),
         FieldPanel("filters"),
         FieldPanel("item"),

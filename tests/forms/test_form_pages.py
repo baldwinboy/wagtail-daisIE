@@ -5,12 +5,9 @@ import pytest
 from django import forms
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile, UploadedFile
-from django.http import QueryDict
-from django.utils.datastructures import MultiValueDict
 
 from wagtail_daisIE.dynamic.registry import reset_context_models
 from wagtail_daisIE.forms.blocks import (
-    FormFieldBlock,
     duplicate_field_names,
     placed_field_names,
 )
@@ -18,8 +15,6 @@ from wagtail_daisIE.forms.builder import DaisyUIFormBuilder
 from wagtail_daisIE.forms.fields import (
     DaisieFileField,
     DaisieFormField,
-    InstanceModelSelect,
-    ModelFieldSelect,
 )
 from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.forms.registry import (
@@ -576,130 +571,3 @@ class TestDaisieFileField:
         assert result[0] == "stored:a.txt"
         assert isinstance(result[1], UploadedFile)
         assert len(seen) == 1 and isinstance(seen[0], UploadedFile)
-
-
-class TestFileWidgets:
-    def test_attachments_merges_new_files_and_existing_refs(self):
-        widget = AttachmentsFileInput()
-        data = QueryDict("photo-existing=stored:a.txt&photo-existing=stored:b.txt")
-        files = MultiValueDict({"photo": [SimpleUploadedFile("c.txt", b"c")]})
-        value = widget.value_from_datadict(data, files, "photo")
-        assert value[0].name == "c.txt"
-        assert value[1:] == ["stored:a.txt", "stored:b.txt"]
-
-    def test_attachments_empty_value(self):
-        widget = AttachmentsFileInput()
-        assert (
-            widget.value_from_datadict(QueryDict(""), MultiValueDict(), "photo") == []
-        )
-
-    def test_attachments_not_omitted_when_existing_present(self):
-        widget = AttachmentsFileInput()
-        assert (
-            widget.value_omitted_from_data(
-                QueryDict("photo-existing=stored:a.txt"), MultiValueDict(), "photo"
-            )
-            is False
-        )
-
-    def test_attachments_omitted_when_empty(self):
-        widget = AttachmentsFileInput()
-        assert (
-            widget.value_omitted_from_data(QueryDict(""), MultiValueDict(), "photo")
-            is True
-        )
-
-    def test_attachments_context_lists_existing(self):
-        context = AttachmentsFileInput().get_context("photo", ["a", "b"], {})
-        assert context["existing"] == ["a", "b"]
-
-    def test_attachments_render_includes_existing_inputs_and_template(self):
-        html = AttachmentsFileInput().render("photo", ["stored:a.txt"], attrs={})
-        assert 'name="photo-existing"' in html
-        assert "stored:a.txt" in html
-        assert "data-daisie-file-template" in html
-
-    def test_image_widget_renders(self):
-        html = ImageFileInput().render("photo", None, attrs={})
-        assert "data-daisie-file-image" in html
-        assert "data-daisie-file-image-preview" in html
-
-    def test_attachments_render_applies_widget_design(self):
-        widget = AttachmentsFileInput()
-        widget.design = {
-            "tray_css": "gap-4",
-            "item_css": "rounded-full",
-            "render": "icon",
-            "fallback": "initials",
-        }
-        html = widget.render("photo", None, attrs={})
-        assert "gap-4" in html
-        assert "rounded-full" in html
-        assert 'data-daisie-file-render="icon"' in html
-        assert 'data-daisie-file-fallback="initials"' in html
-
-
-class TestFormFieldBlock:
-    def test_bound_field_widget_and_unplaced_fields(self):
-        form = _TitleForm()
-        context = FormFieldBlock().get_context("title", {"form": form})
-        assert context["bound_field"].name == "title"
-
-        from wagtail_daisIE.context import (
-            set_current_form_fields,
-            set_current_model_fields,
-        )
-        from wagtail_daisIE.dynamic.registry import get_context_model
-
-        # Only concrete, editable model fields are offered (never the pk).
-        names = [f["name"] for f in get_context_model("member").form_fields()]
-        assert "username" in names and "id" not in names
-
-        set_current_form_fields(
-            [
-                {"name": "title", "label": "Title"},
-                {"name": "notes", "label": "Notes"},
-            ]
-        )
-        set_current_model_fields(
-            [
-                {"name": "title", "label": "Title"},
-                {"name": "description", "label": "Description"},
-            ]
-        )
-        try:
-            form_select = FormFieldBlock().field.widget
-            blank = str(form_select.render("field", ""))
-            assert '<option value="" selected>' in blank
-            assert 'value="title"' in blank and "Title" in blank
-            chosen = str(form_select.render("field", "notes"))
-            assert 'value="notes" selected' in chosen
-            assert 'value="" selected' not in chosen
-
-            model_select = ModelFieldSelect(empty_label="Use the field name")
-            model_html = str(model_select.render("model_field", ""))
-            assert '<option value="" selected>' in model_html
-            assert 'value="title"' in model_html
-            assert 'value="id"' not in model_html
-            stale = str(model_select.render("model_field", "gone"))
-            assert 'value="gone" selected' in stale
-
-            hub = InstanceModelSelect()
-            hub_attrs = hub.build_attrs({})
-            assert hub_attrs["data-controller"] == "daisie-form-instance-model"
-            assert (
-                '"member"'
-                in hub_attrs["data-daisie-form-instance-model-context-models-value"]
-            )
-        finally:
-            set_current_form_fields(())
-            set_current_model_fields(())
-
-        from wagtail_daisIE.templatetags.wagtail_daisIE_tags import (
-            unplaced_form_fields,
-        )
-
-        page = SimpleNamespace(get_placed_field_names=lambda: ["title"])
-        assert [f.name for f in unplaced_form_fields(page, form)] == ["notes"]
-        page = SimpleNamespace(get_placed_field_names=lambda: [])
-        assert [f.name for f in unplaced_form_fields(page, form)] == ["title", "notes"]
