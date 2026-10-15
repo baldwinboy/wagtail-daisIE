@@ -73,7 +73,6 @@ their `insert_global_admin_js` hooks and observer fallbacks to be removed:
 
 - `static/wagtail_daisIE/js/context_binding_block.js` — context binding block:
   field visibility, help panel and instance chooser. Largest of the three.
-- `static/wagtail_daisIE/js/feed_help.js` — Feed model help panel.
 
 - **Risk:** medium (context binding is the largest).
 

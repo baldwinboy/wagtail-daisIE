@@ -72,6 +72,21 @@ def get_current_model_key():
     return _current_model_key.get() or ""
 
 
+_current_context_model_key: contextvars.ContextVar = contextvars.ContextVar(
+    "wagtail_daisIE_current_context_model_key", default=""
+)
+
+
+def set_current_context_model_key(key):
+    """Set the context model key chosen on the snippet being edited (or "")."""
+    return _current_context_model_key.set(key or "")
+
+
+def get_current_context_model_key():
+    """Return the context model key active for the current admin request."""
+    return _current_context_model_key.get() or ""
+
+
 _current_form_context: contextvars.ContextVar = contextvars.ContextVar(
     "wagtail_daisIE_current_form_context", default=None
 )

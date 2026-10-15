@@ -9,7 +9,7 @@ from wagtail.admin.panels import FieldPanel, HelpPanel
 from ..dynamic.registry import get_context_models
 
 
-def bound_model_fields(page):
+def _bound_model_fields(page):
     """Return every configured model and its editable fields.
 
     Each entry carries ``active`` so the saved model's block renders visible and
@@ -44,7 +44,7 @@ class FormModelFieldsHelpPanel(HelpPanel):
     class BoundPanel(HelpPanel.BoundPanel):
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
-            context["bound_model"] = bound_model_fields(self.instance)
+            context["bound_model"] = _bound_model_fields(self.instance)
             return context
 
 

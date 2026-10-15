@@ -14,6 +14,7 @@ from wagtail.admin.menu import MenuItem
 from wagtail.snippets.models import register_snippet
 
 from .context import (
+    set_current_context_model_key,
     set_current_form_fields,
     set_current_model_fields,
     set_current_model_key,
@@ -201,6 +202,30 @@ def _set_form_fields_before_edit_page(request, page):
 # -- END --
 
 
+# Set the context model key on the feed being edited (or "").
+# -- START --
+def _feed_context_model_key(instance):
+    from .feeds.models import Feed
+
+    if not isinstance(instance, Feed):
+        return ""
+
+    return getattr(instance, "context_model", "") or ""
+
+
+@hooks.register("before_create_snippet")
+def _set_context_model_before_create_feed(request, model):
+    set_current_context_model_key("")
+
+
+@hooks.register("before_edit_snippet")
+def _set_context_model_before_edit_feed(request, instance):
+    set_current_context_model_key(_feed_context_model_key(instance))
+
+
+# -- END --
+
+
 # Register admin views
 
 
@@ -282,17 +307,6 @@ def register_block_settings_js():
     return format_html(
         '<script src="{}"></script>',
         static("wagtail_daisIE/js/block_settings.js"),
-    )
-
-
-# Register the feed model help script.
-
-
-@hooks.register("insert_global_admin_js")
-def register_feed_help_js():
-    return format_html(
-        '<script src="{}"></script>',
-        static("wagtail_daisIE/js/feed_help.js"),
     )
 
 

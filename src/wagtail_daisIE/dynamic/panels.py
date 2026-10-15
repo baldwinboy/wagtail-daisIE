@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import HelpPanel
 
 from ..notifications.placeholders import register_placeholder_provider
-from .registry import get_context_model, get_context_models
+from .registry import get_context_models
 
 
 def _context_model_placeholder_groups():
@@ -51,12 +51,37 @@ def _context_model_placeholder_groups():
 register_placeholder_provider(_context_model_placeholder_groups)
 
 
+def _bound_model_fields(feed):
+    """Return every configured model and its metadata.
+
+    Each entry carries ``active`` so the saved model's block renders visible and
+    ``w-rules`` reveals another when the admin changes **context model**.
+    """
+    active_key = getattr(feed, "context_model", "") or ""
+    models = []
+    for key, config in get_context_models().items():
+        model = config.model if config is not None else None
+        models.append(
+            {
+                "key": key,
+                "label": str(config.label) if config else key,
+                "model_label": model._meta.label if model is not None else "",
+                "summary": str(config.source_summary) if config else "",
+                "examples": config.examples(limit=100) if config else [],
+                "fields": config.field_docs(limit=None) if config else [],
+                "filters": sorted(config.get_filters().keys()) if config else [],
+                "active": key == active_key,
+            }
+        )
+    return {"key": active_key, "models": models}
+
+
 class FeedContextModelHelpPanel(HelpPanel):
     """List the properties available for a Feed's selected context model.
 
     Rendered as a ``<details>`` panel next to the Feed editor. It is
     server-rendered for the saved model and enhanced by
-    ``wagtail_daisIE/js/feed_help.js`` so it updates immediately when the model
+    ``RulesController`` so it updates immediately when the model
     select changes.
     """
 
@@ -67,16 +92,5 @@ class FeedContextModelHelpPanel(HelpPanel):
     class BoundPanel(HelpPanel.BoundPanel):
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
-            key = getattr(self.instance, "context_model", "") or ""
-            config = get_context_model(key) if key else None
-            model = config.model if config is not None else None
-            context["feed_model"] = {
-                "key": key,
-                "label": str(config.label) if config else "",
-                "model": model._meta.label if model else "",
-                "summary": str(config.source_summary) if config else "",
-                "examples": config.examples(limit=100) if config else [],
-                "fields": config.field_docs(limit=None) if config else [],
-                "filters": sorted(config.get_filters().keys()) if config else [],
-            }
+            context["bound_model"] = _bound_model_fields(self.instance)
             return context
