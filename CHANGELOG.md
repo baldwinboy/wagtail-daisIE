@@ -31,6 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `daisie_block_css` template tag for rendering a themed block's design classes
   where `{% include_block %}` cannot be used.
 
+### Changed
+
+* The **Context binding** block and the **Layout override** feed block now use
+  out-of-box Stimulus only: conditionals are driven by `w-rules` with
+  prefix-correct keys from a server-rendered `Meta.form_template`, and the
+  specific-instance combobox uses a single `w-swap` target (options ⇄ selected
+  display with a clear action) plus `w-sync`. Pinning a specific instance now
+  clears itself on save when the stored value does not belong to the selected
+  model.
+
 ### Fixed
 
 * Corrected invalid Wagtail admin `Meta.icon` names on 18 blocks.
@@ -50,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 * Inert `collapsed` option on `IconChooserBlock.Meta` (FieldBlocks ignore it).
+* The hand-rolled context-binding admin script and stylesheet
+  (`context_binding_block.js`, `context_binding.css`), the
+  `DynamicInstanceWidget`/`DynamicInstanceField`/`DynamicInstanceChooserBlock`
+  and the JSON `dynamic_object_options` endpoint (replaced by the
+  `binding_results` HTML fragment endpoint).
 
 ## [3.3.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.2.0...v3.3.0) (2026-10-13)
 

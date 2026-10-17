@@ -6,7 +6,7 @@
     </p>
     {% for group in dynamic_link_groups %}
         <details class="w-mb-2"{% if forloop.first %} open{% endif %}>
-            <summary style="display: list-item; user-select: none;">
+            <summary style="display: list-item; user-select: none;" class="w-summary">
                 {{ group.title }}{% if group.description %} — {{ group.description }}{% endif %}
             </summary>
             <table class="listing">

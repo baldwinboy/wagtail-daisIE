@@ -1,0 +1,131 @@
+{% load i18n %}
+{% comment %}
+Custom StructBlock form template.
+
+Prefix-correct ``w-rules`` keys are built from the ``__PREFIX__`` token that
+Wagtail substitutes with this block's content-path prefix when the block is
+rendered in the editor; ``children.<name>.prefix`` gives the same prefix for a
+sibling field. The ``w-rules`` controller itself is added to this template's
+root by ``StructBlock.Meta.form_attrs``.
+
+The first non-whitespace output must be a single root element: Wagtail applies
+``Meta.form_attrs`` to the first node of the parsed template.
+{% endcomment %}
+<div class="daisie-context-binding">
+    <div data-contentpath="key">
+        <label class="w-field__label" for="{{ children.key.id_for_label }}">{{ children.key.block.label }}</label>
+        {{ children.key.render_form }}
+    </div>
+
+    <div data-contentpath="fallback">
+        <label class="w-field__label" for="{{ children.fallback.id_for_label }}">{{ children.fallback.block.label }}</label>
+        {{ children.fallback.render_form }}
+    </div>
+
+    <div data-w-rules-target="show"
+         data-w-rules='{"__PREFIX__-key": {{ multi_mode_json }}}'
+         hidden>
+        <div data-contentpath="mode">
+            <label class="w-field__label" for="{{ children.mode.id_for_label }}">{{ children.mode.block.label }}</label>
+            {{ children.mode.render_form }}
+        </div>
+    </div>
+
+    <div class="help-block help-info">
+        <div data-w-rules-target="show" data-w-rules='{"__PREFIX__-key": [""]}'>
+            <p>{% trans "Choose a value to see the fields you can reference." %}</p>
+        </div>
+        {% for key, model in context_models.items %}
+            <div data-w-rules-target="show"
+                 data-w-rules='{"__PREFIX__-key": ["{{ key|escapejs }}"]}'
+                 hidden>
+                <p>
+                    <strong>{{ model.label }}</strong>
+                    {% if model.model %}(<code>{{ model.model }}</code>){% endif %}
+                    &mdash; {{ model.sourceSummary }}
+                </p>
+                {% if model.examples %}
+                    <p>{% trans "Use:" %}</p>
+                    <ul>
+                        {% for example in model.examples %}
+                            <li><code>{{ example }}</code></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if model.fields %}
+                    <details>
+                        <summary style="display: list-item;" class="w-summary">{% trans "Available fields" %}</summary>
+                        <ul class="w-summary__list">
+                            {% for field in model.fields %}
+                                <li><code>{{ field.name }}</code> &mdash; {{ field.label }}</li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div data-w-rules-target="show"
+         data-w-rules='{"__PREFIX__-mode": ["url"]}'
+         hidden>
+        <div data-contentpath="lookup_in">
+            <label class="w-field__label" for="{{ children.lookup_in.id_for_label }}">{{ children.lookup_in.block.label }}</label>
+            {{ children.lookup_in.render_form }}
+        </div>
+        <div data-contentpath="lookup_field">
+            <label class="w-field__label" for="{{ children.lookup_field.id_for_label }}">{{ children.lookup_field.block.label }}</label>
+            {{ children.lookup_field.render_form }}
+        </div>
+        <div data-contentpath="lookup_pattern">
+            <label class="w-field__label" for="{{ children.lookup_pattern.id_for_label }}">{{ children.lookup_pattern.block.label }}</label>
+            {{ children.lookup_pattern.render_form }}
+        </div>
+    </div>
+
+    {{ children.object_id.render_form }}
+
+    {% for key, model in context_models.items %}
+        <div data-w-rules-target="show"
+             data-w-rules='{"__PREFIX__-key": ["{{ key|escapejs }}"], "__PREFIX__-mode": ["fixed"]}'
+             hidden
+             class="w-combobox-container"
+             >
+            <form method="get" action="{{ binding_results_url }}"
+                  data-controller="w-swap"
+                  data-action="input->w-swap#submitLazy load@window->w-swap#submitLazy"
+                  data-w-swap-target-value="#{{ prefix }}-results-{{ key }}"
+                  data-w-swap-wait-value="50" class="w-combobox">
+                <fieldset>
+                    <input type="hidden" name="model" value="{{ model.modelPath }}">
+                    <input type="hidden" name="target" value="#{{ children.object_id.prefix }}">
+                    <input type="hidden" name="panel" value="#{{ prefix }}-results-{{ key }}">
+                    <input type="hidden" name="current" value=""
+                           data-current-for="{{ children.object_id.prefix }}">
+                    <label class="w-sr-only" for="id_context_binding_{{ key }}" id="id_context_binding_{{ key }}-label">{% trans 'Search…' %}</label>
+                    <div class="w-combobox__field w-flex">
+                        <input
+                            aria-controls="{{ prefix }}-results-{{ key }}"
+                            aria-activedescendant=""
+                            aria-autocomplete="list"
+                            aria-labelledby="id_context_binding_{{ key }}-label"
+                            autoComplete="off"
+                            role="combobox"
+                            type="search"
+                            name="q"
+                            autocomplete="off"
+                            id="id_context_binding_{{ key }}"
+                            placeholder="{% trans 'Search…' %}">
+                    </div>
+                    <input type="hidden" name="limit" value="50">
+                    <div
+                        id="{{ prefix }}-results-{{ key }}"
+                        class="w-combobox__menu"
+                        aria-labelledby="id_context_binding_{{ key }}-label"
+                        role="listbox">
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    {% endfor %}
+</div>

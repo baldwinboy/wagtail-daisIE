@@ -1,12 +1,12 @@
-import json
-
 import pytest
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.test import RequestFactory
 
+from wagtail_daisIE.dynamic.blocks import ContextBindingBlock
 from wagtail_daisIE.dynamic.mixins import DaisieContextMixin
 from wagtail_daisIE.dynamic.registry import (
     get_context_model,
@@ -23,7 +23,7 @@ from wagtail_daisIE.dynamic.resolvers import (
     resolve_url_kwargs,
     url_for_object,
 )
-from wagtail_daisIE.dynamic.views import object_options
+from wagtail_daisIE.dynamic.views import binding_results
 
 
 pytestmark = pytest.mark.django_db
@@ -197,21 +197,113 @@ class TestResolution:
         )
 
 
-class TestObjectOptionsEndpoint:
+class TestBindingResultsEndpoint:
+    def _query(self, **extra):
+        return {
+            "model": "auth.User",
+            "target": "#form_fields-0-object_id",
+            "panel": "#form_fields-0-panel",
+            "limit": "2",
+            **extra,
+        }
+
     def test_staff_and_model_guard_and_limit(self):
         staff = USER_MODEL.objects.create(username="staff", is_staff=True)
-        USER_MODEL.objects.create(username="a")
-        USER_MODEL.objects.create(username="b")
-        request = _request(
-            user=staff, query={"model": USER_MODEL._meta.label, "limit": "2"}
-        )
-        payload = json.loads(object_options(request).content)
-        assert len(payload["results"]) == 2
+        USER_MODEL.objects.create(username="match-a")
+        USER_MODEL.objects.create(username="match-b")
+        content = binding_results(
+            _request(user=staff, query=self._query(q="match"))
+        ).content.decode()
+        assert "data-w-sync-target-value" in content
+        assert "data-w-swap-url-param" in content
 
         non_staff = _request(user=USER_MODEL.objects.create(username="anon"))
         with pytest.raises(Http404):
-            object_options(non_staff)
+            binding_results(non_staff)
 
-        unconfigured = _request(user=staff, query={"model": "wagtailcore.Page"})
+        unconfigured = _request(user=staff, query=self._query(model="wagtailcore.Page"))
         with pytest.raises(Http404):
-            object_options(unconfigured)
+            binding_results(unconfigured)
+
+    def test_blank_query_returns_empty(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        response = binding_results(_request(user=staff, query=self._query(q="")))
+        assert response.content == b""
+
+    def test_blank_query_with_current_renders_display(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        content = binding_results(
+            _request(user=staff, query=self._query(q="", current=str(staff.pk)))
+        ).content.decode()
+        assert "staff" in content
+
+    def test_blank_query_with_unknown_current_returns_empty(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        response = binding_results(
+            _request(user=staff, query=self._query(q="", current="999999"))
+        )
+        assert response.content == b""
+
+    def test_selected_renders_display_and_clear(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        content = binding_results(
+            _request(user=staff, query=self._query(selected=str(staff.pk)))
+        ).content.decode()
+        assert "staff" in content
+        assert "Clear" in content
+
+    def test_clear_returns_empty(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        response = binding_results(_request(user=staff, query=self._query(clear="1")))
+        assert response.content == b""
+
+    def test_invalid_selector_is_rejected(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        response = binding_results(
+            _request(user=staff, query=self._query(panel="body { color: red }"))
+        )
+        assert response.status_code == 400
+
+
+class TestContextBindingClean:
+    def test_fixed_mode_drops_unknown_instance(self):
+        block = ContextBindingBlock()
+        value = {"key": "target", "mode": "fixed", "object_id": "999999"}
+        with pytest.raises(ValidationError):
+            block.clean(value)
+
+    def test_fixed_mode_keeps_existing_instance(self):
+        user = USER_MODEL.objects.create(username="staff")
+        block = ContextBindingBlock()
+        value = {"key": "target", "mode": "fixed", "object_id": str(user.pk)}
+        cleaned = block.clean(value)
+        assert cleaned["object_id"] == str(user.pk)
+
+    def test_invalid_pattern_is_rejected(self):
+        block = ContextBindingBlock()
+        value = {"key": "target", "mode": "url", "lookup_pattern": "("}
+        with pytest.raises(ValidationError):
+            block.clean(value)
+
+
+class TestContextBindingFormTemplate:
+    def test_renders_panel_combobox_and_rules(self):
+        block = ContextBindingBlock()
+        html = block.render_form_template()
+        assert 'name="panel"' in html
+        assert 'class="w-combobox__menu"' in html
+        assert "w-swap" in html
+        assert "load@window->w-swap#submitLazy" in html
+        assert 'name="current"' in html
+        assert 'data-current-for="__PREFIX__-object_id"' in html
+        assert "__PREFIX__-key" in html
+        assert "__PREFIX__-mode" in html
+
+    def test_hidden_value_widget_syncs_current_on_load(self):
+        from wagtail_daisIE.dynamic.blocks import HiddenValueBlock
+
+        widget = HiddenValueBlock().field.widget
+        html = widget.render("__NAME__", None, attrs={"id": "__ID__"})
+        assert "load@window-&gt;w-sync#apply" in html
+        assert "data-w-sync-target-value" in html
+        assert "[data-current-for=&quot;__NAME__&quot;]" in html

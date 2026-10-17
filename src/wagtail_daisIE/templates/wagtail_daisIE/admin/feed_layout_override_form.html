@@ -1,0 +1,51 @@
+{% load i18n %}
+{% comment %}
+Custom StructBlock form template; see context_binding_form.html for the
+``__PREFIX__``/``w-rules`` rationale. The first non-whitespace output must be a
+single root element.
+{% endcomment %}
+<div class="daisie-feed-layout-override">
+    <div data-contentpath="layout">
+        <label class="w-field__label" for="{{ children.layout.id_for_label }}">{{ children.layout.block.label }}</label>
+        {{ children.layout.render_form }}
+    </div>
+
+    <div data-contentpath="gap">
+        <label class="w-field__label" for="{{ children.gap.id_for_label }}">{{ children.gap.block.label }}</label>
+        {{ children.gap.render_form }}
+    </div>
+
+    <div data-w-rules-target="show"
+         data-w-rules='{"__PREFIX__-layout": ["grid"], "__PREFIX__-toggle_layouts": ["grid_list", "grid_row"]}'
+         data-w-rules-match="any"
+         hidden>
+        <div data-contentpath="columns">
+            <label class="w-field__label" for="{{ children.columns.id_for_label }}">{{ children.columns.block.label }}</label>
+            {{ children.columns.render_form }}
+        </div>
+    </div>
+
+    <div data-w-rules-target="show"
+         data-w-rules='{"__PREFIX__-layout": ["row"], "__PREFIX__-toggle_layouts": ["grid_row", "row_list"]}'
+         data-w-rules-match="any"
+         hidden>
+        <div data-contentpath="row_mode">
+            <label class="w-field__label" for="{{ children.row_mode.id_for_label }}">{{ children.row_mode.block.label }}</label>
+            {{ children.row_mode.render_form }}
+        </div>
+    </div>
+
+    <div data-contentpath="show_toggle">
+        <label class="w-field__label" for="{{ children.show_toggle.id_for_label }}">{{ children.show_toggle.block.label }}</label>
+        {{ children.show_toggle.render_form }}
+    </div>
+
+    <div data-w-rules-target="show"
+         data-w-rules='{"__PREFIX__-show_toggle": ["", "yes"]}'
+         hidden>
+        <div data-contentpath="toggle_layouts">
+            <label class="w-field__label" for="{{ children.toggle_layouts.id_for_label }}">{{ children.toggle_layouts.block.label }}</label>
+            {{ children.toggle_layouts.render_form }}
+        </div>
+    </div>
+</div>
