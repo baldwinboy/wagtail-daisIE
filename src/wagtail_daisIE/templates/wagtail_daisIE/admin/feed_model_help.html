@@ -20,10 +20,10 @@
                         {% endblocktrans %}
                     </p>
                     <details style="margin-bottom: 1rem;">
-                        <summary style="display: list-item;">{% trans "Available properties" %}</summary>
+                        <summary style="display: list-item;" class="w-summary">{% trans "Available properties" %}</summary>
                         {% if model.examples %}
                             <p>{% trans "Common expressions:" %}</p>
-                            <ul>
+                            <ul class="w-summary__list">
                                 {% for example in model.examples %}
                                     <li><code>{{ example }}</code></li>
                                 {% endfor %}

@@ -15,7 +15,7 @@
 
         {% for group in placeholder_groups %}
             <details style="margin-bottom: 1rem;">
-                <summary style="display: list-item;">{{ group.title }}</summary>
+                <summary style="display: list-item;" class="w-summary">{{ group.title }}</summary>
                 {% if group.description %}<p>{{ group.description }}</p>{% endif %}
                 <table class="listing">
                     <thead>

@@ -20,7 +20,7 @@ from ..base_blocks.design import TypographyDesignBlock
 from ..base_blocks.input_widget import InputWidgetDesignBlock
 from ..context import get_current_model_key
 from ..dynamic.registry import get_context_models
-from .panels import PrefixedRulesPanel
+from ..panels import PrefixedRulesPanel
 from .registry import (
     FIELD_TYPE_MAX_LENGTH,
     get_form_field_type_choices,
