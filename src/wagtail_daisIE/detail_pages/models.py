@@ -7,11 +7,18 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.http import Http404
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel
-from wagtail.models import Page
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel, TitleFieldPanel
+from wagtail.models import Page, PanelPlaceholder
 
 from ..dynamic.resolvers import parse_bindings, resolve_context_models
 from ..pages import StyledPageMixin
+
+
+def _is_title_panel(panel):
+    """True for the title panel, including ``Page``'s unexpanded placeholder."""
+    return isinstance(panel, TitleFieldPanel) or (
+        isinstance(panel, PanelPlaceholder) and panel.panel_class is TitleFieldPanel
+    )
 
 
 class ModelDetailTemplate(StyledPageMixin):
@@ -33,7 +40,13 @@ class ModelDetailTemplate(StyledPageMixin):
         help_text=_("Where pages generated for this detail type are added."),
     )
 
-    content_panels = StyledPageMixin.content_panels + [
+    content_panels = [
+        FieldPanel("title"),
+        *[
+            panel
+            for panel in StyledPageMixin.content_panels
+            if not _is_title_panel(panel)
+        ],
         FieldPanel("detail_key"),
         FieldPanel("parent_page"),
     ]

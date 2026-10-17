@@ -21,7 +21,7 @@ from .context import (
     set_current_theme,
     theme_from_instance,
 )
-from .dynamic.views import object_options
+from .dynamic.views import binding_results
 from .errors.view_sets import ErrorViewSetGroup
 from .help import GuideIndexView, GuidePageView
 from .icons.providers.iconify import ICONIFY_ICON_SCRIPT
@@ -239,9 +239,9 @@ def register_admin_urls():
         ),
         path("icons/search/", icon_search, name="icon_search"),
         path(
-            "dynamic/objects/",
-            object_options,
-            name="dynamic_object_options",
+            "dynamic/binding-results/",
+            binding_results,
+            name="binding_results",
         ),
         path("guide/", GuideIndexView.as_view(), name="guide"),
         path(
@@ -310,27 +310,6 @@ def register_block_settings_js():
     )
 
 
-# Register the dynamic context-model metadata for the binding block.
-# -- START --
-@hooks.register("insert_global_admin_js")
-def register_context_models_js():
-    from .dynamic.registry import get_context_models_state
-
-    state_json = json.dumps(get_context_models_state())
-    return format_html(
-        "<script type='text/javascript'>window.WAGTAIL_DAISIE_CONTEXT_MODELS = {};</script>",
-        mark_safe(state_json),  # noqa: S308
-    )
-
-
-@hooks.register("insert_global_admin_js")
-def register_context_binding_js():
-    return format_html(
-        '<script src="{}"></script>',
-        static("wagtail_daisIE/js/context_binding_block.js"),
-    )
-
-
 # Feed available context values to the draftail_text_utils dynamic-link control.
 @hooks.register("insert_global_admin_js")
 def register_dynamic_link_context_js():
@@ -359,17 +338,6 @@ def register_block_settings_css():
 
 
 # -- END --
-
-
-# Register the context binding styles.
-
-
-@hooks.register("insert_global_admin_css")
-def register_context_binding_css():
-    return format_html(
-        '<link rel="stylesheet" href="{}">',
-        static("wagtail_daisIE/css/context_binding.css"),
-    )
 
 
 # Register the icon chooser script and CSS.
