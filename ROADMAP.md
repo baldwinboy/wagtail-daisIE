@@ -71,10 +71,12 @@ Global scripts that use `MutationObserver`/manual `initAll` and could become
 Stimulus controllers attached via panel/widget `attrs`/`build_attrs`, allowing
 their `insert_global_admin_js` hooks and observer fallbacks to be removed:
 
-- `static/wagtail_daisIE/js/context_binding_block.js` — context binding block:
-  field visibility, help panel and instance chooser. Largest of the three.
+- ~~`static/wagtail_daisIE/js/context_binding_block.js`~~ — done: the context
+  binding block now uses out-of-box `w-rules`/`w-swap`/`w-sync` with a
+  server-rendered `Meta.form_template`; the script and its stylesheet were
+  deleted.
 
-- **Risk:** medium (context binding is the largest).
+- **Risk:** medium.
 
 ## 5. `block_settings.js` cleanup
 

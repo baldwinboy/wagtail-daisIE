@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+import json
 import re
 
+from django import forms
 from django.core.exceptions import ValidationError
+from django.urls import NoReverseMatch, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks.compact import DaisieStructBlock
 from ..choicelist import ChoiceList
-from .forms import DynamicInstanceField
-from .registry import get_context_model, get_context_model_choices
+from .registry import (
+    get_context_model,
+    get_context_model_choices,
+    get_context_models,
+    get_context_models_state,
+)
 
 
 BINDING_MODE_CHOICES = ChoiceList(
@@ -31,11 +38,21 @@ BINDING_LOOKUP_IN_CHOICES = ChoiceList(
 )
 
 
-class DynamicInstanceChooserBlock(blocks.FieldBlock):
-    """Pick a specific instance of the binding's model."""
+class HiddenValueBlock(blocks.FieldBlock):
+    """Store a value in a hidden input; the value is chosen in the form template."""
 
-    def __init__(self, required=True, **kwargs):
-        self.field = DynamicInstanceField(required=required)
+    def __init__(self, required=False, **kwargs):
+        self.field = forms.CharField(
+            required=required,
+            widget=forms.HiddenInput(
+                attrs={
+                    "data-controller": "w-sync",
+                    "data-action": ("change->w-sync#apply load@window->w-sync#apply"),
+                    "data-w-sync-target-value": '[data-current-for="__NAME__"]',
+                    "data-w-sync-debounce-value": "0",
+                }
+            ),
+        )
         super().__init__(**kwargs)
 
     class Meta:
@@ -56,7 +73,7 @@ class ContextBindingBlock(DaisieStructBlock):
         required=False,
         label=_("Source"),
     )
-    object_id = DynamicInstanceChooserBlock(required=False, label=_("Instance"))
+    object_id = HiddenValueBlock(required=False, label=_("Instance"))
     lookup_field = blocks.CharBlock(
         required=False,
         blank=True,
@@ -88,6 +105,29 @@ class ContextBindingBlock(DaisieStructBlock):
         ),
     )
 
+    def get_form_context(self, value, prefix="", errors=None):
+        context = super().get_form_context(value, prefix=prefix, errors=errors)
+        context["context_models"] = get_context_models_state()
+        multi_mode_keys = [
+            key for key, config in get_context_models().items() if len(config.modes) > 1
+        ]
+        context["multi_mode_json"] = json.dumps(multi_mode_keys)
+        try:
+            context["binding_results_url"] = reverse("wagtail_daisIE:binding_results")
+        except NoReverseMatch:  # pragma: no cover - admin not mounted
+            context["binding_results_url"] = ""
+        return context
+
+    @staticmethod
+    def _object_exists(config, object_id):
+        model = config.model
+        if model is None:
+            return False
+        try:
+            return model._default_manager.filter(pk=object_id).exists()
+        except (TypeError, ValueError):
+            return False
+
     def clean(self, value):
         value = super().clean(value)
         config = get_context_model(value.get("key"))
@@ -95,8 +135,14 @@ class ContextBindingBlock(DaisieStructBlock):
             modes = config.modes
             if value.get("mode") not in modes:
                 value["mode"] = modes[0]
-            if value.get("mode") == "fixed" and not value.get("object_id"):
-                raise ValidationError(_("Choose an instance, or switch the source."))
+            if value.get("mode") == "fixed":
+                object_id = value.get("object_id")
+                if object_id and not self._object_exists(config, object_id):
+                    value["object_id"] = ""
+                if not value.get("object_id"):
+                    raise ValidationError(
+                        _("Choose an instance, or switch the source.")
+                    )
         pattern = value.get("lookup_pattern") or ""
         if pattern:
             try:
@@ -112,15 +158,20 @@ class ContextBindingBlock(DaisieStructBlock):
         icon = "group"
         label = _("Context binding")
         collapsed = True
+        form_template = "wagtail_daisIE/admin/context_binding_form.html"
+        form_attrs = {
+            "data-controller": "w-rules",
+            "data-action": "change->w-rules#resolve",
+        }
         form_layout = blocks.BlockGroup(
             children=[
                 "key",
+                "fallback",
                 "mode",
                 "object_id",
                 "lookup_in",
                 "lookup_field",
                 "lookup_pattern",
-                "fallback",
             ],
             heading=_("Context binding"),
         )

@@ -213,7 +213,7 @@ class Feed(ClusterableModel):
                     attrs={
                         "data-controller": "w-sync",
                         "data-w-sync-name-value": "allow-layout-toggle",
-                        "data-w-sync-target": "#id_toggle_layouts",
+                        "data-w-sync-target-value": "#id_toggle_layouts",
                         "data-action": "change->w-sync#clear",
                     },
                 ),

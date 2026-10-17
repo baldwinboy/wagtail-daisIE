@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import re
+
+from urllib.parse import urlencode
+
 from django.contrib import messages
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -73,25 +77,79 @@ def _add_confirmation(request):
     messages.add_message(request, level, safe, extra_tags=" ".join(tags))
 
 
-def _allowed_labels():
-    labels = set()
+#: ``target``/``panel`` must be simple id selectors, e.g. ``#form_fields-0-object_id``.
+_TARGET_SELECTOR = re.compile(r"#[A-Za-z0-9_-]+")
+
+
+def _configured_models():
+    """Return the set of models configured as context models."""
+    models = set()
     for config in get_context_models().values():
         model = config.model
         if model is not None:
-            labels.add(model._meta.label)
-    return labels
+            models.add(model)
+    return models
 
 
 @require_GET
-def object_options(request):
-    """Return ``{"results": [{id, text}]}`` for a configured context model."""
+def binding_results(request):
+    """Return an HTML fragment of instance options for a configured model.
+
+    Backs the ``w-swap`` search in the context-binding block. The request
+    carries ``model`` (the configured model path), the search ``q``, a ``limit``,
+    ``target`` (the hidden input the chosen value is written to) and ``panel``
+    (the results container that is swapped). With ``selected`` it returns the
+    chosen item's display fragment; with ``clear`` it returns an empty body.
+    """
     user = getattr(request, "user", None)
     if not (user and user.is_staff):
         raise Http404
 
-    label = request.GET.get("model", "")
-    if label not in _allowed_labels():
+    model = resolve_model(request.GET.get("model", ""))
+    if model is None or model not in _configured_models():
         raise Http404
+
+    target = request.GET.get("target", "")
+    panel = request.GET.get("panel", "")
+    if not (_TARGET_SELECTOR.fullmatch(target) and _TARGET_SELECTOR.fullmatch(panel)):
+        return HttpResponseBadRequest("Invalid selector")
+
+    base = {"model": request.GET.get("model", ""), "target": target, "panel": panel}
+    endpoint = reverse("wagtail_daisIE:binding_results")
+    clear_url = endpoint + "?" + urlencode({**base, "clear": "1"})
+
+    def render_selected(obj):
+        return render(
+            request,
+            "wagtail_daisIE/admin/binding_results.html",
+            {
+                "selected": {"id": obj.pk, "text": str(obj)},
+                "target": target,
+                "panel": panel,
+                "clear_url": clear_url,
+            },
+        )
+
+    if request.GET.get("clear"):
+        return HttpResponse("")
+
+    selected = (request.GET.get("selected") or "").strip()
+    if selected:
+        try:
+            obj = model._default_manager.get(pk=selected)
+        except (model.DoesNotExist, TypeError, ValueError):
+            raise Http404 from None
+        return render_selected(obj)
+
+    if not request.GET.get("q", "").strip():
+        current = (request.GET.get("current") or "").strip()
+        if not current:
+            return HttpResponse("")
+        try:
+            obj = model._default_manager.get(pk=current)
+        except (model.DoesNotExist, TypeError, ValueError):
+            return HttpResponse("")
+        return render_selected(obj)
 
     try:
         limit = int(request.GET.get("limit", 50) or 50)
@@ -99,15 +157,21 @@ def object_options(request):
         limit = 50
     limit = max(1, min(limit, 500))
 
-    model = resolve_model(label)
-    return JsonResponse(
+    results = model_options(model, query=request.GET.get("q", ""), limit=limit)
+    for item in results:
+        item["selected_url"] = (
+            endpoint + "?" + urlencode({**base, "selected": item["id"]})
+        )
+
+    return render(
+        request,
+        "wagtail_daisIE/admin/binding_results.html",
         {
-            "results": model_options(
-                model,
-                query=request.GET.get("q", ""),
-                limit=limit,
-            )
-        }
+            "results": results,
+            "target": target,
+            "panel": panel,
+            "clear_url": clear_url,
+        },
     )
 
 

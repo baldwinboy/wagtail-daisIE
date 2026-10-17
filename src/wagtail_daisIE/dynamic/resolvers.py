@@ -456,7 +456,7 @@ def model_options(model, *, query="", limit=50):
                 "SlugField",
                 "EmailField",
             ):
-                condition |= Q(**{f"{field.name}__icontains": query})
+                condition |= Q(**{f"{field.name}__icontains": query.lower()})
         if condition:
             qs = qs.filter(condition)
     options = []
