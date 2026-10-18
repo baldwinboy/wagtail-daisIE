@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.5.0...v3.5.0) (2026-10-18)
+
+
+### Miscellaneous Chores
+
+* release 3.5.0 ([e1d5b35](https://github.com/baldwinboy/wagtail-daisIE/commit/e1d5b35159486451418cf8431a22825ecb39d3f3))
+
 ## [3.5.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.4.0...v3.5.0) (2026-10-17)
 
 
