@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.5.0...v3.0.0) (2026-10-19)
+
+
+### Features
+
+* add account context value for allauth URLs ([348f1ab](https://github.com/baldwinboy/wagtail-daisIE/commit/348f1ab8c83d53c9961102b1fddd217a0c02fc28))
+* add autocomplete ([bba562f](https://github.com/baldwinboy/wagtail-daisIE/commit/bba562f9ecf8e4969c522337e2be306978450343))
+* add context bindings ([3f180cf](https://github.com/baldwinboy/wagtail-daisIE/commit/3f180cf287d886035e62f07770aa20dcc3bfa598))
+* add draftail_text_utils plugin ([2cb3134](https://github.com/baldwinboy/wagtail-daisIE/commit/2cb31344e023e04992fc4d58630d566a85188ae7))
+* add email logic and filters ([ae267eb](https://github.com/baldwinboy/wagtail-daisIE/commit/ae267eb8135961df9b833debda8336db2b31a036))
+* add email templates ([d612491](https://github.com/baldwinboy/wagtail-daisIE/commit/d612491d8c40ae2a166ce192130fcb622613d1ab))
+* add file upload ([f140cc6](https://github.com/baldwinboy/wagtail-daisIE/commit/f140cc698a2c18972ede0271315b6d64ee4b533f))
+* add filters ([065e551](https://github.com/baldwinboy/wagtail-daisIE/commit/065e55168beaece7b608fad806fa1792a7b2a94f))
+* add reusable blocks ([81a7b52](https://github.com/baldwinboy/wagtail-daisIE/commit/81a7b5298191ac69f989a04767538226d0784daf))
+* add secure paths and detail pages ([1399cbb](https://github.com/baldwinboy/wagtail-daisIE/commit/1399cbbcfdec9370405b4d68b72df24e4de90db7))
+* add settings layout ([1e59ea4](https://github.com/baldwinboy/wagtail-daisIE/commit/1e59ea457e8aa7b47111258e005c6c83e878a01f))
+* add table block ([cc183ca](https://github.com/baldwinboy/wagtail-daisIE/commit/cc183caba88416c2309fc3b3cd38d881348f1e67))
+* app-validated multi-attachment form fields ([f68257a](https://github.com/baldwinboy/wagtail-daisIE/commit/f68257a8feea054116fd7308ed70858740e19c4c))
+* editor-designed attachment and autocomplete widgets ([05f3edd](https://github.com/baldwinboy/wagtail-daisIE/commit/05f3edd060fea5d779929c4137cceb05bf00de7f))
+* enable form ordering ([80c872c](https://github.com/baldwinboy/wagtail-daisIE/commit/80c872c47b6825493a894d68a8564dc711c32d2d))
+* honour designs in menus/cards/search, expose input blocks ([605f17a](https://github.com/baldwinboy/wagtail-daisIE/commit/605f17a01e4eb349d85f9509f41edb0c96a8d1fe))
+* improve bound selections ([90bd705](https://github.com/baldwinboy/wagtail-daisIE/commit/90bd70564b673aa12b44c5ca12cdc2d974b82203))
+* layout control and editor styling improvements ([feddf38](https://github.com/baldwinboy/wagtail-daisIE/commit/feddf38f11cf8a0d21fbd62a7b7f337fb2227ab8))
+* migrate feed help to stimulus ([21786b2](https://github.com/baldwinboy/wagtail-daisIE/commit/21786b2c1de400cbb45ab6989e1e753387a99f02))
+* migrate instance model chooser to stimulus ([c4d388c](https://github.com/baldwinboy/wagtail-daisIE/commit/c4d388c9aa2904af6a8382fc7f9f0281405b02df))
+* migrate to htmx control ([b975985](https://github.com/baldwinboy/wagtail-daisIE/commit/b9759857294512e9b1093ebf4b56b92b81d80a35))
+* reduce migration size ([1a52d5e](https://github.com/baldwinboy/wagtail-daisIE/commit/1a52d5e6c1e90dbc4e431c47db71dcebf9694a88))
+* resolve context-bound dynamic styled links ([585d9c0](https://github.com/baldwinboy/wagtail-daisIE/commit/585d9c063247e193d0317b0f5ba7ded341a42315))
+* trim tests ([4f0fdd8](https://github.com/baldwinboy/wagtail-daisIE/commit/4f0fdd8b4d7be92629f74a54bcad2b724d864909))
+
+
+### Bug Fixes
+
+* accept absolute paths in link and search URL blocks ([ef95ccf](https://github.com/baldwinboy/wagtail-daisIE/commit/ef95ccf0c45e1b775bfb74fe05597d7780224c19))
+* add release please config ([1d9ae19](https://github.com/baldwinboy/wagtail-daisIE/commit/1d9ae1980c7bbaab967f81f81ac1f761a353edb3))
+* add release please manifest ([5a1a162](https://github.com/baldwinboy/wagtail-daisIE/commit/5a1a162fcaa3c5da9202943f19c9a2b70d722084))
+* add workflow call ([55ec604](https://github.com/baldwinboy/wagtail-daisIE/commit/55ec604d1ba5a6888fd8ab74f5c1cdc5e9523734))
+* exclude migrations from linting ([4552da1](https://github.com/baldwinboy/wagtail-daisIE/commit/4552da1f9c101538faed07e052abb7636db1e62d))
+* form field default ([a8543ce](https://github.com/baldwinboy/wagtail-daisIE/commit/a8543cedd81141b2cc86c58e8fbf2afcbca8ee33))
+* make field picker reflect configured/dynamic form fields ([6d932d3](https://github.com/baldwinboy/wagtail-daisIE/commit/6d932d30f40e30a7537795d2d2cb58d969f8d7e4))
+* migrate low-risk choosers to stimulus ([c7694e8](https://github.com/baldwinboy/wagtail-daisIE/commit/c7694e81653d0dcdc97f8bdb51520fc582a4de85))
+* preload no theme if none available ([93749b8](https://github.com/baldwinboy/wagtail-daisIE/commit/93749b8e7a7b83be138530846ecee286d22fe2f0))
+* remove incompatible python version tests ([8d57403](https://github.com/baldwinboy/wagtail-daisIE/commit/8d574039a31ec7e3540c6c52b91b71a49235113f))
+* remove incompatible wagtail version tests ([6c70d3b](https://github.com/baldwinboy/wagtail-daisIE/commit/6c70d3bab19f9dc71c71858f2d41df4d26d8c472))
+* remove template check ([012d7a0](https://github.com/baldwinboy/wagtail-daisIE/commit/012d7a0d2bae565b74ab513461d90741be7d9a0b))
+* return usable labels from get_draftail_font_families ([c31f209](https://github.com/baldwinboy/wagtail-daisIE/commit/c31f20990321edf059add050185f50c2dd470ac7))
+
+
+### Documentation
+
+* wire up and document draftail in the demo ([16e4304](https://github.com/baldwinboy/wagtail-daisIE/commit/16e4304ef67313d8be3323d37442aab82b70e10c))
+
+
+### Miscellaneous Chores
+
+* release 3.0.0 ([912e99b](https://github.com/baldwinboy/wagtail-daisIE/commit/912e99bff6a419e74036dce2b1ed4b3b546d97f0))
+
 ## [3.4.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.3.0...v3.4.0) (2026-10-13)
 
 
