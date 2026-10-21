@@ -32,7 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 allauth = [
-    "django-allauth>=65.19.7,<66",
+    "django-allauth>=65.20.0,<66",
 ]
 allauth_emails = [
     "wagtail-daisIE[notifications,allauth]",
@@ -52,7 +52,7 @@ Issues = "https://github.com/baldwinboy/wagtail-daisIE/issues"
 [dependency-groups]
 dev = [
     "dj-database-url==3.1.2",
-    "django-allauth>=65.19.7,<66",
+    "django-allauth>=65.20.0,<66",
     "draftail-text-utils>=3.0.2,<4",
     "pre-commit==4.7.0",
     "prek==0.5.5",

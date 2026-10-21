@@ -30,7 +30,6 @@ from .registry import (
 
 #: ``field_type`` values that use the "Choices" box.
 CHOICE_FIELD_TYPES = [
-    "checkbox",
     "checkboxes",
     "dropdown",
     "multiselect",
@@ -39,7 +38,6 @@ CHOICE_FIELD_TYPES = [
 
 #: ``field_type`` values that use the "Default value" box.
 DEFAULT_VALUE_FIELD_TYPES = [
-    "checkbox",
     "dropdown",
     "radio",
 ]
