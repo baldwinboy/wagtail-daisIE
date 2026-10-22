@@ -180,9 +180,14 @@ class DaisyUISwatchWidget(widgets.RadioSelect):
 
     template_name = "wagtail_daisIE/admin/daisyui_swatch_widget.html"
 
-    def __init__(self, attrs=None, prefix=None):
+    def __init__(self, attrs=None, prefix=None, label=None):
         super().__init__(attrs=attrs)
         self.prefix = prefix or ""
+        self.label = label or _("Swatches")
+
+    @property
+    def media(self):
+        return forms.Media(js=["wagtail_daisIE/js/swatch_controller.js"])
 
     @property
     def color_map(self):
@@ -194,30 +199,57 @@ class DaisyUISwatchWidget(widgets.RadioSelect):
         """
         return self._build_color_map()
 
+    # Value policy hooks (overridden by ``DaisyUIRawSwatchWidget``).
+    # ``get_context`` defines the algorithm once; subclasses only change how
+    # values are represented.
+    def normalise_value(self, value, color_map):
+        return value
+
+    def is_custom(self, value, color_map):
+        marker = f"{self.prefix}-[#"
+        return bool(value and value.startswith(marker) and value.endswith("]"))
+
+    def custom_hex(self, value):
+        marker = f"{self.prefix}-[#"
+        if value and value.startswith(marker) and value.endswith("]"):
+            return f"#{value[len(marker) : -1]}"
+        return ""
+
+    def choice_tile(self, choice_value, color_map):
+        """Return ``(value, color)`` for a choice, or ``None`` to omit it."""
+        return choice_value, color_map.get(choice_value, "#cccccc")
+
+    def widget_extras(self, widget_ctx, value):
+        """Hook for subclass-specific template context."""
+
     def get_context(self, name, value, attrs=None):
         from .utils import get_draftail_color_palette
 
         context = super().get_context(name, value, attrs)
         palette = get_draftail_color_palette()
         color_map = self._build_color_map(palette)
-        marker = f"{self.prefix}-[#"
-        is_custom = bool(value and value.startswith(marker) and value.endswith("]"))
-        custom_hex = f"#{value[len(marker) : -1]}" if is_custom else ""
+        normalised = self.normalise_value(value, color_map)
+        is_custom = self.is_custom(normalised, color_map)
+        custom_hex = self.custom_hex(normalised) if is_custom else ""
 
         tiles = []
         for choice_value, choice_label in self.choices:
+            choice = self.choice_tile(choice_value, color_map)
+            if choice is None:
+                continue
+            tile_value, tile_color = choice
             tiles.append(
                 {
-                    "value": choice_value,
+                    "value": tile_value,
                     "label": choice_label,
-                    "color": color_map.get(choice_value, "#cccccc"),
-                    "selected": not is_custom and choice_value == value,
+                    "color": tile_color,
+                    "selected": not is_custom and tile_value == normalised,
                 }
             )
 
         tiles.append(
             {
-                "value": value if is_custom else "",
+                "value": normalised if is_custom else "",
                 "label": _("Custom"),
                 "color": custom_hex,
                 "selected": is_custom,
@@ -225,13 +257,16 @@ class DaisyUISwatchWidget(widgets.RadioSelect):
             }
         )
 
-        context["widget"]["tiles"] = tiles
-        context["widget"]["is_custom"] = is_custom
-        context["widget"]["custom_color"] = custom_hex
-        context["widget"]["prefix"] = self.prefix
+        widget_ctx = context["widget"]
+        widget_ctx["tiles"] = tiles
+        widget_ctx["is_custom"] = is_custom
+        widget_ctx["custom_color"] = custom_hex
+        widget_ctx["prefix"] = self.prefix
+        widget_ctx["label"] = self.label
+        self.widget_extras(widget_ctx, normalised)
 
         swatches = [entry["value"] for entry in palette if entry["value"]]
-        widget_id = context["widget"]["attrs"].get("id") or ""
+        widget_id = widget_ctx["attrs"].get("id") or ""
         coloris_options = {
             # Scope the picker to this specific widget instance. In the
             # telepath payload the id is the "__ID__" token, which is
@@ -242,10 +277,10 @@ class DaisyUISwatchWidget(widgets.RadioSelect):
             "format": "hex",
             "alpha": False,
             # Coloris is kept in popover mode until the "Custom" tile is
-            # clicked; block_settings.js switches it inline for that widget.
+            # clicked; swatch_controller.js switches it inline for that widget.
             "inline": False,
         }
-        context["widget"]["coloris_options_json"] = json.dumps(coloris_options)
+        widget_ctx["coloris_options_json"] = json.dumps(coloris_options)
         return context
 
     def _build_color_map(self, palette=None):
@@ -280,58 +315,35 @@ class DaisyUIRawSwatchWidget(DaisyUISwatchWidget):
     Selecting the "Primary" swatch stores ``"#422ad5ff"`` on the block.
     """
 
-    def get_context(self, name, value, attrs=None):
+    def normalise_value(self, value, color_map):
         # Accept legacy class-name values ("bg-primary") too, so existing
         # content keeps rendering correctly.
-        color_map = self._build_color_map()
-        normalised = color_map.get(value, value)
+        return color_map.get(value, value)
 
-        context = super().get_context(name, normalised, attrs)
-        widget_ctx = context["widget"]
-
+    def is_custom(self, value, color_map):
         palette_hexes = set(color_map.values())
-        is_custom = (
-            bool(normalised)
-            and isinstance(normalised, str)
-            and normalised.startswith("#")
-            and normalised not in palette_hexes
+        return (
+            bool(value)
+            and isinstance(value, str)
+            and value.startswith("#")
+            and value not in palette_hexes
         )
 
-        tiles = []
-        for choice_value, choice_label in self.choices:
-            hex_value = color_map.get(choice_value)
-            if hex_value is None:
-                continue
-            tiles.append(
-                {
-                    # The radio's submitted value is the hex, not the class.
-                    "value": hex_value,
-                    "label": choice_label,
-                    "color": hex_value,
-                    "selected": not is_custom and normalised == hex_value,
-                }
-            )
+    def custom_hex(self, value):
+        return value or ""
 
-        tiles.append(
-            {
-                "value": normalised if is_custom else "",
-                "label": _("Custom"),
-                "color": normalised if is_custom else "",
-                "selected": is_custom,
-                "is_custom": True,
-                "is_raw": True,
-            }
-        )
+    def choice_tile(self, choice_value, color_map):
+        hex_value = color_map.get(choice_value)
+        if hex_value is None:
+            return None
+        # The radio's submitted value is the hex, not the class.
+        return hex_value, hex_value
 
-        widget_ctx["tiles"] = tiles
-        widget_ctx["is_custom"] = is_custom
-        widget_ctx["custom_color"] = normalised if is_custom else ""
+    def widget_extras(self, widget_ctx, value):
         # The class-name prefix used to build ``bg-[#…]`` values does not
         # apply here — the raw widget stores hex directly.
         widget_ctx["prefix"] = ""
         widget_ctx["is_raw"] = True
-
-        return context
 
     def value_from_datadict(self, data, files, name):
         value = super().value_from_datadict(data, files, name)

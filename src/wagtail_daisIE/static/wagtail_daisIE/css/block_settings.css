@@ -40,6 +40,21 @@
 }
 
 /*
+ * Native exclusive accordion wrapper. Wagtail's normalize.css resets
+ * `summary` to display:block, which removes the disclosure marker; restore the
+ * native list-item marker here instead of using an inline style.
+ */
+
+.daisyui-swatch-accordion > summary {
+  cursor: pointer;
+  display: list-item;
+}
+
+.daisyui-swatch-accordion[open] > .daisyui-swatch-widget {
+  margin-top: var(--daisyui-tile-gap);
+}
+
+/*
  * Coloris maps pointer positions to the colour area using its own
  * `offsetLeft`/`offsetTop`, which are relative to the picker because the
  * inline picker is `position: relative`. In inline mode Coloris then adds the
@@ -173,10 +188,6 @@
   width: 1.375rem;
 }
 
-.daisyui-swatch-tile:has(.daisyui-coloris-input) {
-  grid-column: span 1;
-}
-
 .daisyui-swatch-tile:has(input:checked),
 .daisyui-align-tile:has(input:checked) {
   border-color: var(--w-color-secondary);
@@ -213,16 +224,6 @@
     0.75rem -0.75rem,
     -0.75rem 0;
   background-size: 1.5rem 1.5rem;
-}
-
-.daisyui-coloris-input {
-  border: 0;
-  height: 1px;
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
-  position: absolute;
-  width: 1px;
 }
 
 .daisyui-swatch-widget,

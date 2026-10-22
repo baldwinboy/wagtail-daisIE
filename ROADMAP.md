@@ -13,7 +13,7 @@ widget have already been migrated (see `telepath.py`, `icon_chooser.js`,
 `block_controllers.js`). The items below still hand-roll the telepath widget
 render/state protocol and should be migrated next.
 
-## 1. Colour swatch widget (`DaisyUISwatchWidget` / `DaisyUIRawSwatchWidget`)
+## 1. Colour swatch widget (`DaisyUISwatchWidget` / `DaisyUIRawSwatchWidget`) [X]
 
 - **Current:** `DaisyUISwatchWidgetAdapter` (`src/wagtail_daisIE/telepath.py`)
   plus `SwatchSelectDefinition` / `RadioTileWidget`

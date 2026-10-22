@@ -39,7 +39,7 @@ allauth_emails = [
 ]
 notifications = []
 blocks = [
-    "draftail-text-utils>=3.0.2,<4",
+    "draftail-text-utils>=3.0.3,<4",
 ]
 
 [project.urls]
@@ -53,7 +53,7 @@ Issues = "https://github.com/baldwinboy/wagtail-daisIE/issues"
 dev = [
     "dj-database-url==3.1.2",
     "django-allauth>=65.20.0,<66",
-    "draftail-text-utils>=3.0.2,<4",
+    "draftail-text-utils>=3.0.3,<4",
     "pre-commit==4.7.0",
     "prek==0.5.5",
     "pytest==9.1.1",

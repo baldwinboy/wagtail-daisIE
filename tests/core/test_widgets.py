@@ -24,8 +24,17 @@ class TestDaisyUISwatchWidget:
         widget.choices = [("", "None"), ("bg-primary", "Primary")]
         html = widget.render("bg_color", "bg-[#ff0000]", attrs={"id": "__ID__"})
         assert 'value="bg-[#ff0000]"' in html
-        assert "daisyui-swatch-radio--custom" in html
-        assert 'data-prefix="bg"' in html and 'value="#ff0000"' in html
+        assert (
+            'data-daisie-swatch-prefix-value="bg"' in html and 'value="#ff0000"' in html
+        )
+        assert 'data-controller="daisie-swatch"' in html
+        assert "<details" in html and 'name="daisie-swatch-widget"' in html
+        assert '<summary class="w-label-3">' in html
+        assert 'data-daisie-swatch-target="radio"' in html
+        assert 'data-daisie-swatch-target="input"' in html
+        assert 'class="w-sr-only"' in html
+        assert "daisyui-swatch-chip--custom" in html
+        assert "swatch_controller.js" in str(widget.media)
 
         color_map = widget.color_map
         for name in ("primary", "secondary", "accent", "neutral", "info", "success"):
@@ -35,6 +44,23 @@ class TestDaisyUISwatchWidget:
                 "#cccccc",
                 color_map[f"bg-{name}"],
             )
+
+
+@pytest.mark.django_db
+class TestSwatchTelepathAdapter:
+    def test_adapter_registered_and_includes_media(self):
+        from wagtail.admin.telepath import registry
+
+        from wagtail_daisIE.telepath import DaisyUISwatchWidgetAdapter
+
+        widget = DaisyUISwatchWidget(prefix="bg")
+        adapter = DaisyUISwatchWidgetAdapter()
+        assert "__NAME__" in adapter.js_args(widget)[0]
+        assert "swatch_controller.js" in str(adapter.get_media(widget))
+        assert isinstance(
+            registry.find_adapter(DaisyUIRawSwatchWidget),
+            DaisyUISwatchWidgetAdapter,
+        )
 
 
 class TestWidgetRendering:
@@ -49,6 +75,10 @@ class TestWidgetRendering:
             raw.value_from_datadict({"bg_color": "#1e0000"}, None, "bg_color")
             == "#1e0000"
         )
+        raw_html = raw.render("bg_color", "#1e0000", attrs={"id": "__ID__"})
+        assert 'value="#1e0000"' in raw_html
+        assert 'data-raw="true"' in raw_html
+        assert 'data-daisie-swatch-prefix-value=""' in raw_html
 
         slider = DaisyUISliderWidget()
         slider.choices = [("", "None"), ("auto", "Auto"), ("m-4", "4")]

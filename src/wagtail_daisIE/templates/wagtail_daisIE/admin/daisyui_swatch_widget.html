@@ -1,25 +1,36 @@
 {% load i18n wagtailadmin_tags %}
-<div class="daisyui-swatch-widget" id="{{ widget.attrs.id }}"
-     data-daisyui-coloris-options="{{ widget.coloris_options_json }}"
-     data-daisyui-coloris-parent="{{ widget.attrs.id }}">
-{% for tile in widget.tiles %}
-    <label class="daisyui-swatch-tile{% if tile.selected %} daisyui-swatch-tile--active{% endif %}">
-        <input type="radio" name="{{ widget.name }}" value="{{ tile.value }}"
-               class="daisyui-swatch-radio{% if tile.is_custom %} daisyui-swatch-radio--custom{% endif %}"
-               {% if tile.is_custom %}data-prefix="{{ widget.prefix }}"{% endif %}
-               {% if tile.is_raw %}data-raw="true"{% endif %}
-               {% if tile.selected %}checked{% endif %}>
-{% if tile.is_custom %}
-        <span class="daisyui-swatch-chip daisyui-swatch-chip--custom"
-              style="background-color: {{ tile.color }};"></span>
-        <input type="text"
-               class="daisyui-coloris-input"
-               value="{{ widget.custom_color }}"
-               placeholder="{% trans 'hex' %}">
-{% else %}
-        <span class="daisyui-swatch-chip" style="background-color: {{ tile.color }};"></span>
-{% endif %}
-        <span class="daisyui-swatch-label">{{ tile.label }}</span>
-    </label>
-{% endfor %}
-</div>
+<details class="daisyui-swatch-accordion" name="daisie-swatch-widget">
+    <summary class="w-label-3">{{ widget.label }}</summary>
+    <div id="{{ widget.attrs.id }}" class="daisyui-swatch-widget"
+         data-controller="daisie-swatch"
+         data-action="click@document->daisie-swatch#onOutsideClick coloris:pick@document->daisie-swatch#onColorisPick"
+         data-daisie-swatch-coloris-options-value="{{ widget.coloris_options_json }}"
+         data-daisie-swatch-prefix-value="{{ widget.prefix }}">
+        {% for tile in widget.tiles %}
+            <label class="daisyui-swatch-tile{% if tile.selected %} daisyui-swatch-tile--active{% endif %}"
+                   {% if tile.is_custom %}data-action="click->daisie-swatch#toggleInline"{% endif %}>
+                <input type="radio" name="{{ widget.name }}" value="{{ tile.value }}"
+                       class="daisyui-swatch-radio"
+                       {% if widget.is_raw %}data-raw="true"{% endif %}
+                       {% if tile.selected %}checked{% endif %}
+                       {% if tile.is_custom %}data-daisie-swatch-target="radio"
+                       {% else %}data-action="change->daisie-swatch#dismissPicker"{% endif %}>
+                {% if tile.is_custom %}
+                    <span class="daisyui-swatch-chip daisyui-swatch-chip--custom"
+                          style="background-color: {{ tile.color }};{% if tile.color %} background-image: none;{% endif %}"
+                          aria-hidden="true"
+                          data-daisie-swatch-target="output"></span>
+                    <input type="text" class="w-sr-only"
+                           value="{{ widget.custom_color }}"
+                           placeholder="{% trans 'hex' %}"
+                           aria-label="{% trans 'Custom colour' %}"
+                           data-action="focus->daisie-swatch#activateFromFocus input->daisie-swatch#syncFromInput"
+                           data-daisie-swatch-target="input">
+                {% else %}
+                    <span class="daisyui-swatch-chip" style="background-color: {{ tile.color }};" aria-hidden="true"></span>
+                {% endif %}
+                <span class="daisyui-swatch-label">{{ tile.label }}</span>
+            </label>
+        {% endfor %}
+    </div>
+</details>

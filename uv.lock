@@ -512,7 +512,7 @@ wheels = [
 
 [[package]]
 name = "draftail-text-utils"
-version = "3.0.2"
+version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cssutils" },
@@ -520,9 +520,9 @@ dependencies = [
     { name = "wagtail" },
     { name = "wagtail-traverse" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2e/81/9e5de40650aa45a915aac40d52832862530fa1cedda0ab0a345ae1dfdcff/draftail_text_utils-3.0.2.tar.gz", hash = "sha256:cbdb83be1ac5cff43c4a52535729c20c11258354fa565fc41a171a3ab1cc55cd", size = 30224, upload-time = "2026-10-19T18:27:45.942Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/95/fd/eda007562865d94208c6f7ada140dea02327a6167e3a92dec64d86a693e0/draftail_text_utils-3.0.3.tar.gz", hash = "sha256:2c65d8437f69fc778f5bec83fc8f7834139f6cb37dc751930b719809f7829684", size = 32617, upload-time = "2026-10-22T14:43:20.92Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/ed/6ffd24cc58332f5450003f2733cbf600842c00b2ff603863b81e1a4ad261/draftail_text_utils-3.0.2-py3-none-any.whl", hash = "sha256:6099679d90830a471c7daff2415a151bb30144086443d3668869b045136fd6df", size = 49404, upload-time = "2026-10-19T18:27:44.535Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/6f/d47a613685bd56f1715026720fd1392989624b71560c4237f9da06398773/draftail_text_utils-3.0.3-py3-none-any.whl", hash = "sha256:24fd0a96aa453101873c5a28fc53585ab995b28a9ddd447ebffc3c73df48ca1b", size = 51826, upload-time = "2026-10-22T14:43:19.603Z" },
 ]
 
 [[package]]
@@ -1348,7 +1348,7 @@ requires-dist = [
     { name = "django-allauth", marker = "extra == 'allauth'", specifier = ">=65.20.0,<66" },
     { name = "django-colorfield", specifier = ">=0.14.0,<0.15" },
     { name = "django-htmx", specifier = ">=1.29.0" },
-    { name = "draftail-text-utils", marker = "extra == 'blocks'", specifier = ">=3.0.2,<4" },
+    { name = "draftail-text-utils", marker = "extra == 'blocks'", specifier = ">=3.0.3,<4" },
     { name = "lxml", specifier = ">=6.1.3" },
     { name = "markdown-it-py", specifier = ">=4.0,<5" },
     { name = "mdit-py-plugins", specifier = ">=0.6,<0.7" },
@@ -1362,7 +1362,7 @@ provides-extras = ["allauth", "allauth-emails", "notifications", "blocks"]
 dev = [
     { name = "dj-database-url", specifier = "==3.1.2" },
     { name = "django-allauth", specifier = ">=65.20.0,<66" },
-    { name = "draftail-text-utils", specifier = ">=3.0.2,<4" },
+    { name = "draftail-text-utils", specifier = ">=3.0.3,<4" },
     { name = "pre-commit", specifier = "==4.7.0" },
     { name = "prek", specifier = "==0.5.5" },
     { name = "pytest", specifier = "==9.1.1" },
