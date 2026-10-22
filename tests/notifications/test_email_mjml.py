@@ -54,6 +54,77 @@ class TestDesignStyle:
             {"border": {"border_width": 2, "border_style": "dashed"}}
         ) == {"border": "2px dashed #000000"}
 
+    def test_prefixed_margin_autos(self):
+        assert build_design_style(
+            {
+                "margin": {
+                    "all_margins": "m-auto",
+                    "top": "mt-auto",
+                    "right": "mr-auto",
+                    "bottom": "mb-auto",
+                    "left": "ml-auto",
+                }
+            }
+        ) == {
+            "margin": "auto",
+            "margin-top": "auto",
+            "margin-right": "auto",
+            "margin-bottom": "auto",
+            "margin-left": "auto",
+        }
+
+    def test_legacy_bare_margin_autos(self):
+        assert build_design_style({"margin": {"left": "auto", "right": "auto"}}) == {
+            "margin-right": "auto",
+            "margin-left": "auto",
+        }
+
+    def test_prefixed_size_autos(self):
+        assert build_design_style(
+            {
+                "size": {
+                    "size": "size-auto",
+                    "width": {
+                        "width": "w-auto",
+                        "min_width": "min-w-auto",
+                    },
+                    "height": {
+                        "height": "h-auto",
+                        "min_height": "min-h-auto",
+                    },
+                }
+            }
+        ) == {
+            "width": "auto",
+            "height": "auto",
+            "min-width": "auto",
+            "min-height": "auto",
+        }
+
+    def test_legacy_bare_size_autos(self):
+        assert build_design_style(
+            {
+                "size": {
+                    "size": "auto",
+                    "width": {"width": "auto"},
+                    "height": {"height": "auto"},
+                }
+            }
+        ) == {"width": "auto", "height": "auto"}
+
+    def test_max_width_and_height_never_emit_auto(self):
+        assert (
+            build_design_style(
+                {
+                    "size": {
+                        "width": {"max_width": "auto"},
+                        "height": {"max_height": "auto"},
+                    }
+                }
+            )
+            == {}
+        )
+
     def test_typography_size_and_box(self):
         style = build_design_style(
             {

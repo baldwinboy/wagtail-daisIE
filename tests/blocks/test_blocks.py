@@ -8,6 +8,8 @@ from wagtail_daisIE.base_blocks import LinkDestinationBlock
 from wagtail_daisIE.base_blocks.css import (
     build_border_css,
     build_design_css,
+    build_margin_css,
+    build_size_css,
     build_typography_css,
     merge_block_css,
 )
@@ -42,6 +44,70 @@ class TestBuildTypographyCss:
     def test_font_family_prefixing(self):
         assert build_typography_css({"font_family": "heading"}) == "font-heading"
         assert build_typography_css({"font_family": "font-body"}) == "font-body"
+
+
+class TestAutoSpacingCss:
+    def test_prefixed_margin_autos(self):
+        assert (
+            build_margin_css(
+                {
+                    "all_margins": "m-auto",
+                    "top": "mt-auto",
+                    "right": "mr-auto",
+                    "bottom": "mb-auto",
+                    "left": "ml-auto",
+                }
+            )
+            == "m-auto mt-auto mr-auto mb-auto ml-auto"
+        )
+
+    def test_legacy_bare_margin_autos_are_prefixed(self):
+        css = build_margin_css({"right": "auto", "left": "auto"})
+        assert css.split() == ["mr-auto", "ml-auto"]
+        assert "auto auto" not in css
+
+    def test_prefixed_size_autos(self):
+        assert (
+            build_size_css(
+                {
+                    "size": "size-auto",
+                    "width": {
+                        "width": "w-auto",
+                        "min_width": "min-w-auto",
+                        "max_width": "max-w-auto",
+                    },
+                    "height": {
+                        "height": "h-auto",
+                        "min_height": "min-h-auto",
+                        "max_height": "max-h-auto",
+                    },
+                }
+            )
+            == "size-auto w-auto min-w-auto h-auto min-h-auto"
+        )
+
+    def test_legacy_bare_size_autos_are_prefixed(self):
+        assert (
+            build_size_css(
+                {
+                    "size": "auto",
+                    "width": {"width": "auto", "min_width": "auto"},
+                    "height": {"height": "auto", "min_height": "auto"},
+                }
+            )
+            == "size-auto w-auto min-w-auto h-auto min-h-auto"
+        )
+
+    def test_max_width_and_height_never_emit_auto(self):
+        assert (
+            build_size_css(
+                {
+                    "width": {"max_width": "auto"},
+                    "height": {"max_height": "auto"},
+                }
+            )
+            == ""
+        )
 
 
 class TestBuildDesignCss:

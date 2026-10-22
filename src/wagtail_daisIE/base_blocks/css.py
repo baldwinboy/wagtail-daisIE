@@ -8,6 +8,7 @@ the ``block_css`` template variable.
 """
 
 from wagtail_daisIE.choices import GRID_COLUMNS, MAIN_LAYOUT_CLASSES
+from wagtail_daisIE.choices.utils import normalize_auto_class
 
 from .utils import build_border_width, build_class
 
@@ -33,22 +34,31 @@ def build_size_css(value):
     """
     if not value:
         return ""
+    size = normalize_auto_class(value.get("size", ""), "size-")
     width = value.get("width", "")
     height = value.get("height", "")
     if isinstance(width, dict):
         width = build_class(
-            width.get("width", ""),
-            width.get("min_width", ""),
-            width.get("max_width", ""),
+            normalize_auto_class(width.get("width", ""), "w-"),
+            normalize_auto_class(width.get("min_width", ""), "min-w-"),
+            normalize_auto_class(
+                width.get("max_width", ""), "max-w-", allow_auto=False
+            ),
         )
+    else:
+        width = normalize_auto_class(width, "w-")
     if isinstance(height, dict):
         height = build_class(
-            height.get("height", ""),
-            height.get("min_height", ""),
-            height.get("max_height", ""),
+            normalize_auto_class(height.get("height", ""), "h-"),
+            normalize_auto_class(height.get("min_height", ""), "min-h-"),
+            normalize_auto_class(
+                height.get("max_height", ""), "max-h-", allow_auto=False
+            ),
         )
+    else:
+        height = normalize_auto_class(height, "h-")
     return build_class(
-        value.get("size", ""),
+        size,
         width,
         height,
     )
@@ -110,11 +120,11 @@ def build_margin_css(value):
     if not value:
         return ""
     return build_class(
-        value.get("all_margins", ""),
-        value.get("top", ""),
-        value.get("right", ""),
-        value.get("bottom", ""),
-        value.get("left", ""),
+        normalize_auto_class(value.get("all_margins", ""), "m-"),
+        normalize_auto_class(value.get("top", ""), "mt-"),
+        normalize_auto_class(value.get("right", ""), "mr-"),
+        normalize_auto_class(value.get("bottom", ""), "mb-"),
+        normalize_auto_class(value.get("left", ""), "ml-"),
     )
 
 

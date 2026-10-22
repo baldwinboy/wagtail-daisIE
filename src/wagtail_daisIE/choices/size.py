@@ -34,24 +34,25 @@ _BLOCK_RESPONSIVE_SIZES = [
 ]
 
 
-def make_inline_size_choices(prefix):
+def _make_size_choices(prefix, responsive_sizes, include_auto):
+    auto_choices = (
+        make_auto_spacing_choices(prefix) if include_auto else [("", _("None"))]
+    )
     return [
-        *make_auto_spacing_choices(prefix),
+        *auto_choices,
         *make_choices(prefix, _SMALL_NUMERIC_SIZES, prepend_none=False),
         *make_choices(prefix, _SEMATIC_SIZES, prepend_none=False),
         *make_choices(prefix, _LARGE_NUMERIC_SIZES, prepend_none=False),
-        *make_choices(prefix, _INLINE_RESPONSIVE_SIZES, prepend_none=False),
+        *make_choices(prefix, responsive_sizes, prepend_none=False),
     ]
 
 
-def make_block_size_choices(prefix):
-    return [
-        *make_auto_spacing_choices(prefix),
-        *make_choices(prefix, _SMALL_NUMERIC_SIZES, prepend_none=False),
-        *make_choices(prefix, _SEMATIC_SIZES, prepend_none=False),
-        *make_choices(prefix, _LARGE_NUMERIC_SIZES, prepend_none=False),
-        *make_choices(prefix, _BLOCK_RESPONSIVE_SIZES, prepend_none=False),
-    ]
+def make_inline_size_choices(prefix, include_auto=True):
+    return _make_size_choices(prefix, _INLINE_RESPONSIVE_SIZES, include_auto)
+
+
+def make_block_size_choices(prefix, include_auto=True):
+    return _make_size_choices(prefix, _BLOCK_RESPONSIVE_SIZES, include_auto)
 
 
 # Height choices
@@ -63,7 +64,8 @@ INLINE_HEIGHT_CHOICES = ChoiceList(
     make_inline_size_choices("h-"), "INLINE_HEIGHT_CHOICES"
 )
 INLINE_MAX_HEIGHT_CHOICES = ChoiceList(
-    make_inline_size_choices("max-h-"), "INLINE_MAX_HEIGHT_CHOICES"
+    make_inline_size_choices("max-h-", include_auto=False),
+    "INLINE_MAX_HEIGHT_CHOICES",
 )
 
 BLOCK_MIN_HEIGHT_CHOICES = ChoiceList(
@@ -71,7 +73,8 @@ BLOCK_MIN_HEIGHT_CHOICES = ChoiceList(
 )
 BLOCK_HEIGHT_CHOICES = ChoiceList(make_block_size_choices("h-"), "BLOCK_HEIGHT_CHOICES")
 BLOCK_MAX_HEIGHT_CHOICES = ChoiceList(
-    make_block_size_choices("max-h-"), "BLOCK_MAX_HEIGHT_CHOICES"
+    make_block_size_choices("max-h-", include_auto=False),
+    "BLOCK_MAX_HEIGHT_CHOICES",
 )
 
 # Width choices
@@ -83,7 +86,8 @@ INLINE_WIDTH_CHOICES = ChoiceList(
     make_inline_size_choices("w-"), "INLINE_WIDTH_CHOICES"
 )
 INLINE_MAX_WIDTH_CHOICES = ChoiceList(
-    make_inline_size_choices("max-w-"), "INLINE_MAX_WIDTH_CHOICES"
+    make_inline_size_choices("max-w-", include_auto=False),
+    "INLINE_MAX_WIDTH_CHOICES",
 )
 
 BLOCK_MIN_WIDTH_CHOICES = ChoiceList(
@@ -91,7 +95,8 @@ BLOCK_MIN_WIDTH_CHOICES = ChoiceList(
 )
 BLOCK_WIDTH_CHOICES = ChoiceList(make_block_size_choices("w-"), "BLOCK_WIDTH_CHOICES")
 BLOCK_MAX_WIDTH_CHOICES = ChoiceList(
-    make_block_size_choices("max-w-"), "BLOCK_MAX_WIDTH_CHOICES"
+    make_block_size_choices("max-w-", include_auto=False),
+    "BLOCK_MAX_WIDTH_CHOICES",
 )
 
 # Size choices (width + height)

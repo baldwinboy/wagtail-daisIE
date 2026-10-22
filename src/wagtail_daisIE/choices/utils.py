@@ -76,9 +76,49 @@ def make_auto_spacing_choices(prefix):
     choices = make_spacing_choices(prefix, prepend_none=False)
     return [
         ("", _("None")),
-        ("auto", _("Auto")),
+        (f"{prefix}auto", _("Auto")),
         *choices,
     ]
+
+
+_AUTO_UTILITY_PREFIXES = (
+    "m-",
+    "mx-",
+    "my-",
+    "mt-",
+    "mr-",
+    "mb-",
+    "ml-",
+    "w-",
+    "h-",
+    "size-",
+    "min-w-",
+    "min-h-",
+    "max-w-",
+    "max-h-",
+)
+_AUTO_UTILITY_VALUES = frozenset(f"{prefix}auto" for prefix in _AUTO_UTILITY_PREFIXES)
+
+
+def is_auto_utility(value):
+    """Return whether ``value`` is a legacy or prefixed auto utility class."""
+    if not isinstance(value, str):
+        return False
+    return value == "auto" or value in _AUTO_UTILITY_VALUES
+
+
+def normalize_auto_class(value, prefix, *, allow_auto=True):
+    """Resolve a legacy bare ``"auto"`` to ``<prefix>auto``.
+
+    Prefixed values pass through unchanged. When ``allow_auto`` is false, both
+    forms resolve to an empty string (used for max-width/max-height, which have
+    no valid auto utility in Tailwind).
+    """
+    if not isinstance(value, str) or not value:
+        return value
+    if value == "auto" or value == f"{prefix}auto":
+        return f"{prefix}auto" if allow_auto else ""
+    return value
 
 
 def generate_tailwind_fractions(prefix, denominators=(2, 3, 4, 5, 6, 12)):

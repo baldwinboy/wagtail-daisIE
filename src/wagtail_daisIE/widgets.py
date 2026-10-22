@@ -8,6 +8,8 @@ from django.forms import ValidationError, widgets
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from wagtail_daisIE.choices.utils import is_auto_utility
+
 
 class DaisyUISizeUnitChoices(models.TextChoices):
     PX = "px", _("px (Pixels)")
@@ -396,7 +398,9 @@ class DaisyUISliderWidget(widgets.Select):
         index = 0
         selected_label = ""
         for i, (choice_value, choice_label) in enumerate(self.choices):
-            is_selected = choice_value == value
+            is_selected = choice_value == value or (
+                value == "auto" and is_auto_utility(choice_value)
+            )
             if is_selected:
                 index = i
                 selected_label = choice_label
@@ -425,7 +429,7 @@ class DaisyUISliderWidget(widgets.Select):
         responsive = []
         for option in options:
             choice_value = option["value"]
-            if choice_value == "" or choice_value == "auto":
+            if choice_value == "" or is_auto_utility(choice_value):
                 standalone.append(option)
             else:
                 suffix = choice_value.split("-")[-1]

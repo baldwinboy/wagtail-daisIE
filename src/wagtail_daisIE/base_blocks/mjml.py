@@ -19,6 +19,8 @@ render time (see ``EmailTemplate.get_theme``).
 
 import re
 
+from wagtail_daisIE.choices.utils import is_auto_utility, normalize_auto_class
+
 
 _SPACING_STEPS = {
     "0": "0",
@@ -240,10 +242,12 @@ def _spacing(raw):
     return _SPACING_STEPS.get(raw.rsplit("-", 1)[-1])
 
 
-def _dimension(raw):
+def _dimension(raw, *, allow_auto=True):
     """Resolve a width/height utility value (``w-4``, ``h-full``, ``w-px``)."""
     if not raw:
         return None
+    if is_auto_utility(raw):
+        return "auto" if allow_auto else None
     suffix = raw.rsplit("-", 1)[-1]
     if suffix in ("full", "screen"):
         return "100%"
@@ -255,16 +259,20 @@ def _dimension(raw):
 def _size_declarations(raw, width=True, height=True):
     if not raw:
         return {}
-    suffix = raw.split("-", 1)[-1]
-    if "-" not in raw:
-        return {}
-    out = {}
-    if suffix in _SPACING_STEPS:
+    if is_auto_utility(raw):
+        value = "auto"
+    else:
+        if "-" not in raw:
+            return {}
+        suffix = raw.split("-", 1)[-1]
+        if suffix not in _SPACING_STEPS:
+            return {}
         value = _SPACING_STEPS[suffix]
-        if width:
-            out["width"] = value
-        if height:
-            out["height"] = value
+    out = {}
+    if width:
+        out["width"] = value
+    if height:
+        out["height"] = value
     return out
 
 
@@ -350,7 +358,7 @@ def build_size_style(value, theme=None):
             ("min_width", "min-width"),
             ("max_width", "max-width"),
         ):
-            resolved = _dimension(width.get(key))
+            resolved = _dimension(width.get(key), allow_auto=key != "max_width")
             if resolved:
                 out[prop] = resolved
     height = value.get("height")
@@ -360,7 +368,7 @@ def build_size_style(value, theme=None):
             ("min_height", "min-height"),
             ("max_height", "max-height"),
         ):
-            resolved = _dimension(height.get(key))
+            resolved = _dimension(height.get(key), allow_auto=key != "max_height")
             if resolved:
                 out[prop] = resolved
     return out
@@ -397,21 +405,29 @@ def build_padding_style(value, theme=None):
     return out
 
 
+def _margin(raw, prefix):
+    normalized = normalize_auto_class(raw, prefix)
+    if normalized == f"{prefix}auto":
+        return "auto"
+    return _spacing(raw)
+
+
 def build_margin_style(value, theme=None):
     if not value:
         return {}
     out = {}
-    all_value = value.get("all_margins")
-    if all_value == "auto":
-        out["margin"] = "auto"
-    elif _spacing(all_value):
-        out["margin"] = _spacing(all_value)
-    for side in ("top", "right", "bottom", "left"):
-        raw = value.get(side)
-        if raw == "auto":
-            out[f"margin-{side}"] = "auto"
-        elif _spacing(raw):
-            out[f"margin-{side}"] = _spacing(raw)
+    all_value = _margin(value.get("all_margins"), "m-")
+    if all_value:
+        out["margin"] = all_value
+    for side, prefix in (
+        ("top", "mt-"),
+        ("right", "mr-"),
+        ("bottom", "mb-"),
+        ("left", "ml-"),
+    ):
+        resolved = _margin(value.get(side), prefix)
+        if resolved:
+            out[f"margin-{side}"] = resolved
     return out
 
 

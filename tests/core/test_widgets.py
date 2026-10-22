@@ -81,10 +81,13 @@ class TestWidgetRendering:
         assert 'data-daisie-swatch-prefix-value=""' in raw_html
 
         slider = DaisyUISliderWidget()
-        slider.choices = [("", "None"), ("auto", "Auto"), ("m-4", "4")]
-        html = slider.render("__NAME__", "auto", attrs={"id": "__ID__"})
-        assert 'value="auto"' in html
+        slider.choices = [("", "None"), ("m-auto", "Auto"), ("m-4", "4")]
+        html = slider.render("__NAME__", "m-auto", attrs={"id": "__ID__"})
+        assert 'value="m-auto"' in html
         assert "None / Auto" in html and 'optgroup label="Preset sizes"' in html
+
+        legacy = slider.render("__NAME__", "auto", attrs={"id": "__ID__"})
+        assert 'value="m-auto" selected' in legacy
 
         responsive = DaisyUISliderWidget()
         responsive.choices = [

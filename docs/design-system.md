@@ -32,6 +32,11 @@ Font families store the theme role (or custom name) and render as
 `font-<role>`, matching the `--font-<role>` custom properties emitted by
 `{% daisyui_theme_font_css %}`.
 
+Auto spacing and size values are stored prefixed (`ml-auto`, `w-auto`,
+`size-auto`, `min-h-auto`). Legacy bare `auto` values are normalised at render
+time in both web and email output. `max-width`/`max-height` have no auto
+utility in Tailwind, so their choice lists omit Auto.
+
 ## Inheritance (category channels)
 
 Inheritance is per element category and strictly isolated. Each `ThemedBlock`
