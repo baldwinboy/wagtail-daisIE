@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.5.1...v3.6.0) (2026-10-24)
+
+
+### Features
+
+* migrate color picker to stimulus ([cc937c0](https://github.com/baldwinboy/wagtail-daisIE/commit/cc937c06115f407718590a2f8e2100dcd82cc786))
+
+
+### Bug Fixes
+
+* layout ([0cac921](https://github.com/baldwinboy/wagtail-daisIE/commit/0cac921a3bac6800be72b0c775ec122375b10da4))
+* migrate accordion item to details element ([2723839](https://github.com/baldwinboy/wagtail-daisIE/commit/2723839f2c3bcd8485a4f2aa157ff2f53ab03b54))
+* normalise auto values ([ac5e921](https://github.com/baldwinboy/wagtail-daisIE/commit/ac5e9219a20e67fdd3d6a4a87a87211f5e201999))
+* render marquee animation ([eb414b3](https://github.com/baldwinboy/wagtail-daisIE/commit/eb414b3325a2a06d909d9ca0dde8f781ff8a97f1))
+* render prose ([fc956e6](https://github.com/baldwinboy/wagtail-daisIE/commit/fc956e61175e8994d99f669fdd6a2327f352eb7b))
+
 ## [3.5.1](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.5.0...v3.5.1) (2026-10-19)
 
 
