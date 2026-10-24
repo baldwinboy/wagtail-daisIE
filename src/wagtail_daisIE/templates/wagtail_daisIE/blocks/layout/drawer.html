@@ -2,7 +2,7 @@
 {% if audience_allowed %}
   <div class="drawer lg:drawer-open {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     <input id="daisie-drawer-{{ block.id }}" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-content flex flex-col">
+    <div class="drawer-content flex flex-col {{ alignment_css|default:"" }}">
       <label for="daisie-drawer-{{ block.id }}" class="btn btn-ghost w-fit lg:hidden">{% trans "Menu" %}</label>
       {% for child in value.content %}{% include_block child %}{% endfor %}
     </div>

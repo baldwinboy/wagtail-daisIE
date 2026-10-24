@@ -28,6 +28,34 @@ def _image_alt(value):
     )
 
 
+class InlineImageBlock(ThemedMediaBlock):
+    image = WagtailImageBlock(required=True)
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        design = (value or {}).get("design") or {}
+        size = design.get("size") or {}
+        width = (size.get("width") or {}).get("width") or size.get("size")
+        height = (size.get("height") or {}).get("height") or size.get("size")
+        defaults = []
+        if not width:
+            defaults.append("w-auto")
+        if not height:
+            defaults.append("h-16")
+        context["marquee_image_default_css"] = " ".join(defaults)
+        return context
+
+    class Meta:
+        icon = "image"
+        group = _("Media")
+        collapsed = True
+        template = "wagtail_daisIE/blocks/inline_image.html"
+        form_layout = blocks.BlockGroup(
+            children=["image"],
+            settings=["design", "audience"],
+        )
+
+
 class ImageBlock(ThemedMediaBlock):
     image = WagtailImageBlock(
         required=False,

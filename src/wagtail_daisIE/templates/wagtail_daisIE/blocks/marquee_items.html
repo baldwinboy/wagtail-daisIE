@@ -1,0 +1,4 @@
+{% load wagtailcore_tags %}
+{% for item in content %}
+  <div class="daisie-marquee__item">{% include_block item %}</div>
+{% endfor %}

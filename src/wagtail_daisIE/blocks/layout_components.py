@@ -35,13 +35,6 @@ from .link import LabelLinkBlock
 from .spaced import LIST_CONTENT_BLOCKS, SpacedBlock
 
 
-HERO_ALIGN_CHOICES = ChoiceList(
-    [
-        ("left", _("Left")),
-        ("center", _("Center")),
-    ],
-    "HERO_ALIGN_CHOICES",
-)
 JOIN_ITEM_TYPE_CHOICES = ChoiceList(
     [
         ("button", _("Button")),
@@ -60,7 +53,7 @@ class StackBlock(SpacedBlock):
         template = "wagtail_daisIE/blocks/layout/stack.html"
         form_layout = blocks.BlockGroup(
             children=["content"],
-            settings=["design", "alignment", "audience"],
+            settings=["design", "audience"],
         )
 
 
@@ -73,7 +66,7 @@ class AuraBlock(SpacedBlock):
         template = "wagtail_daisIE/blocks/layout/aura.html"
         form_layout = blocks.BlockGroup(
             children=["content"],
-            settings=["design", "alignment", "audience"],
+            settings=["design", "audience"],
         )
 
 
@@ -376,11 +369,6 @@ class HeroBlock(SpacedBlock):
         required=False,
         help_text=_("Break out of the page container to span the viewport."),
     )
-    align = blocks.ChoiceBlock(
-        choices=HERO_ALIGN_CHOICES,
-        default="left",
-        label=_("Content alignment"),
-    )
 
     class Meta:
         abstract = False
@@ -389,7 +377,7 @@ class HeroBlock(SpacedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/layout/hero.html"
         form_layout = blocks.BlockGroup(
-            children=["overlay", "full_width", "align", "content"],
+            children=["overlay", "full_width", "content"],
             settings=["design", "alignment", "audience"],
         )
 

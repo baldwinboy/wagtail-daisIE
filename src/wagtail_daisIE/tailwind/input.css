@@ -286,3 +286,145 @@
   --text-42xl: 16.25rem;
   --text-42xl--line-height: 1;
 }
+
+/* Marquee */
+@theme {
+  --animate-marquee: marquee 20s linear infinite;
+
+  /* Repeat mode: loops between two identical groups. */
+  @keyframes marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(
+        var(--daisie-marquee-x, -50%),
+        var(--daisie-marquee-y, 0%),
+        0
+      );
+    }
+  }
+}
+
+/* Non-repeat mode: one instance enters and exits across the whole container. */
+@keyframes marquee-once-x {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+@keyframes marquee-once-y {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+.daisie-marquee {
+  position: relative;
+  width: 100%; /* spans parent by default */
+  user-select: none;
+  overflow: hidden;
+}
+
+.daisie-marquee .daisie-marquee__track {
+  display: flex;
+  width: max-content;
+  animation-duration: var(--daisie-marquee-duration, 20s);
+}
+
+/* Non‑repeat: single instance scrolls through the container */
+.daisie-marquee:not([data-repeat]) .daisie-marquee__track {
+  width: 100%;
+  justify-content: center; /* nice resting position mid-scroll */
+  animation-name: marquee-once-x;
+}
+
+/* Repeat: background-repeat-like seamless loop */
+.daisie-marquee[data-repeat] .daisie-marquee__track {
+  width: max-content;
+  min-width: 200%; /* guarantee we always fill 2× the viewport      */
+}
+
+.daisie-marquee__group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2rem;
+  padding-inline-end: 2rem; /* also creates the seam gap between groups */
+}
+
+.daisie-marquee__item {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Repeat: groups may grow to satisfy the 200% track floor. */
+.daisie-marquee[data-repeat] .daisie-marquee__group {
+  flex: 1 1 max-content;
+}
+
+/* ── Vertical layout ──────────────────────────────────────────────────── */
+.daisie-marquee[data-layout='vertical'] .daisie-marquee__track {
+  flex-direction: column;
+  width: 100%;
+  height: max-content;
+  --daisie-marquee-x: 0;
+  --daisie-marquee-y: -50%;
+}
+
+.daisie-marquee[data-layout='vertical']:not([data-repeat])
+  .daisie-marquee__track {
+  height: 100%;
+  animation-name: marquee-once-y;
+}
+
+.daisie-marquee[data-layout='vertical'][data-repeat] .daisie-marquee__track {
+  height: max-content;
+  min-height: 200%;
+}
+
+.daisie-marquee[data-layout='vertical'] .daisie-marquee__group {
+  flex-direction: column;
+  padding-inline-end: 0;
+  padding-block-end: 2rem;
+}
+
+.daisie-marquee[data-layout='vertical'][data-repeat] .daisie-marquee__group {
+  flex-direction: column;
+}
+
+/* Modifiers */
+.daisie-marquee[data-reverse] .daisie-marquee__track {
+  animation-direction: reverse;
+}
+
+.daisie-marquee[data-pause-on-hover]:hover .daisie-marquee__track,
+.daisie-marquee[data-pause-on-hover]:focus-within .daisie-marquee__track,
+.daisie-marquee__toggle:checked ~ .daisie-marquee__track {
+  animation-play-state: paused;
+}
+
+.daisie-marquee__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.daisie-marquee__toggle:focus-visible + .daisie-marquee__overlay {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daisie-marquee__track {
+    animation: none;
+  }
+}

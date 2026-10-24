@@ -1123,7 +1123,6 @@ def _home_body(data, blog_index, load_image):
             {
                 "overlay": True,
                 "full_width": True,
-                "align": "left",
                 "content": content,
                 "design": {
                     "background": background,

@@ -1,6 +1,6 @@
 {% load wagtailcore_tags %}
 {% if audience_allowed %}
-  <div class="card bg-base-100 {{ block_css }} {{ card_default_css }}{% if card_clickable %} relative overflow-hidden cursor-pointer{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+  <div class="card bg-base-100 {{ block_css }} {{ alignment_css|default:"" }} {{ card_default_css }}{% if card_clickable %} relative overflow-hidden cursor-pointer{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     <div class="card-body">
       {% for child in value.content %}
         {% if card_clickable %}

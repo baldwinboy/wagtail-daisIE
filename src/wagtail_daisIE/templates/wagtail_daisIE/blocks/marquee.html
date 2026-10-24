@@ -1,9 +1,33 @@
-{% load notifications %}
+{% load i18n notifications %}
 {% if audience_allowed %}
-  <div class="overflow-hidden bg-base-200 {{ block_css }} {{ marquee_default_css }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    <div class="flex {{ value.direction|default:"flex-row" }} {{ value.speed|default:"animate-[marquee_20s_linear_infinite]" }} whitespace-nowrap">
-      <span class="px-8">{% daisie_markup value.text %}</span>
-      <span class="px-8" aria-hidden="true">{% daisie_markup value.text %}</span>
+  <div
+    class="daisie-marquee {{ marquee_default_css }}"
+    style="{{ marquee_style }}"
+    data-layout="{{ marquee_layout }}"
+    {% if value.repeat %}data-repeat{% endif %}
+    {% if marquee_reverse %}data-reverse{% endif %}
+    {% if value.pause_on_hover %}data-pause-on-hover{% endif %}
+    {% if value.pause_on_click %}data-pause-on-click{% endif %}>
+    {% if value.pause_on_click %}
+      <input
+        id="daisie-marquee-toggle-{{ block.id }}"
+        type="checkbox"
+        class="daisie-marquee__toggle sr-only"
+        aria-label="{% translate 'Pause marquee animation' %}"
+      >
+      <label for="daisie-marquee-toggle-{{ block.id }}" class="daisie-marquee__overlay" aria-hidden="true" title="{% translate 'Toggle marquee animation' %}"></label>
+    {% endif %}
+    <div class="daisie-marquee__track {{ block_css }} animate-marquee">
+      <div class="daisie-marquee__group {{ alignment_css }}">
+        {% include "wagtail_daisIE/blocks/marquee_items.html" with content=value.content %}
+      </div>
+      {% if value.repeat %}
+        {% for _ in "1234567" %}
+          <div class="daisie-marquee__group {{ alignment_css }}" inert aria-hidden="true">
+            {% include "wagtail_daisIE/blocks/marquee_items.html" with content=value.content %}
+          </div>
+        {% endfor %}
+      {% endif %}
     </div>
   </div>
 {% endif %}

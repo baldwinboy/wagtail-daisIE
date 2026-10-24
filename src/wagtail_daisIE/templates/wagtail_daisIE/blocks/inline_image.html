@@ -1,0 +1,5 @@
+{% load wagtailimages_tags %}
+{% if audience_allowed and value.image %}
+  {% image value.image max-800x800 as img %}
+  <img {{ img.attrs }} class="{{ block_css }} {{ marquee_image_default_css }} shrink-0 object-contain" />
+{% endif %}
