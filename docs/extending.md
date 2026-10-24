@@ -72,6 +72,13 @@ Add `DaisyUIThemeFontFamily` rows (one per role) to a theme's `DaisyUIThemeFonts
 and optional `DaisyUIThemeFontCDN` stylesheet links. The stored font role then
 appears in every `TypographyBlock` picker and renders as `font-<role>`.
 
+The built-in roles also become theme defaults: `body` for page text (with the
+configured base size and line height), `heading` for `h1`/`h2`, `subheading`
+for `h3`–`h6`, and `code` for code elements. Those defaults use low-specificity
+element selectors, so an explicit `font-<role>` utility still wins. A custom
+font name cannot be `heading`, `subheading`, `body`, `code`, a Tailwind weight
+name such as `bold`, or a generic family name such as `sans`.
+
 ## Register a form field type
 
 Add extra form field types (file/image uploads, or any Django form field) to

@@ -13,7 +13,11 @@ from wagtail_daisIE.panels import (
     DaisyUISizePanel,
 )
 
-from ..choices import FONT_FAMILY_ROLE_CHOICES, GENERIC_FONT_FAMILY_CHOICES
+from ..choices import (
+    FONT_FAMILY_ROLE_CHOICES,
+    FONT_WEIGHT_CHOICES,
+    GENERIC_FONT_FAMILY_CHOICES,
+)
 from .fields import DaisyUISizeField
 
 
@@ -23,6 +27,23 @@ def font_family_role_choices():
 
 def generic_font_family_choices():
     return GENERIC_FONT_FAMILY_CHOICES
+
+
+# Custom names must not shadow a built-in role, font-weight utility, or the
+# generic Tailwind family utilities.
+RESERVED_FONT_FAMILY_NAMES = frozenset(
+    [
+        *(value for value, _label in FONT_FAMILY_ROLE_CHOICES if value != "custom"),
+        *(
+            value.removeprefix("font-")
+            for value, _label in FONT_WEIGHT_CHOICES
+            if value
+        ),
+        "sans",
+        "serif",
+        "mono",
+    ]
+)
 
 
 class DaisyUIThemeFontCDN(Orderable):
@@ -174,6 +195,15 @@ class DaisyUIThemeFontFamily(ClusterableModel, Orderable):
                 raise ValidationError(
                     _("Custom font families must have a name."),
                     code="wagtail_daisIE.custom_font_family_missing_name",
+                )
+            if self.name in RESERVED_FONT_FAMILY_NAMES:
+                raise ValidationError(
+                    _(
+                        "'%(name)s' is reserved for a built-in font role or "
+                        "utility. Choose a different custom name."
+                    ),
+                    code="wagtail_daisIE.reserved_font_family_name",
+                    params={"name": self.name},
                 )
             return
 

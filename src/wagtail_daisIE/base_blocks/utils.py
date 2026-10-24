@@ -69,7 +69,10 @@ def build_font_family_choices(theme, raw=False):
     choices = []
     for family in _theme_font_families(theme):
         value = family.css_value if raw else str(family)
-        label = str(family).capitalize()
+        if family.role == "custom":
+            label = _("%(name)s (custom)") % {"name": family.name}
+        else:
+            label = family.get_role_display()
         if value:
             choices.append((value, label))
     return choices

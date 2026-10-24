@@ -4,10 +4,16 @@
     {% if value.heading.text %}
       {% include_block value.heading %}
     {% endif %}
-    <ul class="{{ value.ordering|default:"list-none" }}">
+    {% if value.ordering == "list-decimal" %}
+      <ol class="list-decimal">
+    {% elif value.ordering == "list-none" or not value.ordering %}
+      <ul class="list-none">
+    {% else %}
+      <ul class="list-disc">
+    {% endif %}
       {% for child in value.content %}
         <li>{% include_block child %}</li>
       {% endfor %}
-    </ul>
+    {% if value.ordering == "list-decimal" %}</ol>{% else %}</ul>{% endif %}
   </div>
 {% endif %}

@@ -1,9 +1,21 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from wagtail_daisIE.choices import FONT_WEIGHT_CHOICES
+
 from ..base_blocks import InlineMarkupBlock
 from .base import (
     ThemedTypographyBlock,
+)
+
+
+_RETAINED_FONT_CLASSES = frozenset(
+    [
+        *(value for value, _label in FONT_WEIGHT_CHOICES if value),
+        "font-sans",
+        "font-serif",
+        "font-mono",
+    ]
 )
 
 
@@ -36,6 +48,17 @@ class InlineRichTextBlock(ThemedTypographyBlock):
         help_text=_("Rich text content for the inline block."),
         required=False,
     )
+
+    def get_context(self, value, parent_context=None):
+        parent_context = dict(parent_context or {})
+        inherited = parent_context.get("text_css", "")
+        if inherited:
+            parent_context["text_css"] = " ".join(
+                token
+                for token in inherited.split()
+                if not token.startswith("font-") or token in _RETAINED_FONT_CLASSES
+            )
+        return super().get_context(value, parent_context)
 
     class Meta:
         icon = "doc-full"

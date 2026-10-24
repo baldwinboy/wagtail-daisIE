@@ -12,7 +12,8 @@ from .section import SectionBlock
 
 LIST_ORDERING_CHOICES = ChoiceList(
     [
-        ("list-none", _("Unordered")),
+        ("list-none", _("None")),
+        ("list-disc", _("Unordered")),
         ("list-decimal", _("Ordered")),
     ],
     "LIST_ORDERING_CHOICES",
@@ -36,7 +37,7 @@ class ListBlock(SpacedBlock):
     heading = HeaderBlock(required=False)
     ordering = blocks.ChoiceBlock(
         choices=LIST_ORDERING_CHOICES,
-        default="list-none",
+        default="list-disc",
         help_text=_("Whether the list is ordered or unordered."),
     )
 

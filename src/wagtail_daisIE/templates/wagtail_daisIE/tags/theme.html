@@ -60,6 +60,7 @@
 
 {% with fonts=theme.fonts.first %}
 {% if fonts %}
+{% include "wagtail_daisIE/tags/_font_defaults.html" %}
 {% with font_families=fonts.font_families.all %}
 {% for family in font_families %}
 .font-{{ family }} { font-family: var(--font-{{ family }}); }

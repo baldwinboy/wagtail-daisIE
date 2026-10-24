@@ -113,15 +113,16 @@ def reset_current_form_context(token):
 
 def theme_from_instance(instance):
     """
-    Extract a DaisyUITheme from a Page or DaisyUIMenu-like instance.
+    Extract a DaisyUITheme from a Page or Snippet instance.
 
-    Pages carry ``page_theme``; menus (custom Snippets/Clusterable models)
-    carry ``menu_theme``. Either may be None. Model classes (as passed to the
-    ``before_create_*`` admin hooks) are not instances and resolve to None.
+    Pages carry ``page_theme``; menus carry ``menu_theme``; email templates
+    carry ``email_theme``; allauth page overrides carry ``theme``. Any may be
+    None. Model classes (as passed to the ``before_create_*`` admin hooks) are
+    not instances and resolve to None.
     """
     if instance is None or isinstance(instance, type):
         return None
-    for attr in ("page_theme", "menu_theme"):
+    for attr in ("page_theme", "menu_theme", "email_theme", "theme"):
         theme = getattr(instance, attr, None)
         if theme is not None:
             return theme

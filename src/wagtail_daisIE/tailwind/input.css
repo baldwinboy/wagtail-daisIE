@@ -98,6 +98,124 @@
   .daisie-file-image--ready .daisie-file-image__label input[type='file'] {
     display: none;
   }
+
+  /* Rich text: restore element styling stripped by Tailwind preflight. */
+  .daisie-richtext {
+    overflow-wrap: break-word;
+  }
+  .daisie-richtext :where(p) {
+    margin-block: 0.75em;
+  }
+  .daisie-richtext :where(h1, h2, h3, h4, h5, h6) {
+    margin-block: 1em 0.5em;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .daisie-richtext :where(h1) {
+    font-size: 2em;
+  }
+  .daisie-richtext :where(h2) {
+    font-size: 1.5em;
+  }
+  .daisie-richtext :where(h3) {
+    font-size: 1.25em;
+  }
+  .daisie-richtext :where(h4) {
+    font-size: 1.125em;
+  }
+  .daisie-richtext :where(h5) {
+    font-size: 1em;
+  }
+  .daisie-richtext :where(h6) {
+    font-size: 0.875em;
+  }
+  .daisie-richtext :where(h5, h6) {
+    font-weight: 600;
+  }
+  .daisie-richtext :where(ul) {
+    list-style: disc outside;
+    padding-inline-start: 1.5em;
+    margin-block: 0.75em;
+  }
+  .daisie-richtext :where(ol) {
+    list-style: decimal outside;
+    padding-inline-start: 1.5em;
+    margin-block: 0.75em;
+  }
+  .daisie-richtext :where(ul ul) {
+    list-style-type: circle;
+  }
+  .daisie-richtext :where(ul ul ul) {
+    list-style-type: square;
+  }
+  .daisie-richtext :where(ol ol) {
+    list-style-type: lower-alpha;
+  }
+  .daisie-richtext :where(ol ol ol) {
+    list-style-type: lower-roman;
+  }
+  .daisie-richtext :where(li) {
+    display: list-item;
+    margin-block: 0.25em;
+  }
+  .daisie-richtext :where(li > p) {
+    margin-block: 0;
+  }
+  .daisie-richtext :where(a) {
+    color: var(--color-primary);
+    text-decoration-line: underline;
+    text-underline-offset: 0.15em;
+  }
+  .daisie-richtext :where(blockquote) {
+    margin-block: 1em;
+    padding-inline-start: 1em;
+    border-inline-start: 0.25rem solid var(--color-base-300);
+    font-style: italic;
+  }
+  .daisie-richtext :where(hr) {
+    margin-block: 1.5em;
+    border-color: var(--color-base-300);
+  }
+  .daisie-richtext :where(code, kbd, samp, pre) {
+    font-family: var(
+      --font-code,
+      var(--font-mono, var(--default-mono-font-family, monospace))
+    );
+  }
+  .daisie-richtext :where(:not(pre) > code) {
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-field);
+    background-color: var(--color-base-200);
+    font-size: 0.875em;
+  }
+  .daisie-richtext :where(pre) {
+    margin-block: 1em;
+    padding: 1em;
+    border-radius: var(--radius-box);
+    background-color: var(--color-base-200);
+    overflow-x: auto;
+  }
+  .daisie-richtext :where(pre code) {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  .daisie-richtext :where(img) {
+    max-width: 100%;
+    height: auto;
+    margin-block: 1em;
+  }
+  .daisie-richtext :where(video, iframe) {
+    max-width: 100%;
+  }
+  .daisie-richtext > :first-child {
+    margin-block-start: 0;
+  }
+  .daisie-richtext > :last-child {
+    margin-block-end: 0;
+  }
 }
 
 @theme static {

@@ -244,23 +244,11 @@ def daisyui_theme_font_css(theme):
 @register.simple_tag
 def daisyui_theme_font_inline_css(theme):
     """Return font CSS string for a theme."""
-    fonts = theme.fonts.first()
-    if not fonts:
+    html = render_to_string("wagtail_daisIE/tags/font_css.html", {"theme": theme})
+    if "<style>" not in html:
         return ""
-
-    font_families = fonts.font_families.all()
-    if not font_families:
-        return ""
-
-    lines = [
-        f'[data-theme="{theme.name}"], :root:has(.theme-controller[value="{theme.name}"]:checked) {{',
-        *[f"  --font-{family.__str__}: {family.css_value}" for family in font_families],
-        f"  --font-size-base: {fonts.base_font_size};",
-        f"  --line-height: {fonts.line_height};",
-        "}",
-    ]
-
-    return mark_safe("\n".join(lines))  # noqa: S308
+    css = html.split("<style>", 1)[1].split("</style>", 1)[0]
+    return mark_safe(css.strip())  # noqa: S308
 
 
 @register.inclusion_tag("wagtail_daisIE/tags/full_css.html")

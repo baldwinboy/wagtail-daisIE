@@ -403,7 +403,7 @@ def register_icon_providers(providers):
 | `{% daisyui_theme_inline_css theme %}` | Simple | Raw theme CSS string |
 | `{% daisyui_theme_background_css theme %}` | Inclusion | Inline `<style>` for background layers |
 | `{% daisyui_theme_background_inline_css theme %}` | Simple | Raw background CSS string |
-| `{% daisyui_theme_font_css theme %}` | Inclusion | Inline `<style>` with `--font-*` variables |
+| `{% daisyui_theme_font_css theme %}` | Inclusion | Inline `<style>` with `--font-*` variables and typography defaults |
 | `{% daisyui_theme_font_cdns theme %}` | Inclusion | `<link>` tags for font CDNs |
 | `{% daisyui_theme_full_css theme %}` | Inclusion | Font CDNs + colors + background + fonts |
 | `{% daisyui_theme_full_inline_css theme %}` | Simple | Raw combined CSS string |

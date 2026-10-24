@@ -10,7 +10,7 @@
     >
       <div class="modal-box">
         {% if value.title %}<h3 class="text-lg font-bold">{{ value.title }}</h3>{% endif %}
-        {% if value.content %}<div class="py-4">{% daisie_richtext value.content %}</div>{% endif %}
+        {% if value.content %}<div class="daisie-richtext py-4">{% daisie_richtext value.content %}</div>{% endif %}
         <div class="modal-action">
           <a href="#" class="btn">
             {% if value.close_label %}{{ value.close_label }}{% else %}{% trans "Close" %}{% endif %}

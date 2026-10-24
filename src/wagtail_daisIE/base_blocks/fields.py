@@ -2,6 +2,7 @@ import re
 
 from django import forms
 from django.core import validators
+from django.db.utils import OperationalError, ProgrammingError
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
@@ -75,7 +76,7 @@ def resolve_font_family_theme():
         from ..models import DaisyUITheme
 
         return DaisyUITheme.objects.filter(default=True).first()
-    except Exception:
+    except (OperationalError, ProgrammingError):
         return None
 
 
@@ -113,8 +114,9 @@ class FontFamilyChoiceBlock(blocks.ChoiceBlock):
 
     The stored value is the font family role (or the custom name), matching
     the ``--font-<role>`` custom properties emitted by the theme font tag.
-    Choices are resolved lazily in ``get_form_state``/``render_form`` so no
-    database access happens at import time.
+    Choices are resolved lazily on every access so validation does not depend
+    on the block having been rendered, and no database access happens at
+    import time.
 
     Parameters
     ----------
@@ -129,8 +131,9 @@ class FontFamilyChoiceBlock(blocks.ChoiceBlock):
         self.raw = raw
         self.theme_getter = theme_getter or resolve_font_family_theme
 
-        # Start with empty choices; the choices are filled in per request.
-        kwargs.setdefault("choices", [])
+        # Wagtail accepts callable choices and evaluates them on every access,
+        # so validation never sees the pre-render empty list.
+        kwargs["choices"] = self._resolved_choices
         super().__init__(*args, **kwargs)
 
     def _resolved_choices(self):
@@ -139,16 +142,6 @@ class FontFamilyChoiceBlock(blocks.ChoiceBlock):
             ("", _("Default")),
             *build_font_family_choices(theme, raw=self.raw),
         ]
-
-    def get_form_state(self, value):
-        # Assigning ``field.choices`` also updates ``field.widget.choices``
-        # (Django's ChoiceField._set_choices does this).
-        self.field.choices = self._resolved_choices()
-        return super().get_form_state(value)
-
-    def render_form(self, *args, **kwargs):
-        self.field.choices = self._resolved_choices()
-        return super().render_form(*args, **kwargs)
 
     def deconstruct(self):
         """
@@ -160,3 +153,14 @@ class FontFamilyChoiceBlock(blocks.ChoiceBlock):
         kwargs.pop("raw", None)
         kwargs.pop("theme_getter", None)
         return ("wagtail.blocks.ChoiceBlock", args, kwargs)
+
+    def normalize_choice(self, value):
+        """Normalise without resolving dynamic choices.
+
+        Wagtail computes block defaults during module import (ListBlock), so
+        iterating ``field.choices`` here would query the theme model while the app
+        registry is still loading. All values for this block are strings.
+        """
+        if value is None:
+            return None
+        return str(value)

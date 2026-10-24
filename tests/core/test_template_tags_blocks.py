@@ -80,9 +80,23 @@ class TestThemeCss:
             "{% daisyui_theme_font_css theme %}", {"theme": theme_with_fonts}
         )
         assert "--font-heading:" in fonts and "Roboto" in fonts
-        assert "--font-heading" not in _render(
-            "{% daisyui_theme_font_css theme %}", {"theme": theme}
+        assert ':where([data-theme="fonts-theme"]) body' in fonts
+        assert ":is(h1, h2)" in fonts
+        assert ":is(h3, h4, h5, h6)" in fonts
+        assert ":is(code, kbd, samp, pre)" in fonts
+        assert "var(--font-size-base, inherit)" in fonts
+        assert "var(--line-height, inherit)" in fonts
+        assert ".font-heading {" in fonts
+
+        without_fonts = _render("{% daisyui_theme_font_css theme %}", {"theme": theme})
+        assert "--font-heading" not in without_fonts
+        assert ":where(" not in without_fonts
+
+        theme_css = _render(
+            "{% daisyui_theme_css theme %}", {"theme": theme_with_fonts}
         )
+        assert ':where([data-theme="fonts-theme"]) body' in theme_css
+
         cdn = _render(
             "{% daisyui_theme_font_cdns theme %}", {"theme": theme_with_fonts}
         )
@@ -94,6 +108,12 @@ class TestThemeCss:
         )
         assert "--color-primary:" in html
         assert "--font-heading:" in html
+
+        inline = _render(
+            "{% daisyui_theme_full_inline_css theme %}", {"theme": theme_with_fonts}
+        )
+        assert ':where([data-theme="fonts-theme"]) body' in inline
+        assert "<style>" not in inline
 
         # Every configured theme's variables are emitted so a page/toggle that
         # names another theme never falls through to daisyUI's prefers-dark.

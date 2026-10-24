@@ -32,6 +32,25 @@ Font families store the theme role (or custom name) and render as
 `font-<role>`, matching the `--font-<role>` custom properties emitted by
 `{% daisyui_theme_font_css %}`.
 
+Those roles are also applied as theme defaults: `body` sets the body font
+(plus `--font-size-base` and `--line-height`), `heading` applies to `h1`/`h2`,
+`subheading` to `h3`–`h6`, and `code` to `code`/`kbd`/`samp`/`pre`. The rules
+use element-level specificity scoped with `:where()`, so an explicit
+`font-<role>` utility always wins. Custom font names cannot reuse a built-in
+role name or a Tailwind font weight/family utility name.
+
+Rich text renders inside `.daisie-richtext`, which restores the element styles
+Tailwind preflight removes: paragraph and heading spacing, heading sizes,
+list markers and indentation, link underlines, blockquotes, rules, code blocks
+and media sizing. Rich text drops inherited page-level `font-*` classes so
+non-heading content defaults to the theme `body` font; an explicit block font
+still applies to normal text, while `h1`/`h2` and `h3`–`h6` keep their role
+fonts. Inline editor font spans always win.
+
+`ListBlock` stores `list-disc` (Unordered) or `list-decimal` (Ordered) and
+renders `<ul>` or `<ol>` accordingly. Legacy stored `list-none` values render
+as unordered lists and normalise on the next edit.
+
 Auto spacing and size values are stored prefixed (`ml-auto`, `w-auto`,
 `size-auto`, `min-h-auto`). Legacy bare `auto` values are normalised at render
 time in both web and email output. `max-width`/`max-height` have no auto
@@ -158,9 +177,9 @@ available in pages, form pages and allauth bodies.
 
 `{% daisyui_theme_full_css theme %}` emits the theme's `--color-*`,
 `--radius-*`, `--size-*`, `--font-*` custom properties as inline CSS, plus a
-`.font-<role>` rule for each font family. A page renders with its theme by
-overriding those variables; the shared structural CSS comes from the committed
-`daisie.css`.
+`.font-<role>` rule and the theme-scoped body/heading/subheading/code defaults
+for each font family. A page renders with its theme by overriding those
+variables; the shared structural CSS comes from the committed `daisie.css`.
 
 Base templates also render `{% daisyui_all_themes_css %}`, which emits those
 variables for **every** configured theme. Without it, a `data-theme` (or the

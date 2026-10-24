@@ -78,6 +78,21 @@ class TestDaisyUIThemeFonts:
             DaisyUIThemeFontFamily(fonts=fonts, role="body").clean()
         with pytest.raises(ValidationError):
             DaisyUIThemeFontFamily(fonts=fonts, role="custom", name="").clean()
+        for reserved in (
+            "heading",
+            "subheading",
+            "body",
+            "code",
+            "bold",
+            "normal",
+            "sans",
+            "mono",
+        ):
+            with pytest.raises(ValidationError):
+                DaisyUIThemeFontFamily(
+                    fonts=fonts, role="custom", name=reserved
+                ).clean()
+        DaisyUIThemeFontFamily(fonts=fonts, role="custom", name="display").clean()
 
 
 class TestDaisyUIMenu:
