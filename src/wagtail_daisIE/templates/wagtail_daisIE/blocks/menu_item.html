@@ -1,0 +1,2 @@
+{% load wagtailcore_tags wagtail_daisIE_tags %}
+<li{% if item|menu_item_is_static %} class="menu-static"{% endif %}>{% include_block item %}</li>

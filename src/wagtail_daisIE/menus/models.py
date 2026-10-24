@@ -77,33 +77,6 @@ class DaisyUIMenu(
         help_text=_("Logo and/or wordmark, optionally wrapped in a link."),
     )
 
-    # Search
-    show_search = models.BooleanField(
-        default=False,
-        verbose_name=_("Show search box"),
-        help_text=_("Display a search form in the navbar."),
-    )
-    search_url = models.CharField(
-        max_length=255,
-        blank=True,
-        default="/search/",
-        verbose_name=_("Search URL"),
-        help_text=_("URL the search form submits to."),
-    )
-    search_parameter = models.CharField(
-        max_length=64,
-        blank=True,
-        default="query",
-        verbose_name=_("Search parameter"),
-        help_text=_("Query-string parameter used for the search term."),
-    )
-    search_placeholder = models.CharField(
-        max_length=128,
-        blank=True,
-        default=_("Search"),
-        verbose_name=_("Search placeholder"),
-    )
-
     # Theme
     menu_theme = models.ForeignKey(
         DaisyUITheme,
@@ -191,16 +164,6 @@ class DaisyUIMenu(
         FieldPanel("branding"),
         MultiFieldPanel(
             [
-                FieldPanel("show_search"),
-                FieldPanel("search_url"),
-                FieldPanel("search_parameter"),
-                FieldPanel("search_placeholder"),
-            ],
-            heading=_("Search"),
-            classname="collapsed",
-        ),
-        MultiFieldPanel(
-            [
                 FieldPanel("show_theme_toggle"),
                 FieldPanel("alt_menu_theme"),
             ],
@@ -238,15 +201,10 @@ class DaisyUIMenu(
 
     def get_menu_design_style(self):
         """Return the literal ``background`` style from ``menu_design``."""
-        from ..base_blocks.background_layer import BackgroundStreamBlock
+        from ..base_blocks.css import build_background_style
 
         first = self.menu_design[0].value if self.menu_design else None
-        background = (first or {}).get("background")
-        if background and not isinstance(background, dict):
-            css = BackgroundStreamBlock().get_css(background)
-            if css:
-                return f"background: {css}"
-        return ""
+        return build_background_style(first)
 
     def get_item_css(self):
         """Return the CSS classes contributed by ``item_design``."""
@@ -261,15 +219,10 @@ class DaisyUIMenu(
         Background layers are rendered as a ``style`` value rather than utility
         classes, so the menu's item defaults need a parallel accessor.
         """
-        from ..base_blocks.background_layer import BackgroundStreamBlock
+        from ..base_blocks.css import build_background_style
 
         first = self.item_design[0].value if self.item_design else None
-        background = (first or {}).get("background")
-        if background and not isinstance(background, dict):
-            css = BackgroundStreamBlock().get_css(background)
-            if css:
-                return f"background: {css}"
-        return ""
+        return build_background_style(first)
 
     def get_preview_template(self, request, mode_name):
         return "wagtail_daisIE/previews/menu.html"

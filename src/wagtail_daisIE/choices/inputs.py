@@ -246,3 +246,13 @@ FILE_SIZE_CHOICES = ChoiceList(
     ],
     "FILE_SIZE_CHOICES",
 )
+
+CHOICE_OVERFLOW_CHOICES = ChoiceList(
+    [
+        ("", "None"),
+        ("overflow-y-auto", "Scroll vertically"),
+        ("overflow-x-auto", "Scroll horizontally"),
+        ("overflow-auto", "Scroll both axes"),
+    ],
+    "CHOICE_OVERFLOW_CHOICES",
+)

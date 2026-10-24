@@ -1,0 +1,7 @@
+{% for group, options, index in widget.optgroups %}
+  {% if group %}<div class="mb-2"><span class="label font-semibold">{{ group }}</span>{% endif %}
+  {% for option in options %}
+    {% include option.template_name with widget=option %}
+  {% endfor %}
+  {% if group %}</div>{% endif %}
+{% endfor %}

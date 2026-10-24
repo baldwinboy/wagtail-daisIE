@@ -28,7 +28,8 @@
                 {% include_block block %}
             {% endfor %}
 
-            <form id="{{ page.form_id }}" method="post" action="" enctype="multipart/form-data" class="mt-8 space-y-4">
+            {% with form_css=page.get_form_css form_style=page.get_form_style %}
+            <form id="{{ page.form_id }}" method="post" action="" enctype="multipart/form-data" class="{% if form_css %}{{ form_css }}{% else %}mt-8 space-y-4{% endif %}"{% if form_style %} style="{{ form_style }}"{% endif %}>
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
@@ -44,6 +45,7 @@
 
                 <button type="submit" class="{% if button_css %}{{ button_css }} {% endif %}{{ page.get_submit_css }} mt-2">{{ page.submit_label|default:"Submit" }}</button>
             </form>
+            {% endwith %}
         </main>
     </body>
 </html>

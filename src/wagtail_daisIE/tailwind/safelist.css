@@ -654,6 +654,9 @@
 @source inline("otp-warning-content");
 @source inline("otp-xl");
 @source inline("otp-xs");
+@source inline("overflow-auto");
+@source inline("overflow-x-auto");
+@source inline("overflow-y-auto");
 @source inline("overline");
 @source inline("placeholder:text-accent");
 @source inline("placeholder:text-accent-content");

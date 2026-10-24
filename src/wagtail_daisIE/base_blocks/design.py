@@ -2,13 +2,14 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from wagtail_daisIE.base_blocks.button import ButtonAppearanceBlock
-from wagtail_daisIE.choices import MAIN_LAYOUT_CHOICES
+from wagtail_daisIE.choices import CHOICE_OVERFLOW_CHOICES, MAIN_LAYOUT_CHOICES
 
 from .audience import AudienceBlock, evaluate_audience
 from .background_layer import BackgroundStreamBlock
 from .box import BorderBlock, BoxBlock, MarginBlock, PaddingBlock, SpacingBlock
 from .compact import DaisieStructBlock
-from .css import build_design_css
+from .css import build_background_style, build_design_css
+from .layout_design import LayoutBlock
 from .mjml import build_design_style
 from .size import BlockSizeBlock, InlineSizeBlock, MediaSizeBlock
 from .table import TableAppearanceBlock
@@ -163,6 +164,26 @@ class MainDesignBlock(SpacedDesignBlock):
         )
 
 
+class ChoiceOptionsDesignBlock(DesignBlock):
+    """Container design for a group of checkbox or radio choices."""
+
+    layout_design = LayoutBlock()
+    scroll = blocks.ChoiceBlock(
+        choices=CHOICE_OVERFLOW_CHOICES,
+        required=False,
+        label=_("Overflow"),
+    )
+
+    class Meta:
+        icon = "bars"
+        label = _("Choice options")
+        collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=["layout_design", "scroll", *_BLOCK_CHILDREN],
+            heading=_("Choice options"),
+        )
+
+
 class PageDesignBlock(DaisieStructBlock):
     """Page-wide defaults applied per element category.
 
@@ -251,18 +272,9 @@ class ThemedBlock(DaisieStructBlock):
             own,
         )
         context[key] = build_class(channel, own)
-        # Background layers become a literal ``style`` value, not utility
-        # classes. ``TextBackgroundBlock`` (email solid-only) stores a plain
-        # dict, so it is skipped here.
-        background = (value.get("design") or {}).get("background")
-        block_style = ""
-        if background and not isinstance(background, dict):
-            background_css = BackgroundStreamBlock().get_css(background)
-            if background_css:
-                block_style = f"background: {background_css}"
-        context["block_style"] = block_style or parent_context.get(
-            "menu_default_style", ""
-        )
+        context["block_style"] = build_background_style(
+            value.get("design")
+        ) or parent_context.get("menu_default_style", "")
         audience_keys = (value.get("audience") or {}).get("audience") or []
         request = parent_context.get("request")
         context["audience_allowed"] = evaluate_audience(audience_keys, request)

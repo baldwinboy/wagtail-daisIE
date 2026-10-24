@@ -14,7 +14,6 @@ Provided by the required `wagtail_daisIE.menus` app.
 | `name` | Unique; used by `{% daisyui_menu "Name" %}`. |
 | `layout` | `navbar`, `megamenu`, `footer`, `sidebar`, `horizontal`, `vertical`, `dock`. |
 | `branding` | One-item stream of `MenuBranding` (logo and/or wordmark, optional link). |
-| `show_search`, `search_url`, `search_parameter`, `search_placeholder` | Optional search box. |
 | `menu_theme` | Theme applied to the menu; falls back to the default theme. |
 | `show_theme_toggle`, `alt_menu_theme` | Optional light/dark toggle. |
 | `menu_design` | One-item stream of `SpacedDesignBlock`: the **container** design. |

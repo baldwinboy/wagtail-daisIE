@@ -14,6 +14,7 @@ from wagtail.contrib.forms.forms import FormBuilder
 from ..context import get_current_form_context
 from .fields import DaisieFileField, MultipleFileInput
 from .registry import DISPLAY_ATTACHMENTS, DISPLAY_IMAGE, get_form_field_type
+from .widgets_choice import DaisieCheckboxSelectMultiple, DaisieRadioSelect
 from .widgets_file import AttachmentsFileInput, ImageFileInput
 
 
@@ -58,6 +59,11 @@ def _resolve_choices(spec, field):
     except TypeError:
         raw = target()
     return _normalise_choices(raw)
+
+
+def _design_value(form_field, method, default=""):
+    getter = getattr(form_field, method, None)
+    return (getter() or default) if callable(getter) else default
 
 
 def _upload_widget(spec):
@@ -144,20 +150,22 @@ class DaisyUIFormBuilder(FormBuilder):
         return create_field
 
     def _design(self, form_field, django_field):
-        input_css = ""
-        label_css = ""
-        get_input = getattr(form_field, "get_input_css", None)
-        if callable(get_input):
-            input_css = get_input() or ""
-        get_label = getattr(form_field, "get_label_css", None)
-        if callable(get_label):
-            label_css = get_label() or ""
+        input_css = _design_value(form_field, "get_input_css")
+        label_css = _design_value(form_field, "get_label_css")
+        container_css = _design_value(form_field, "get_container_css")
+        container_style = _design_value(form_field, "get_container_style")
+        choice_options_css = _design_value(form_field, "get_choice_options_css")
+        choice_options_style = _design_value(form_field, "get_choice_options_style")
         if input_css:
             widget = django_field.widget
             existing = widget.attrs.get("class", "")
             widget.attrs["class"] = f"{existing} {input_css}".strip()
         django_field.input_css = input_css
         django_field.label_css = label_css
+        django_field.container_css = container_css
+        django_field.container_style = container_style
+        django_field.choice_options_css = choice_options_css
+        django_field.choice_options_style = choice_options_style
         get_widget_design = getattr(form_field, "get_widget_design", None)
         if callable(get_widget_design):
             design = get_widget_design()
@@ -206,11 +214,11 @@ class DaisyUIFormBuilder(FormBuilder):
         return self._design(field, super().create_multiselect_field(field, options))
 
     def create_radio_field(self, field, options):
-        self._styled(options, forms.RadioSelect, "radio")
+        self._styled(options, DaisieRadioSelect, "radio")
         return self._design(field, super().create_radio_field(field, options))
 
     def create_checkboxes_field(self, field, options):
-        self._styled(options, forms.CheckboxSelectMultiple, "checkbox")
+        self._styled(options, DaisieCheckboxSelectMultiple, "checkbox")
         return self._design(field, super().create_checkboxes_field(field, options))
 
     def create_checkbox_field(self, field, options):

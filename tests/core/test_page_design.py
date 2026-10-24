@@ -1,4 +1,6 @@
 from wagtail_daisIE.base_blocks import PageDesignBlock
+from wagtail_daisIE.base_blocks.background_layer import BackgroundStreamBlock
+from wagtail_daisIE.base_blocks.css import build_background_style
 from wagtail_daisIE.base_blocks.design import (
     ThemedBlock,
     ThemedButtonBlock,
@@ -109,3 +111,12 @@ class TestCategoryIsolation:
         )
         assert "text-primary" in ctx["cell_css"].split()
         assert "text-primary" in ctx["header_cell_css"].split()
+
+
+def test_build_background_style_from_design_value():
+    background = BackgroundStreamBlock().to_python(
+        [{"type": "layer", "value": {"layer_type": "solid", "color": "#ff0000"}}]
+    )
+    assert build_background_style({"background": background}) == ("background: #ff0000")
+    assert build_background_style({"background": {}}) == ""
+    assert build_background_style(None) == ""

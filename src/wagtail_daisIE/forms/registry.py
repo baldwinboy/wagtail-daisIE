@@ -224,6 +224,11 @@ def get_default_upload_handler():
     return _resolve(get_default_upload_handler_path())
 
 
+def get_upload_field_type_keys() -> list[str]:
+    """Return the configured field-type keys that accept uploads."""
+    return [key for key, spec in get_form_field_types().items() if spec.is_upload]
+
+
 def get_form_field_type_choices():
     """Choices callable for the field type select (lazy, never queries)."""
     from wagtail.contrib.forms.models import FORM_FIELD_CHOICES
@@ -241,6 +246,7 @@ __all__ = [
     "get_form_field_type",
     "get_form_field_type_choices",
     "get_form_field_types",
+    "get_upload_field_type_keys",
     "is_upload_field_type",
     "reset_form_field_types",
 ]

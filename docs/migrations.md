@@ -151,6 +151,15 @@ python manage.py makemigrations --check --noinput   # must be clean
   next load/save (standard `StructBlock.to_python` behaviour). Back up before
   removing fields.
 
+## Breaking: form upload design moved
+
+`InputWidgetDesignBlock` no longer defines `tray`, `item`, `render` or
+`fallback`; those controls now live in `DaisieFormField.upload_design`. Existing
+values stored under `input_design` are dropped on the next load/save because
+`StructBlock.to_python` ignores keys that are not child blocks. Projects that
+need to preserve them must copy those keys into `upload_design` in a data
+migration before upgrading.
+
 ## Guards
 
 Two tests in `tests/core/test_compact_blocks.py` protect the mechanism:

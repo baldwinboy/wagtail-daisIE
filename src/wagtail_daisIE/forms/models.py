@@ -16,7 +16,8 @@ from wagtail.contrib.forms.panels import FormSubmissionsPanel
 from wagtail.fields import StreamField
 
 from ..base_blocks.button import ButtonAppearanceBlock
-from ..base_blocks.css import build_design_css
+from ..base_blocks.css import build_background_style, build_design_css
+from ..base_blocks.design import MainDesignBlock
 from ..blocks.content import ContentBlock
 from ..context import reset_current_form_context, set_current_form_context
 from ..dynamic.registry import get_context_model, get_context_model_choices
@@ -132,6 +133,17 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
         use_json_field=True,
         verbose_name=_("Submit button"),
     )
+    form_design = StreamField(
+        [("design", MainDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Form design"),
+        help_text=_(
+            "Styling for the form container. Replaces the default form classes "
+            "when set."
+        ),
+    )
 
     class Meta:
         abstract = True
@@ -148,6 +160,11 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
             classname="collapsed",
         ),
         FormModelFieldsHelpPanel(),
+        MultiFieldPanel(
+            [FieldPanel("form_design")],
+            heading=_("Form design"),
+            classname="collapsed",
+        ),
         MultiFieldPanel(
             [
                 FieldPanel("submit_label"),
@@ -172,6 +189,14 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
     def get_submit_css(self):
         value = self.submit_appearance[0].value if self.submit_appearance else None
         return build_design_css({"button_appearance": value}) or "btn"
+
+    def get_form_css(self) -> str:
+        value = self.form_design[0].value if self.form_design else None
+        return build_design_css(value)
+
+    def get_form_style(self) -> str:
+        value = self.form_design[0].value if self.form_design else None
+        return build_background_style(value)
 
     def get_placed_field_names(self):
         """Return the clean names of form fields placed in ``body``, in order."""

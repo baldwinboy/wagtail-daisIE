@@ -218,6 +218,14 @@
   }
 }
 
+/* Menu items that are not immediately clickable must not inherit the
+   interactive hover/cursor treatment DaisyUI applies to every direct child. */
+.daisyui-menu .menu-static > :where(:hover, :focus, :focus-visible, :active) {
+  background-color: transparent;
+  box-shadow: none;
+  cursor: auto;
+}
+
 @theme static {
   --text-10xl: 8.25rem;
   --text-10xl--line-height: 1;

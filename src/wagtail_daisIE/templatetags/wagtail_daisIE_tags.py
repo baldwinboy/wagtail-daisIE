@@ -345,6 +345,14 @@ def is_active(item, request):
     return False
 
 
+@register.filter
+def menu_item_is_static(item):
+    """Return whether a menu item is not immediately clickable."""
+    from ..blocks.menu_items import is_static_menu_block
+
+    return is_static_menu_block(getattr(item, "block_type", ""))
+
+
 @register.simple_tag
 def unplaced_form_fields(page, form):
     """Return the bound fields that ``page.body`` does not already render.

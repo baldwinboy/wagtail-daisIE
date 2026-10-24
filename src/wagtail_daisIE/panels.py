@@ -69,7 +69,10 @@ class PrefixedRulesPanel(FieldPanel):
     """
 
     def __init__(self, field_name, rules=None, *, match="any", **kwargs):
-        self.rules = {key: list(values) for key, values in (rules or {}).items()}
+        self.rules = {
+            key: values if callable(values) else list(values)
+            for key, values in (rules or {}).items()
+        }
         self.match = match
         super().__init__(field_name, **kwargs)
 
@@ -91,6 +94,12 @@ class PrefixedRulesPanel(FieldPanel):
                     attrs["hidden"] = True
             return attrs
 
+        def _current_rules(self):
+            return {
+                key: list(values() if callable(values) else values)
+                for key, values in self.panel.rules.items()
+            }
+
         def _prefixed_rules(self):
             if self.form is None:
                 return {}
@@ -99,11 +108,13 @@ class PrefixedRulesPanel(FieldPanel):
                 if getattr(self.form, "prefix", "")
                 else (lambda name: name)
             )
-            return {resolve(name): values for name, values in self.panel.rules.items()}
+            return {
+                resolve(name): values for name, values in self._current_rules().items()
+            }
 
         def _matches(self):
             results = []
-            for name, values in self.panel.rules.items():
+            for name, values in self._current_rules().items():
                 field = self.form[name] if name in self.form.fields else None
                 if field is None:
                     results.append(False)

@@ -5,7 +5,12 @@ import pytest
 from django import forms
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile, UploadedFile
+from django.template import Context, Template
 
+from wagtail_daisIE.base_blocks.input_widget import (
+    InputWidgetDesignBlock,
+    UploadWidgetDesignBlock,
+)
 from wagtail_daisIE.dynamic.registry import reset_context_models
 from wagtail_daisIE.forms.blocks import (
     duplicate_field_names,
@@ -23,8 +28,13 @@ from wagtail_daisIE.forms.registry import (
     get_form_field_type,
     get_form_field_type_choices,
     get_form_field_types,
+    get_upload_field_type_keys,
     is_upload_field_type,
     reset_form_field_types,
+)
+from wagtail_daisIE.forms.widgets_choice import (
+    DaisieCheckboxSelectMultiple,
+    DaisieRadioSelect,
 )
 from wagtail_daisIE.forms.widgets_file import AttachmentsFileInput, ImageFileInput
 from wagtail_daisIE.widgets import DaisieAutocompleteSelectMultiple
@@ -202,6 +212,146 @@ class TestBuilder:
         widget = create(field, {"required": False}).widget
         assert widget.design["render"] == "icon"
         assert widget.design["tray_css"] == "gap-4"
+
+
+class TestFormDesignChannels:
+    def test_builder_threads_all_design_channels(self):
+        class _DesignedField(_FakeField):
+            def get_input_css(self):
+                return "border-primary"
+
+            def get_label_css(self):
+                return "text-primary"
+
+            def get_container_css(self):
+                return "p-4"
+
+            def get_container_style(self):
+                return "background: red"
+
+            def get_choice_options_css(self):
+                return "grid grid-cols-2"
+
+            def get_choice_options_style(self):
+                return "background: blue"
+
+        result = DaisyUIFormBuilder([]).create_singleline_field(_DesignedField(), {})
+        assert result.container_css == "p-4"
+        assert result.container_style == "background: red"
+        assert result.choice_options_css == "grid grid-cols-2"
+        assert result.choice_options_style == "background: blue"
+
+    def test_choice_widgets_are_daisyui_groups(self):
+        field = _FakeField()
+        field.choices = "a,b"
+        builder = DaisyUIFormBuilder([])
+        checkboxes = builder.create_checkboxes_field(field, {})
+        radio = builder.create_radio_field(field, {})
+        assert isinstance(checkboxes.widget, DaisieCheckboxSelectMultiple)
+        assert isinstance(radio.widget, DaisieRadioSelect)
+
+    def test_form_page_css_is_empty_without_design(self):
+        page = SimpleNamespace(form_design=[])
+        assert DaisieFormPage.get_form_css(page) == ""
+
+    def test_form_page_css_uses_design(self):
+        page = SimpleNamespace(form_design=[SimpleNamespace(value={"layout": "row"})])
+        assert "flex-row" in DaisieFormPage.get_form_css(page)
+
+    def test_upload_widget_design_prefers_upload_design(self):
+        field = SimpleNamespace(
+            upload_design=[
+                SimpleNamespace(
+                    value={
+                        "render": "icon",
+                        "fallback": "initials",
+                        "tray": {"layout": "row"},
+                    }
+                )
+            ],
+            input_design=[
+                SimpleNamespace(value={"render": "avatar", "fallback": "none"})
+            ],
+        )
+        design = DaisieFormField.get_widget_design(field)
+        assert design["render"] == "icon"
+        assert design["fallback"] == "initials"
+        assert design["tray_css"]
+
+    def test_choice_options_merge_nested_layout(self):
+        block = DaisieFormField._meta.get_field("choice_options").stream_block
+        stream = block.to_python(
+            [
+                (
+                    "design",
+                    {
+                        "layout_design": {"layout": "grid", "columns": "2"},
+                        "scroll": "overflow-x-auto",
+                    },
+                )
+            ]
+        )
+        field = SimpleNamespace(choice_options=stream)
+        css = DaisieFormField.get_choice_options_css(field)
+        assert "grid" in css
+        assert "grid-cols-1" in css
+        assert "overflow-x-auto" in css
+
+    def test_input_design_no_longer_has_upload_children(self):
+        assert "tray" not in InputWidgetDesignBlock().child_blocks
+        assert "item" not in InputWidgetDesignBlock().child_blocks
+        assert "tray" in UploadWidgetDesignBlock().child_blocks
+        assert "item" in UploadWidgetDesignBlock().child_blocks
+
+    def test_multi_checkbox_renders_labels_and_help_text(self):
+        class _ChoiceForm(forms.Form):
+            choices = forms.MultipleChoiceField(
+                choices=[("a", "Alpha"), ("b", "Bravo")],
+                widget=DaisieCheckboxSelectMultiple(attrs={"class": "checkbox"}),
+                help_text="Pick some",
+            )
+
+        _ChoiceForm.base_fields["choices"].choice_options_css = "grid grid-cols-2"
+        form = _ChoiceForm()
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": form["choices"]})
+        )
+        assert html.count('type="checkbox"') == 2
+        assert "Alpha" in html and "Bravo" in html
+        assert "Pick some" in html
+        assert "grid grid-cols-2" in html
+
+    def test_single_checkbox_renders_help_text(self):
+        class _CheckboxForm(forms.Form):
+            agree = forms.BooleanField(help_text="Required to continue")
+
+        form = _CheckboxForm()
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": form["agree"]})
+        )
+        assert "Required to continue" in html
+
+    def test_radio_group_renders_labels_and_help_text(self):
+        class _RadioForm(forms.Form):
+            choice = forms.ChoiceField(
+                choices=[("a", "Alpha"), ("b", "Bravo")],
+                widget=DaisieRadioSelect(attrs={"class": "radio"}),
+                help_text="Pick one",
+            )
+
+        form = _RadioForm()
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": form["choice"]})
+        )
+        assert html.count('type="radio"') == 2
+        assert "Pick one" in html
+
+
+class TestUploadFieldTypes:
+    def test_get_upload_field_type_keys(self):
+        keys = get_upload_field_type_keys()
+        assert "file" in keys and "image" in keys
+        assert "singleline" not in keys
 
 
 CONFIG = {"member": {"label": "Member", "model": "auth.User"}}

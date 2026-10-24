@@ -63,16 +63,15 @@ builder applies the input design to the widget and the label design to its
 legend/label, so inputs and labels can be styled individually on top of the
 DaisyUI defaults.
 
-For upload fields, **Input design** additionally carries a **tray** and an
-**item** design (container layout/wrap/gap/justify/align and per-item
-size/shape/background/typography) plus **Item rendering** (thumbnail / icon /
-avatar) and **Empty fallback** (icon / initials / placeholder / blank). The
-same vocabulary is available to editors on the **File input** and
-**Autocomplete** data-input blocks, so designed forms can match form pages
-without template overrides.
+Each field also has a **Container design** for the wrapper around the label,
+input, help text and errors, and upload fields have a separate **Upload design**
+(tray and item styling, item rendering and empty fallback). Choice fields
+(checkboxes and radio buttons) have **Choice options**: layout, wrap, grid
+columns, overflow scrolling, size and box styling around the option list.
 
-The page's **Submit button** field exposes the same button appearance
-(`ButtonAppearanceBlock`).
+The page's **Form design** controls the `<form>` container; when set it replaces
+the default `mt-8 space-y-4` classes. The **Submit button** field exposes the
+same button appearance (`ButtonAppearanceBlock`).
 
 ## Ordering fields in the body
 

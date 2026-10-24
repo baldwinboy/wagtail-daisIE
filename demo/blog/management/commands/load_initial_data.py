@@ -1429,8 +1429,6 @@ class Command(BaseCommand):
             layout="navbar",
             force=force,
             menu_theme=bakery_theme,
-            show_search=True,
-            search_url="/search/",
             item_design=[
                 (
                     "item",
@@ -1474,6 +1472,16 @@ class Command(BaseCommand):
                         "text": "Blog",
                         "destination": [{"type": "link_page", "value": blog_index}],
                         "open_in_new_tab": False,
+                    },
+                },
+                {
+                    "type": "search",
+                    "value": {
+                        "search_url": "/search/",
+                        "search_parameter": "query",
+                        "search_placeholder": "Search",
+                        "method": "get",
+                        "input_color": "",
                     },
                 },
             ],

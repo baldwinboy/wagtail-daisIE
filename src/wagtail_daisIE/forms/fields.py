@@ -15,15 +15,27 @@ from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
 from wagtail.fields import StreamField
 
-from ..base_blocks.css import build_design_css
-from ..base_blocks.design import TypographyDesignBlock
-from ..base_blocks.input_widget import InputWidgetDesignBlock
+from ..base_blocks.css import (
+    build_background_style,
+    build_class,
+    build_design_css,
+)
+from ..base_blocks.design import (
+    ChoiceOptionsDesignBlock,
+    SpacedDesignBlock,
+    TypographyDesignBlock,
+)
+from ..base_blocks.input_widget import (
+    InputWidgetDesignBlock,
+    UploadWidgetDesignBlock,
+)
 from ..context import get_current_model_key
 from ..dynamic.registry import get_context_models
 from ..panels import PrefixedRulesPanel
 from .registry import (
     FIELD_TYPE_MAX_LENGTH,
     get_form_field_type_choices,
+    get_upload_field_type_keys,
     is_upload_field_type,
 )
 
@@ -39,6 +51,12 @@ CHOICE_FIELD_TYPES = [
 #: ``field_type`` values that use the "Default value" box.
 DEFAULT_VALUE_FIELD_TYPES = [
     "dropdown",
+    "radio",
+]
+
+#: ``field_type`` values rendered as a group of choice controls.
+CHOICE_OPTIONS_FIELD_TYPES = [
+    "checkboxes",
     "radio",
 ]
 
@@ -271,6 +289,28 @@ class DaisieFormField(AbstractFormField):
         use_json_field=True,
         verbose_name=_("Label design"),
     )
+    container_design = StreamField(
+        [("design", SpacedDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Container design"),
+        help_text=_("Styling for the wrapper around this field."),
+    )
+    upload_design = StreamField(
+        [("design", UploadWidgetDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Upload design"),
+    )
+    choice_options = StreamField(
+        [("design", ChoiceOptionsDesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Choice options"),
+    )
 
     panels = [
         MultiFieldPanel(
@@ -314,6 +354,21 @@ class DaisieFormField(AbstractFormField):
                     heading=_("Design"),
                     classname="collapsed",
                 ),
+                FieldRowPanel(
+                    [
+                        FieldPanel("container_design"),
+                        PrefixedRulesPanel(
+                            "choice_options",
+                            rules={"field_type": CHOICE_OPTIONS_FIELD_TYPES},
+                        ),
+                    ],
+                    heading=_("Container and choices"),
+                    classname="collapsed",
+                ),
+                PrefixedRulesPanel(
+                    "upload_design",
+                    rules={"field_type": get_upload_field_type_keys},
+                ),
             ],
             attrs={
                 "data-controller": "w-rules",
@@ -330,12 +385,44 @@ class DaisieFormField(AbstractFormField):
         """Whether this field accepts a file upload."""
         return is_upload_field_type(self.field_type)
 
-    def get_input_css(self):
+    def get_input_css(self) -> str:
         return build_design_css(
             self.input_design[0].value if self.input_design else None
         )
 
-    def get_label_css(self):
+    def get_label_css(self) -> str:
         return build_design_css(
             self.label_design[0].value if self.label_design else None
         )
+
+    def get_container_css(self) -> str:
+        return build_design_css(
+            self.container_design[0].value if self.container_design else None
+        )
+
+    def get_container_style(self) -> str:
+        return build_background_style(
+            self.container_design[0].value if self.container_design else None
+        )
+
+    def get_choice_options_css(self) -> str:
+        value = self.choice_options[0].value if self.choice_options else None
+        return build_class(
+            build_design_css(value),
+            build_design_css((value or {}).get("layout_design")),
+        )
+
+    def get_choice_options_style(self) -> str:
+        return build_background_style(
+            self.choice_options[0].value if self.choice_options else None
+        )
+
+    def get_widget_design(self):
+        value = self.upload_design[0].value if self.upload_design else None
+        value = value or {}
+        return {
+            "tray_css": build_design_css(value.get("tray")),
+            "item_css": build_design_css(value.get("item")),
+            "render": value.get("render") or "thumbnail",
+            "fallback": value.get("fallback") or "icon",
+        }

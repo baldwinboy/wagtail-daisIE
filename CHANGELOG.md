@@ -81,6 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Form fields now expose container, upload and choice-options design; form
+  pages expose form design.
+* Non-clickable menu items opt out of DaisyUI hover/cursor styling.
 * Reusable `LayoutBlock` design primitive (row/column/wrapping row and column,
   1-6 column grid, wrap, justify, align, gap) and layout control on the
   autocomplete (`arrangement`, `options position`, `layout design`).
@@ -97,6 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Upload-only form design moved from `input_design` to `upload_design`;
+  existing values are not migrated automatically.
 * The **Context binding** block and the **Layout override** feed block now use
   out-of-box Stimulus only: conditionals are driven by `w-rules` with
   prefix-correct keys from a server-rendered `Meta.form_template`, and the
@@ -123,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+* Redundant top-level menu search fields; use the Search box menu item.
 * Inert `collapsed` option on `IconChooserBlock.Meta` (FieldBlocks ignore it).
 * The hand-rolled context-binding admin script and stylesheet
   (`context_binding_block.js`, `context_binding.css`), the

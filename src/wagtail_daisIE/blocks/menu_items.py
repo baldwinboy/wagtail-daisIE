@@ -32,6 +32,23 @@ SEARCH_FORM_METHOD_CHOICES = ChoiceList(
     "SEARCH_FORM_METHOD_CHOICES",
 )
 
+#: Menu item types that are not immediately clickable as a whole.
+MENU_STATIC_BLOCK_TYPES = frozenset(
+    {
+        "header",
+        "text",
+        "search",
+        "newsletter",
+        "inline_card",
+        "link_list",
+    }
+)
+
+
+def is_static_menu_block(block_type: str) -> bool:
+    """Return whether ``block_type`` should opt out of menu hover styles."""
+    return block_type in MENU_STATIC_BLOCK_TYPES
+
 
 class MenuLogo(ImageBlock):
     """A logo image with the same fields/design as the image block.

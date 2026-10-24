@@ -13,11 +13,8 @@
         </summary>
         <ul class="dropdown-content menu z-50 mt-3 w-72 gap-1 rounded-box bg-base-100 p-2 shadow">
           {% for item in menu_items %}
-            <li>{% include_block item %}</li>
+            {% include "wagtail_daisIE/blocks/menu_item.html" with item=item %}
           {% endfor %}
-          {% if menu.show_search %}
-            <li class="menu-title">{% include "wagtail_daisIE/blocks/navbar_search.html" %}</li>
-          {% endif %}
           {% if menu.show_theme_toggle %}
             <li>{% include "wagtail_daisIE/blocks/navbar_theme_toggle.html" %}</li>
           {% endif %}
@@ -30,9 +27,6 @@
     </div>
 
     <div class="navbar-end gap-2">
-      {% if menu.show_search %}
-        {% include "wagtail_daisIE/blocks/navbar_search.html" %}
-      {% endif %}
       {% if menu.show_theme_toggle %}
         {% include "wagtail_daisIE/blocks/navbar_theme_toggle.html" %}
       {% endif %}

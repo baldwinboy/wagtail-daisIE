@@ -5,6 +5,9 @@
 blocks, so adding them to a block's design does not change its migration
 representation. The ``render``/``fallback`` choices below drive which markup a
 dynamic item clones and what shows when there is nothing to display.
+
+``InputWidgetDesignBlock`` styles the input element itself; upload-only controls
+live in ``UploadWidgetDesignBlock``.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ from wagtail_daisIE.choices import (
     MAIN_LAYOUT_CHOICES,
 )
 
+from .compact import DaisieStructBlock
 from .design import SpacedDesignBlock, TypographyDesignBlock
 
 
@@ -127,13 +131,33 @@ class ItemDesignBlock(TypographyDesignBlock):
 
 
 class InputWidgetDesignBlock(TypographyDesignBlock):
-    """Editor design for a file/attachment form field.
+    """Editor design for a form input.
 
-    The typography/size/box groups style the input element (as before); the
-    nested ``tray``/``item`` blocks style the attachment tray and each item, and
-    ``render``/``fallback`` choose the item markup. A frozen migration key keeps
-    future edits from disturbing `DaisieFormField.input_design` migrations.
+    A frozen migration key keeps future edits from disturbing
+    ``DaisieFormField.input_design`` migrations. Upload-only controls live in
+    :class:`UploadWidgetDesignBlock`.
     """
+
+    class Meta:
+        icon = "sliders"
+        collapsed = True
+        migration_key = "wagtail_daisIE.InputWidgetDesignBlock"
+        form_layout = blocks.BlockGroup(
+            children=[
+                "typography",
+                "size",
+                "background",
+                "border",
+                "padding",
+                "margin",
+                "box",
+            ],
+            heading=_("Input design"),
+        )
+
+
+class UploadWidgetDesignBlock(DaisieStructBlock):
+    """Upload-only design controls for a file/attachment form field."""
 
     tray = TrayDesignBlock()
     item = ItemDesignBlock()
@@ -146,21 +170,9 @@ class InputWidgetDesignBlock(TypographyDesignBlock):
 
     class Meta:
         icon = "sliders"
+        label = _("Upload design")
         collapsed = True
-        migration_key = "wagtail_daisIE.InputWidgetDesignBlock"
         form_layout = blocks.BlockGroup(
-            children=[
-                "typography",
-                "render",
-                "fallback",
-                "tray",
-                "item",
-                "size",
-                "background",
-                "border",
-                "padding",
-                "margin",
-                "box",
-            ],
-            heading=_("Input design"),
+            children=["render", "fallback", "tray", "item"],
+            heading=_("Upload design"),
         )

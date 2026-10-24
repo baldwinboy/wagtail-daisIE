@@ -2,6 +2,6 @@
 <ul class="daisyui-menu menu menu-horizontal {{ menu_design_css }} {{ menu_css }}"{% if menu_design_style %} style="{{ menu_design_style }}"{% endif %}
     {% if menu_theme %}data-theme="{{ menu_theme.name }}"{% endif %}>
   {% for item in menu_items %}
-    <li>{% include_block item %}</li>
+    {% include "wagtail_daisIE/blocks/menu_item.html" with item=item %}
   {% endfor %}
 </ul>

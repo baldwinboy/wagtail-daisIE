@@ -24,6 +24,7 @@ from .compact import (
 )
 from .design import (
     BaseDesignBlock,
+    ChoiceOptionsDesignBlock,
     DesignBlock,
     InlineDesignBlock,
     InlineSpacedDesignBlock,
@@ -50,6 +51,7 @@ from .input_widget import (
     InputWidgetDesignBlock,
     ItemDesignBlock,
     TrayDesignBlock,
+    UploadWidgetDesignBlock,
 )
 from .layout_design import LayoutBlock
 from .link import AbstractLinkBlock, LinkDestinationBlock
@@ -68,6 +70,7 @@ __all__ = [
     "BorderBlock",
     "BoxBlock",
     "ButtonAppearanceBlock",
+    "ChoiceOptionsDesignBlock",
     "ColorChoiceBlock",
     "CompactBlockMetaclass",
     "CompactBlockMixin",
@@ -83,6 +86,7 @@ __all__ = [
     "RENDER_CHOICES",
     "TrayDesignBlock",
     "UPLOAD_DISPLAY_CHOICES",
+    "UploadWidgetDesignBlock",
     "InlineDesignBlock",
     "InlineMarkupBlock",
     "InlineSizeBlock",

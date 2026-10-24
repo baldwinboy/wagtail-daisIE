@@ -91,6 +91,17 @@ def build_background_css(value):
     )
 
 
+def build_background_style(value) -> str:
+    """Return a literal ``background`` declaration for a design value."""
+    background = (value or {}).get("background")
+    if not background or isinstance(background, dict):
+        return ""
+    from .background_layer import BackgroundStreamBlock
+
+    css = BackgroundStreamBlock().get_css(background)
+    return f"background: {css}" if css else ""
+
+
 def build_border_css(value):
     if not value:
         return ""
@@ -292,6 +303,7 @@ _DESIGN_BUILDERS = {
     "align": build_passthrough_css,
     "gap": build_passthrough_css,
     "shape": build_passthrough_css,
+    "scroll": build_passthrough_css,
 }
 
 

@@ -45,6 +45,7 @@ from .components import (
     TABS_SIZE_CHOICES,
     TABS_STYLE_CHOICES,
 )
+from .inputs import CHOICE_OVERFLOW_CHOICES
 from .menu import MENU_SIZE_CHOICES
 from .radii import ROUNDED_CHOICES
 from .shadow import SHADOW_CHOICES
@@ -97,6 +98,7 @@ __all__ = [
     "BADGE_SIZE_CHOICES",
     "BADGE_STYLE_CHOICES",
     "CAROUSEL_ORIENTATION_CHOICES",
+    "CHOICE_OVERFLOW_CHOICES",
     "COUNTDOWN_SIZE_CHOICES",
     "DIVIDER_COLOR_CHOICES",
     "DIVIDER_ORIENTATION_CHOICES",
