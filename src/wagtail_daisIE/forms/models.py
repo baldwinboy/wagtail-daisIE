@@ -6,7 +6,7 @@ import logging
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.db import models
+from django.db import models, transaction
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.utils.translation import gettext_lazy as _
@@ -29,6 +29,10 @@ from .registry import get_default_upload_handler, get_form_field_type
 
 
 logger = logging.getLogger(__name__)
+
+
+class FormSubmissionError(Exception):
+    """Reject a valid form before a ``FormSubmission`` is created."""
 
 
 def _model_field(model, name):
@@ -296,19 +300,24 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
         return mapping
 
     def process_form_submission(self, form):
-        submission = self.get_submission_class().objects.create(
-            form_data=self.get_submission_form_data(form),
-            page=self,
-        )
-        self.save_instance_from_submission(form, submission)
-        return submission
+        with transaction.atomic():
+            submission = self.get_submission_class().objects.create(
+                form_data=self.get_submission_form_data(form),
+                page=self,
+            )
+            self.save_instance_from_submission(form, submission)
+            return submission
 
     def save_instance_from_submission(self, form, submission=None):
         """Create or (in edit mode) update the linked instance from ``form``."""
         if self.form_mode == "edit":
             instance = getattr(self, "_daisie_instance", None)
             if instance is not None:
-                return self.update_instance_from_submission(form, instance)
+                return self.update_instance_from_submission(
+                    form,
+                    instance,
+                    submission=submission,
+                )
         return self.create_instance_from_submission(form, submission)
 
     def get_upload_handler(self, field, form=None):
@@ -439,7 +448,7 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
 
         return instance
 
-    def update_instance_from_submission(self, form, instance):
+    def update_instance_from_submission(self, form, instance, submission=None):
         """Apply ``form`` to an existing instance (edit mode)."""
         model = type(instance)
         mapping = self.get_model_field_map()
@@ -483,7 +492,18 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
             )
             if form.is_valid():
                 try:
-                    submission = self.process_form_submission(form)
+                    try:
+                        submission = self.process_form_submission(form)
+                    except FormSubmissionError as exc:
+                        form.add_error(None, str(exc))
+                        context = self.get_context(request)
+                        context["form"] = form
+                        context["form_has_errors"] = True
+                        return TemplateResponse(
+                            request,
+                            self.get_template(request),
+                            context,
+                        )
                 finally:
                     self._daisie_request = None
                 if self.success_redirect_page_id:

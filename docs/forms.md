@@ -141,6 +141,40 @@ Override them or `get_template()` / `get_landing_page_template()` as needed.
 
 Failures creating the instance are logged and do not break the submission.
 
+### Field mapping
+
+Each input maps to at most one concrete model field through its **Model field**
+choice. Leaving it blank falls back to the input's clean name. Inputs that do not
+map to a model field are still stored in `FormSubmission.form_data` and exposed
+in the landing payload as `payload.submission`; they are not discarded.
+
+JSON fields such as `submission` are not per-input targets. If a project needs
+to write a JSON structure, override `create_instance_from_submission()` /
+`update_instance_from_submission()` and build it explicitly. Two inputs mapping
+to the same concrete field are unsupported; the last value wins.
+
+Use `form_fields_exclude` on a configured context model to keep internal fields
+out of the **Model field** selector:
+
+```python
+WAGTAIL_DAISIE_CONTEXT_MODELS = {
+    "peer_application": {
+        "model": "peers.PeerApplication",
+        "source": "myapp.selectors.user_peer_application",
+        "form_fields_exclude": [
+            "user",
+            "submission",
+            "submission_record",
+            "status",
+        ],
+    },
+}
+```
+
+`FormSubmissionError` may be raised from `process_form_submission()` to reject a
+valid form before a `FormSubmission` is created. The page re-renders with the
+error as a non-field form error, so no orphan submission is left behind.
+
 ### Editing an existing instance
 
 Set `form_mode = "edit"` on a `DaisieFormPage` subclass (a class attribute, never

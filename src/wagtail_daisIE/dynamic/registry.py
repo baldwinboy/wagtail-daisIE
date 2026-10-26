@@ -55,6 +55,7 @@ class ContextModel:
     select_related: tuple[str, ...] = ()
     prefetch_related: tuple[str, ...] = ()
     fields: tuple[str, ...] = ()
+    form_fields_exclude: tuple[str, ...] = ()
     queryset_path: object = ""
     filters_config: dict = field(default_factory=dict)
     _resolved_model: object = field(default=None, repr=False)
@@ -184,6 +185,7 @@ class ContextModel:
         model = self.model
         if model is None:
             return []
+        excluded = set(self.form_fields_exclude)
         fields = []
         for model_field in model._meta.get_fields():
             if not getattr(model_field, "editable", False):
@@ -191,6 +193,8 @@ class ContextModel:
             if getattr(model_field, "auto_created", False):
                 continue
             if not getattr(model_field, "concrete", False):
+                continue
+            if model_field.name in excluded:
                 continue
             fields.append(
                 {
@@ -252,6 +256,7 @@ def _build_context_model(key, raw, **overrides):
         select_related=_as_tuple(raw.get("select_related")),
         prefetch_related=_as_tuple(raw.get("prefetch_related")),
         fields=_as_tuple(raw.get("fields")),
+        form_fields_exclude=_as_tuple(raw.get("form_fields_exclude")),
         queryset_path=raw.get("queryset", "") or "",
         filters_config=dict(raw.get("filters") or {}),
     )

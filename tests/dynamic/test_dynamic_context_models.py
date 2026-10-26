@@ -69,6 +69,22 @@ def _binding(**kwargs):
 
 
 class TestRegistry:
+    def test_form_fields_exclude_hides_configured_fields(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "owner": {
+                "label": "Owner",
+                "model": "auth.User",
+                "source": "request.user",
+                "form_fields_exclude": ["email"],
+            },
+        }
+        reset_context_models()
+
+        names = {field["name"] for field in get_context_model("owner").form_fields()}
+
+        assert "email" not in names
+        assert "username" in names
+
     def test_returns_configured_models_and_choices(self, settings):
         models = get_context_models()
         assert set(models) == {"owner", "target"}

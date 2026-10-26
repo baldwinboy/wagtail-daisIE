@@ -7,6 +7,9 @@
         <h3>{% trans "Fields available to link" %}</h3>
         {% if bound_model.models %}
             <p>{% trans "Inputs can be linked to any editable field on the selected model." %}</p>
+            <p>
+                {% trans "Unlinked answers are still recorded in the submission payload. JSON and internal fields can be hidden with form_fields_exclude." %}
+            </p>
             {% for model in bound_model.models %}
                 <div data-w-rules-target="show"
                      data-w-rules='{"instance_model": ["{{ model.key|escapejs }}"]}'
