@@ -1,6 +1,11 @@
 from django.utils.translation import gettext_lazy as _
 
-from .utils import ChoiceList, make_auto_spacing_choices, make_choices
+from .utils import (
+    ChoiceList,
+    make_auto_spacing_choices,
+    make_choices,
+    make_spacing_choices,
+)
 
 
 _SMALL_NUMERIC_SIZES = [(f"{i}xs", (f"{i}xs")) for i in range(2, 4)]
@@ -33,6 +38,19 @@ _BLOCK_RESPONSIVE_SIZES = [
     ("lvh", _("Largest visible height")),
 ]
 
+# Max-height supports the numeric spacing scale plus a small set of intrinsic
+# values. The old semantic values are retained below for stored content.
+_MAX_HEIGHT_RESPONSIVE_SIZES = [
+    ("full", _("Full")),
+    ("min", _("Min")),
+    ("max", _("Max")),
+    ("fit", _("Fit")),
+    ("screen", _("Screen")),
+    ("svh", _("Smallest visible height")),
+    ("lvh", _("Largest visible height")),
+    ("dvh", _("Device height")),
+]
+
 
 def _make_size_choices(prefix, responsive_sizes, include_auto):
     auto_choices = (
@@ -55,6 +73,19 @@ def make_block_size_choices(prefix, include_auto=True):
     return _make_size_choices(prefix, _BLOCK_RESPONSIVE_SIZES, include_auto)
 
 
+def make_max_height_choices():
+    """Return valid Tailwind max-height choices plus legacy saved values."""
+    return [
+        ("", _("None")),
+        *make_spacing_choices("max-h-", prepend_none=False),
+        *make_choices("max-h-", _MAX_HEIGHT_RESPONSIVE_SIZES, prepend_none=False),
+        # Keep the pre-existing semantic values valid for stored content.
+        *make_choices("max-h-", _SMALL_NUMERIC_SIZES, prepend_none=False),
+        *make_choices("max-h-", _SEMATIC_SIZES, prepend_none=False),
+        *make_choices("max-h-", _LARGE_NUMERIC_SIZES, prepend_none=False),
+    ]
+
+
 # Height choices
 
 INLINE_MIN_HEIGHT_CHOICES = ChoiceList(
@@ -64,7 +95,7 @@ INLINE_HEIGHT_CHOICES = ChoiceList(
     make_inline_size_choices("h-"), "INLINE_HEIGHT_CHOICES"
 )
 INLINE_MAX_HEIGHT_CHOICES = ChoiceList(
-    make_inline_size_choices("max-h-", include_auto=False),
+    make_max_height_choices(),
     "INLINE_MAX_HEIGHT_CHOICES",
 )
 
@@ -73,7 +104,7 @@ BLOCK_MIN_HEIGHT_CHOICES = ChoiceList(
 )
 BLOCK_HEIGHT_CHOICES = ChoiceList(make_block_size_choices("h-"), "BLOCK_HEIGHT_CHOICES")
 BLOCK_MAX_HEIGHT_CHOICES = ChoiceList(
-    make_block_size_choices("max-h-", include_auto=False),
+    make_max_height_choices(),
     "BLOCK_MAX_HEIGHT_CHOICES",
 )
 

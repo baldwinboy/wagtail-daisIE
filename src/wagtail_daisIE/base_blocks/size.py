@@ -9,6 +9,7 @@ from wagtail_daisIE.choices import (
     BLOCK_MIN_WIDTH_CHOICES,
     BLOCK_SIZE_CHOICES,
     BLOCK_WIDTH_CHOICES,
+    CHOICE_OVERFLOW_CHOICES,
     INLINE_HEIGHT_CHOICES,
     INLINE_MAX_HEIGHT_CHOICES,
     INLINE_MAX_WIDTH_CHOICES,
@@ -216,6 +217,15 @@ class AbstractBlockSizeBlock(DaisieStructBlock):
 
 
 class BlockSizeBlock(SizeContextMixin, AbstractBlockSizeBlock):
+    scroll = blocks.ChoiceBlock(
+        choices=CHOICE_OVERFLOW_CHOICES,
+        required=False,
+        label=_("Overflow"),
+        help_text=_(
+            "Requires a height or maximum height. Use vertical scroll for long content."
+        ),
+    )
+
     class Meta:
         icon = "breadcrumb-expand"
         collapsed = True
@@ -224,6 +234,7 @@ class BlockSizeBlock(SizeContextMixin, AbstractBlockSizeBlock):
                 "size",
                 "width",
                 "height",
+                "scroll",
             ],
             heading=_("Size"),
         )

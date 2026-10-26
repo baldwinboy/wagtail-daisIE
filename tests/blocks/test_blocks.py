@@ -109,6 +109,48 @@ class TestAutoSpacingCss:
             == ""
         )
 
+    def test_scroll_is_emitted_from_the_size_block(self):
+        assert build_size_css({"scroll": "overflow-y-auto"}) == "overflow-y-auto"
+
+
+class TestBlockSizeScroll:
+    def test_only_block_size_blocks_expose_scroll(self):
+        from wagtail_daisIE.base_blocks.size import (
+            BlockSizeBlock,
+            InlineSizeBlock,
+            MediaSizeBlock,
+        )
+
+        assert "scroll" in BlockSizeBlock().child_blocks
+        assert "scroll" not in InlineSizeBlock().child_blocks
+        assert "scroll" not in MediaSizeBlock().child_blocks
+
+
+class TestRowScroll:
+    def _context(self, *, scroll, wrap="flex-wrap"):
+        from wagtail_daisIE.blocks.layout import RowBlock
+
+        value = {
+            "wrap": wrap,
+            "design": {"size": {"scroll": scroll}},
+            "content": [],
+        }
+        return RowBlock().get_context(value, {"request": None})
+
+    def test_horizontal_scroll_forces_nowrap_and_non_shrinking_items(self):
+        context = self._context(scroll="overflow-x-auto")
+        assert context["row_wrap_css"] == ""
+        assert context["row_scroll_css"] == "flex-nowrap"
+        assert context["row_item_css"] == "shrink-0"
+        assert "overflow-x-auto" in context["block_css"].split()
+
+    def test_vertical_scroll_keeps_the_configured_wrap(self):
+        context = self._context(scroll="overflow-y-auto", wrap="flex-wrap")
+        assert context["row_wrap_css"] == "flex-wrap"
+        assert context["row_scroll_css"] == ""
+        assert context["row_item_css"] == "flex-1 min-w-0"
+        assert "overflow-y-auto" in context["block_css"].split()
+
 
 class TestBuildDesignCss:
     def test_aggregates_known_groups(self):
@@ -120,6 +162,12 @@ class TestBuildDesignCss:
         )
         assert "text-base-content" in css
         assert "p-4" in css
+
+    def test_size_scroll_is_aggregated(self):
+        assert (
+            "overflow-y-auto"
+            in build_design_css({"size": {"scroll": "overflow-y-auto"}}).split()
+        )
 
     def test_button_appearance_controls_the_btn_class(self):
         """``btn`` comes from the appearance group, never from typography."""

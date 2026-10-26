@@ -278,25 +278,6 @@ class TestFormDesignChannels:
         assert design["fallback"] == "initials"
         assert design["tray_css"]
 
-    def test_choice_options_merge_nested_layout(self):
-        block = DaisieFormField._meta.get_field("choice_options").stream_block
-        stream = block.to_python(
-            [
-                (
-                    "design",
-                    {
-                        "layout_design": {"layout": "grid", "columns": "2"},
-                        "scroll": "overflow-x-auto",
-                    },
-                )
-            ]
-        )
-        field = SimpleNamespace(choice_options=stream)
-        css = DaisieFormField.get_choice_options_css(field)
-        assert "grid" in css
-        assert "grid-cols-1" in css
-        assert "overflow-x-auto" in css
-
     def test_input_design_no_longer_has_upload_children(self):
         assert "tray" not in InputWidgetDesignBlock().child_blocks
         assert "item" not in InputWidgetDesignBlock().child_blocks
@@ -721,3 +702,52 @@ class TestDaisieFileField:
         assert result[0] == "stored:a.txt"
         assert isinstance(result[1], UploadedFile)
         assert len(seen) == 1 and isinstance(seen[0], UploadedFile)
+
+
+def test_choice_options_legacy_scroll_is_upgraded_to_size_scroll():
+    from wagtail_daisIE.base_blocks.design import ChoiceOptionsDesignBlock
+
+    block = ChoiceOptionsDesignBlock()
+    assert "scroll" not in block.child_blocks
+    value = block.to_python(
+        {
+            "layout_design": {"layout": "grid", "columns": "2"},
+            "scroll": "overflow-x-auto",
+        }
+    )
+
+    assert "scroll" not in dict(value)
+    assert value["size"]["scroll"] == "overflow-x-auto"
+
+
+def test_choice_options_max_height_defaults_to_vertical_scroll():
+    field = SimpleNamespace(
+        choice_options=[
+            SimpleNamespace(value={"size": {"height": {"max_height": "max-h-48"}}})
+        ]
+    )
+
+    css = DaisieFormField.get_choice_options_css(field)
+
+    assert "max-h-48" in css
+    assert "overflow-y-auto" in css
+
+
+def test_choice_options_explicit_overflow_is_preserved():
+    field = SimpleNamespace(
+        choice_options=[
+            SimpleNamespace(
+                value={
+                    "size": {
+                        "height": {"max_height": "max-h-48"},
+                        "scroll": "overflow-x-auto",
+                    }
+                }
+            )
+        ]
+    )
+
+    css = DaisieFormField.get_choice_options_css(field)
+
+    assert "overflow-x-auto" in css
+    assert "overflow-y-auto" not in css

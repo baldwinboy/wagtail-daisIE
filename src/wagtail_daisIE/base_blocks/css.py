@@ -61,6 +61,7 @@ def build_size_css(value):
         size,
         width,
         height,
+        build_passthrough_css(value.get("scroll", "")),
     )
 
 

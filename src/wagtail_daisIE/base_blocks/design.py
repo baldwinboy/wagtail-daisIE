@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from wagtail_daisIE.base_blocks.button import ButtonAppearanceBlock
-from wagtail_daisIE.choices import CHOICE_OVERFLOW_CHOICES, MAIN_LAYOUT_CHOICES
+from wagtail_daisIE.choices import MAIN_LAYOUT_CHOICES
 
 from .audience import AudienceBlock, evaluate_audience
 from .background_layer import BackgroundStreamBlock
@@ -168,18 +168,33 @@ class ChoiceOptionsDesignBlock(DesignBlock):
     """Container design for a group of checkbox or radio choices."""
 
     layout_design = LayoutBlock()
-    scroll = blocks.ChoiceBlock(
-        choices=CHOICE_OVERFLOW_CHOICES,
-        required=False,
-        label=_("Overflow"),
-    )
+
+    @staticmethod
+    def _upgrade_legacy_scroll(value):
+        """Move a pre-SizeBlock top-level scroll into size.scroll."""
+        if not value or not value.get("scroll"):
+            return value
+        value = dict(value)
+        legacy = value.pop("scroll")
+        size = dict(value.get("size") or {})
+        size.setdefault("scroll", legacy)
+        value["size"] = size
+        return value
+
+    def to_python(self, value):
+        return super().to_python(self._upgrade_legacy_scroll(value or {}))
+
+    def bulk_to_python(self, values):
+        return super().bulk_to_python(
+            [self._upgrade_legacy_scroll(value or {}) for value in values]
+        )
 
     class Meta:
         icon = "bars"
         label = _("Choice options")
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=["layout_design", "scroll", *_BLOCK_CHILDREN],
+            children=["layout_design", *_BLOCK_CHILDREN],
             heading=_("Choice options"),
         )
 
@@ -271,6 +286,10 @@ class ThemedBlock(DaisieStructBlock):
             parent_context.get("menu_default_css", ""),
             own,
         )
+        scroll = (((value or {}).get("design") or {}).get("size") or {}).get(
+            "scroll", ""
+        )
+        context["has_scroll"] = bool(scroll)
         context[key] = build_class(channel, own)
         context["block_style"] = build_background_style(
             value.get("design")

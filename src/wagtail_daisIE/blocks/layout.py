@@ -24,6 +24,19 @@ class RowBlock(SpacedBlockWithList):
         label=_("Wrap"),
     )
 
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        scroll = (((value or {}).get("design") or {}).get("size") or {}).get(
+            "scroll", ""
+        )
+        horizontal = scroll in {"overflow-x-auto", "overflow-auto"}
+        context["row_wrap_css"] = (
+            "" if horizontal else ((value or {}).get("wrap") or "flex-wrap")
+        )
+        context["row_scroll_css"] = "flex-nowrap" if horizontal else ""
+        context["row_item_css"] = "shrink-0" if horizontal else "flex-1 min-w-0"
+        return context
+
     class Meta:
         icon = "expand-right"
         group = _("Layout")

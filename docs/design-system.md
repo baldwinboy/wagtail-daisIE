@@ -56,6 +56,21 @@ Auto spacing and size values are stored prefixed (`ml-auto`, `w-auto`,
 time in both web and email output. `max-width`/`max-height` have no auto
 utility in Tailwind, so their choice lists omit Auto.
 
+Block-level `Size` includes an optional `Overflow` choice
+(`overflow-y-auto`, `overflow-x-auto`, `overflow-auto`). Vertical scrolling only
+has an effect when a height or maximum height constrains the container. Rows
+that use horizontal scrolling automatically drop their wrap setting and mark
+their children as non-shrinking so the row scrolls instead of wrapping.
+
+`ChoiceOptionsDesignBlock` uses the same `Size -> Overflow` field. Values saved
+with the old top-level `choice_options.scroll` key are upgraded into
+`choice_options.size.scroll` when the block is loaded; the legacy key is removed
+on the next save.
+
+Page-level container design also exposes `Overflow`. Because page-level
+container classes are inherited by every block, setting overflow there applies
+to all blocks that use the container channel. Use it deliberately.
+
 ## Inheritance (category channels)
 
 Inheritance is per element category and strictly isolated. Each `ThemedBlock`

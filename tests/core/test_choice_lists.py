@@ -76,6 +76,17 @@ def test_max_size_choices_have_no_auto():
         assert not any(is_auto_utility(value) for value in _values(choice_list))
 
 
+def test_max_height_choices_include_valid_spacing_and_legacy_values():
+    for choice_list in (INLINE_MAX_HEIGHT_CHOICES, BLOCK_MAX_HEIGHT_CHOICES):
+        values = _values(choice_list)
+        assert "max-h-48" in values
+        assert "max-h-96" in values
+        assert "max-h-full" in values
+        # Stored content from the previous semantic scale remains valid.
+        assert "max-h-xs" in values
+        assert "max-h-2xl" in values
+
+
 def test_is_auto_utility_excludes_unrelated_auto_classes():
     assert is_auto_utility("auto")
     assert is_auto_utility("ml-auto")

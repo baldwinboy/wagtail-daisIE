@@ -92,17 +92,18 @@ def _otp_markup(field, attrs, size="", color="", joined=False):
 
 def _field_extras(body, field, errors, help_html=None):
     help_content = help_html or field.help_text
+    field_id = field.id_for_label or field.auto_id
     extras = ""
     if help_content:
         extras += format_html(
             '<p class="label" id="{}-help">{}</p>',
-            field.id_for_label,
+            field_id,
             help_content,
         )
     if errors:
         extras += format_html(
             '<p class="label text-error" id="{}-error" role="alert">{}</p>',
-            field.id_for_label,
+            field_id,
             " ".join(errors),
         )
     return mark_safe(body + extras)  # noqa: S308
@@ -138,13 +139,14 @@ def daisie_form_field(
     attrs = {"class": css}
     if form_id:
         attrs["form"] = form_id
+    field_id = field.id_for_label or field.auto_id
     described_by = []
     if errors:
         attrs["aria-invalid"] = "true"
-        if field.id_for_label:
-            described_by.append(f"{field.id_for_label}-error")
-    if help_content and field.id_for_label:
-        described_by.append(f"{field.id_for_label}-help")
+        if field_id:
+            described_by.append(f"{field_id}-error")
+    if help_content and field_id:
+        described_by.append(f"{field_id}-help")
     if described_by:
         attrs["aria-describedby"] = " ".join(described_by)
 

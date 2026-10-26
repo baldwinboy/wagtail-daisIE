@@ -26,6 +26,23 @@ Provided by the required `wagtail_daisIE.menus` app.
 `get_item_style()` describe the item defaults. Container and item styles are
 **fully independent**.
 
+## Search
+
+Search is a menu item block (`search`), not a menu-level field. Add it to
+`body` wherever the search box should appear; it works in every layout.
+
+Older releases stored `show_search`, `search_url`, `search_parameter` and
+`search_placeholder` on the menu. Those fields have been removed. If an
+existing menu lost its search box, recover it from revision history with:
+
+```bash
+python manage.py recover_menu_search_blocks --dry-run
+python manage.py recover_menu_search_blocks --apply
+```
+
+The command only appends a `search` block when the menu has none and a revision
+with `show_search=True` is still available.
+
 ## Rendering
 
 `{% daisyui_menu %}` looks the menu up by name and renders

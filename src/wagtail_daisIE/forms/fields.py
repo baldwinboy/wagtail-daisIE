@@ -407,10 +407,16 @@ class DaisieFormField(AbstractFormField):
 
     def get_choice_options_css(self) -> str:
         value = self.choice_options[0].value if self.choice_options else None
-        return build_class(
+        css = build_class(
             build_design_css(value),
             build_design_css((value or {}).get("layout_design")),
         )
+        classes = css.split()
+        if any(token.startswith("max-h-") for token in classes) and not any(
+            token.startswith("overflow-") for token in classes
+        ):
+            css = build_class(css, "overflow-y-auto")
+        return css
 
     def get_choice_options_style(self) -> str:
         return build_background_style(
