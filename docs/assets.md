@@ -15,8 +15,10 @@ tailwind/input.css  ──►  tailwindcss CLI  ──►  static/wagtail_daisIE
 
 1. **Safelist** — the design system builds class strings at runtime
    (`block_css`), so Tailwind cannot discover them by scanning templates.
-   `manage.py daisie_safelist` walks `choices/*` (plus the feed layout literals)
-   and writes `@source inline(...)` directives to `tailwind/safelist.css`.
+   `manage.py daisie_safelist` walks `choices/*` (including the dict groups),
+   the feed layout literals and the integer-driven ranges (border width,
+   table border spacing, grid columns), then writes `@source inline(...)`
+   directives to `tailwind/safelist.css`.
 2. **Build** — `tailwind/input.css` (`@import "tailwindcss"` + `@plugin
    "daisyui"` + the extended typography scale + `@import "./safelist.css"`) is
    compiled by the npm `tailwindcss` CLI into the committed

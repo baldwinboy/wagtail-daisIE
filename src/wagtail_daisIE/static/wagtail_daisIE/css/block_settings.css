@@ -151,7 +151,7 @@
   padding: 0.25rem 0.5rem;
 }
 
-.daisyui-slider-semantic[aria-pressed="true"] {
+.daisyui-slider-semantic[aria-pressed='true'] {
   border-color: var(--w-color-secondary);
   box-shadow: 0 0 0 1px var(--w-color-secondary);
 }

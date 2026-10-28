@@ -109,10 +109,13 @@ def build_border_css(value):
     border_width = value.get("border_width")
     if not border_width or border_width <= 0:
         return ""
+    border_style = value.get("border_style", "")
+    if border_style and not border_style.startswith("border-"):
+        border_style = f"border-{border_style}"
     return build_class(
         build_border_width(border_width),
         value.get("border_color", ""),
-        value.get("border_style", ""),
+        border_style,
     )
 
 

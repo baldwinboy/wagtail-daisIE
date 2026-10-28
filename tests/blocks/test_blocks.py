@@ -191,6 +191,14 @@ class TestBuildDesignCss:
         )
         assert "border" in build_border_css({"border_width": 1}).split()
 
+    def test_border_style_is_rendered_as_a_utility(self):
+        assert build_border_css(
+            {"border_width": 2, "border_style": "solid"}
+        ).split() == ["border-2", "border-solid"]
+        assert build_border_css(
+            {"border_width": 1, "border_style": "border-dashed"}
+        ).split() == ["border", "border-dashed"]
+
 
 class TestLinkUrl:
     def test_stream_value_legacy_dicts_and_active(self):

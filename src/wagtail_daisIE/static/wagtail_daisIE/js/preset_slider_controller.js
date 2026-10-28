@@ -14,8 +14,20 @@
   var Controller = window.StimulusModule.Controller;
 
   var AUTO_PREFIXES = [
-    'm-', 'mx-', 'my-', 'mt-', 'mr-', 'mb-', 'ml-', 'w-', 'h-', 'size-',
-    'min-w-', 'min-h-', 'max-w-', 'max-h-',
+    'm-',
+    'mx-',
+    'my-',
+    'mt-',
+    'mr-',
+    'mb-',
+    'ml-',
+    'w-',
+    'h-',
+    'size-',
+    'min-w-',
+    'min-h-',
+    'max-w-',
+    'max-h-',
   ];
 
   function isSemantic(value, option) {
@@ -31,8 +43,21 @@
       }
     }
     var suffix = String(value).split('-').pop();
-    return ['full', 'min', 'max', 'fit', 'screen', 'dvw', 'dvh', 'lvw',
-            'lvh', 'svw', 'svh'].indexOf(suffix) !== -1;
+    return (
+      [
+        'full',
+        'min',
+        'max',
+        'fit',
+        'screen',
+        'dvw',
+        'dvh',
+        'lvw',
+        'lvh',
+        'svw',
+        'svh',
+      ].indexOf(suffix) !== -1
+    );
   }
 
   class PresetSliderController extends Controller {
@@ -46,10 +71,13 @@
       this.allValues = [];
       this.allTexts = [];
       if (this.selectTarget_) {
-        Array.prototype.forEach.call(this.selectTarget_.options, function (opt) {
-          this.allValues.push(opt.value);
-          this.allTexts.push(opt.text);
-        }.bind(this));
+        Array.prototype.forEach.call(
+          this.selectTarget_.options,
+          function (opt) {
+            this.allValues.push(opt.value);
+            this.allTexts.push(opt.text);
+          }.bind(this),
+        );
       }
 
       this.onRangeInput = this.handleRangeInput.bind(this);
@@ -60,11 +88,17 @@
       var buttons = this.element.querySelectorAll(
         '[data-daisie-preset-semantic]',
       );
-      Array.prototype.forEach.call(buttons, function (btn) {
-        btn.addEventListener('click', function () {
-          this.selectSemantic(btn.getAttribute('data-value') || '');
-        }.bind(this));
-      }.bind(this));
+      Array.prototype.forEach.call(
+        buttons,
+        function (btn) {
+          btn.addEventListener(
+            'click',
+            function () {
+              this.selectSemantic(btn.getAttribute('data-value') || '');
+            }.bind(this),
+          );
+        }.bind(this),
+      );
 
       this.syncFromSelect();
     }
@@ -81,7 +115,9 @@
       var option = this.findOption(value);
       var isSem = option ? isSemantic(option.value, option) : false;
 
-      var buttons = this.element.querySelectorAll('[data-daisie-preset-semantic]');
+      var buttons = this.element.querySelectorAll(
+        '[data-daisie-preset-semantic]',
+      );
       Array.prototype.forEach.call(buttons, function (btn) {
         btn.setAttribute(
           'aria-pressed',
@@ -107,7 +143,9 @@
       }
       this.syncFromSelect();
       if (this.selectTarget_) {
-        this.selectTarget_.dispatchEvent(new Event('change', { bubbles: true }));
+        this.selectTarget_.dispatchEvent(
+          new Event('change', { bubbles: true }),
+        );
       }
     }
 
@@ -119,16 +157,23 @@
       if (value !== undefined) {
         this.selectTarget_.value = value;
       }
-      var buttons = this.element.querySelectorAll('[data-daisie-preset-semantic]');
+      var buttons = this.element.querySelectorAll(
+        '[data-daisie-preset-semantic]',
+      );
       Array.prototype.forEach.call(buttons, function (btn) {
         btn.setAttribute('aria-pressed', 'false');
       });
       this.updateReadout(this.allTexts[idx] || value);
       if (this.rangeTarget_) {
-        this.rangeTarget_.setAttribute('aria-valuetext', this.allTexts[idx] || value || '');
+        this.rangeTarget_.setAttribute(
+          'aria-valuetext',
+          this.allTexts[idx] || value || '',
+        );
       }
       if (this.selectTarget_) {
-        this.selectTarget_.dispatchEvent(new Event('change', { bubbles: true }));
+        this.selectTarget_.dispatchEvent(
+          new Event('change', { bubbles: true }),
+        );
       }
     }
 
