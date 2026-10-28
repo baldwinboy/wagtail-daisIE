@@ -395,14 +395,12 @@ class DaisyUISliderWidget(widgets.Select):
     def get_context(self, name, value, attrs=None):
         context = super().get_context(name, value, attrs)
         options = []
-        index = 0
         selected_label = ""
-        for i, (choice_value, choice_label) in enumerate(self.choices):
+        for _i, (choice_value, choice_label) in enumerate(self.choices):
             is_selected = choice_value == value or (
                 value == "auto" and is_auto_utility(choice_value)
             )
             if is_selected:
-                index = i
                 selected_label = choice_label
             options.append(
                 {
@@ -413,8 +411,15 @@ class DaisyUISliderWidget(widgets.Select):
             )
         context["widget"]["options"] = options
         context["widget"]["opt_groups"] = self._build_opt_groups(options)
+        # The range slider covers every option; semantic buttons are quick
+        # access shortcuts for the standalone/responsive values.
+        selected_index = 0
+        for i, option in enumerate(options):
+            if option["selected"]:
+                selected_index = i
+                break
         context["widget"]["slider_max"] = max(0, len(options) - 1)
-        context["widget"]["slider_index"] = index
+        context["widget"]["slider_index"] = selected_index
         context["widget"]["selected_label"] = selected_label
         return context
 
@@ -446,6 +451,10 @@ class DaisyUISliderWidget(widgets.Select):
         if responsive:
             groups.append({"label": _("Responsive sizes"), "options": responsive})
         return groups
+
+    @property
+    def media(self):
+        return forms.Media(js=["wagtail_daisIE/js/preset_slider_controller.js"])
 
 
 class DaisyUINumberSliderWidget(widgets.NumberInput):
@@ -489,10 +498,11 @@ class DaisyUINumberSliderWidget(widgets.NumberInput):
         widget_ctx["step"] = self.step
         widget_ctx["suffix"] = self.suffix
         widget_ctx["current"] = current
-        widget_ctx["label"] = (
-            _("None") if value in (None, "") else f"{current}{self.suffix}"
-        )
         return context
+
+    @property
+    def media(self):
+        return forms.Media(js=["wagtail_daisIE/js/number_slider_controller.js"])
 
 
 class DaisyUIIntegerBlock(blocks.IntegerBlock):

@@ -306,12 +306,9 @@ def register_block_controllers_js():
 @hooks.register("insert_global_admin_js")
 def register_widget_definitions_js():
     return format_html(
-        '<script src="{}"></script>'
-        '<script src="{}"></script>'
-        '<script src="{}"></script>',
+        '<script src="{}"></script><script src="{}"></script>',
         static("wagtail_daisIE/js/widget_definition.js"),
         static("wagtail_daisIE/js/swatch_definition.js"),
-        static("wagtail_daisIE/js/block_settings.js"),
     )
 
 

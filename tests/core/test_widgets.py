@@ -64,7 +64,7 @@ class TestSwatchTelepathAdapter:
 
 
 class TestWidgetRendering:
-    def test_raw_swatch_and_sliders(self):
+    def test_raw_swatch(self):
         raw = DaisyUIRawSwatchWidget(prefix="bg")
         raw.choices = [("", "None"), ("bg-primary", "Primary")]
         assert (
@@ -80,29 +80,25 @@ class TestWidgetRendering:
         assert 'data-raw="true"' in raw_html
         assert 'data-daisie-swatch-prefix-value=""' in raw_html
 
+    def test_preset_slider(self):
         slider = DaisyUISliderWidget()
         slider.choices = [("", "None"), ("m-auto", "Auto"), ("m-4", "4")]
         html = slider.render("__NAME__", "m-auto", attrs={"id": "__ID__"})
-        assert 'value="m-auto"' in html
-        assert "None / Auto" in html and 'optgroup label="Preset sizes"' in html
+        assert 'data-controller="daisie-preset-slider"' in html
+        assert 'data-daisie-preset-slider-target="range"' in html
+        assert 'aria-valuetext="Auto"' in html
+        assert 'data-daisie-preset-semantic="1"' in html
 
-        legacy = slider.render("__NAME__", "auto", attrs={"id": "__ID__"})
-        assert 'value="m-auto" selected' in legacy
-
-        responsive = DaisyUISliderWidget()
-        responsive.choices = [
-            ("", "None"),
-            ("p-4", "4"),
-            ("w-full", "Full"),
-            ("h-svw", "Smallest visible width"),
-        ]
-        html = responsive.render("__NAME__", "p-4", attrs={"id": "__ID__"})
-        assert "Preset sizes" in html and "Responsive sizes" in html
-        assert 'value="w-full"' in html and 'value="h-svw"' in html
-
+    def test_number_slider(self):
         number = DaisyUINumberSliderWidget(min_value=0, max_value=10, step=1)
-        assert 'value="10"' in number.render("__NAME__", 50, attrs={"id": "__ID__"})
+        html = number.render("__NAME__", 5, attrs={"id": "__ID__"})
+        assert 'data-controller="daisie-number-slider"' in html
+        assert 'data-daisie-number-slider-target="range"' in html
+        assert 'data-daisie-number-slider-target="number"' in html
+        assert "daisyui-slider-value" not in html
+        assert "number_slider_controller.js" in str(number.media)
 
+    def test_autocomplete(self):
         autocomplete = DaisieAutocompleteSelectMultiple(
             choices=[("a", "Alpha"), ("b", "Bravo")], placeholder="Pick"
         )

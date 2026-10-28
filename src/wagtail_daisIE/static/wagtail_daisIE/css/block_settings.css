@@ -141,19 +141,19 @@
   text-align: end;
 }
 
-/*
- * Numeric slider reuses the row/range/value styles above; the number input
- * is the value carrier and sits between the range and the readout.
- */
-
-.daisyui-number-slider-widget {
-  display: flex;
-  flex-direction: column;
+/* Semantic value button group for the preset slider. */
+.daisyui-slider-semantic {
+  background-color: var(--w-color-surface-field);
+  border: 1px solid var(--w-color-border-furniture);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: var(--daisyui-font-size-label);
+  padding: 0.25rem 0.5rem;
 }
 
-.daisyui-number-slider-widget .daisyui-number-input {
-  max-inline-size: 5rem;
-  text-align: end;
+.daisyui-slider-semantic[aria-pressed="true"] {
+  border-color: var(--w-color-secondary);
+  box-shadow: 0 0 0 1px var(--w-color-secondary);
 }
 
 /* -------------------------------------------------------------------------
