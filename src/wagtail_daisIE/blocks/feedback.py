@@ -28,6 +28,7 @@ from ..choices.feedback import (
     TOOLTIP_POSITION_CHOICES,
 )
 from ..icons.blocks import IconChooserBlock
+from .stream import FeedbackBodyStreamBlock
 
 
 MODAL_PLACEMENT_CHOICES = ChoiceList(
@@ -44,7 +45,8 @@ MODAL_PLACEMENT_CHOICES = ChoiceList(
 
 
 class AlertBlock(ThemedBlock):
-    content = blocks.RichTextBlock(label=_("Message"))
+    content = blocks.RichTextBlock(label=_("Message"), required=False)
+    body = FeedbackBodyStreamBlock()
     icon = IconChooserBlock(required=False)
     color = blocks.ChoiceBlock(
         choices=ALERT_COLOR_CHOICES, required=False, label=_("Colour")
@@ -60,6 +62,7 @@ class AlertBlock(ThemedBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "content",
+                "body",
                 collapsed_group(_("Icon"), "icon", icon="image"),
                 "color",
                 "style",
@@ -169,7 +172,8 @@ class ToastBlock(ThemedBlock):
     color = blocks.ChoiceBlock(
         choices=ALERT_COLOR_CHOICES, default="alert-info", label=_("Colour")
     )
-    content = blocks.RichTextBlock(label=_("Message"))
+    content = blocks.RichTextBlock(label=_("Message"), required=False)
+    body = FeedbackBodyStreamBlock()
 
     class Meta:
         icon = "download"
@@ -177,7 +181,7 @@ class ToastBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/toast.html"
         form_layout = blocks.BlockGroup(
-            children=["content", "color", "position"],
+            children=["content", "body", "color", "position"],
             settings=["design", "audience"],
         )
 
@@ -186,6 +190,7 @@ class ModalBlock(ThemedBlock):
     trigger_label = blocks.CharBlock(max_length=64, default="Open")
     title = blocks.CharBlock(max_length=255, required=False)
     content = blocks.RichTextBlock(required=False)
+    body = FeedbackBodyStreamBlock()
     close_label = blocks.CharBlock(max_length=64, default="Close", required=False)
     placement = blocks.ChoiceBlock(
         choices=MODAL_PLACEMENT_CHOICES,
@@ -199,7 +204,14 @@ class ModalBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/feedback/modal.html"
         form_layout = blocks.BlockGroup(
-            children=["trigger_label", "title", "content", "close_label", "placement"],
+            children=[
+                "trigger_label",
+                "title",
+                "content",
+                "body",
+                "close_label",
+                "placement",
+            ],
             settings=["design", "audience"],
         )
 

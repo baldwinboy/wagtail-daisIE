@@ -3,11 +3,9 @@ from wagtail import blocks
 
 from wagtail_daisIE.widgets import DaisyUIIntegerBlock, DaisyUINumberSliderWidget
 
-from ..base_blocks import DaisieStreamBlock
 from ..choicelist import ChoiceList
-from .inline import InlineTextBlock
-from .media import InlineImageBlock
 from .section import SectionBlock
+from .stream import MarqueeContentStreamBlock
 
 
 MARQUEE_LAYOUT_CHOICES = ChoiceList(
@@ -20,13 +18,7 @@ MARQUEE_LAYOUT_CHOICES = ChoiceList(
 
 
 class MarqueeBlock(SectionBlock):
-    content = DaisieStreamBlock(
-        [
-            ("text", InlineTextBlock()),
-            ("image", InlineImageBlock()),
-        ],
-        label=_("Marquee content"),
-    )
+    content = MarqueeContentStreamBlock()
     speed = DaisyUIIntegerBlock(
         required=False,
         default=5,

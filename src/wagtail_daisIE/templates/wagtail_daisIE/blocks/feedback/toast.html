@@ -1,4 +1,4 @@
-{% load notifications %}
+{% load notifications wagtailcore_tags %}
 {% if audience_allowed %}
   <div
     class="toast {{ value.position }}{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
@@ -6,7 +6,8 @@
     aria-live="polite"
   >
     <div class="alert {{ value.color }}">
-      <div class="daisie-richtext">{% daisie_richtext value.content %}</div>
+      {% if value.content %}<div class="daisie-richtext">{% daisie_richtext value.content %}</div>{% endif %}
+      {% if value.body %}<div class="daisie-richtext">{% for child in value.body %}{% include_block child %}{% endfor %}</div>{% endif %}
     </div>
   </div>
 {% endif %}

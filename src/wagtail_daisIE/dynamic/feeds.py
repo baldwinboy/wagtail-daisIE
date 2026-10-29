@@ -268,10 +268,43 @@ def _selected_filters(feed):
     return items
 
 
+def _first_stream_value(stream_field):
+    if not stream_field:
+        return {}
+    child = stream_field[0]
+    value = child.value if hasattr(child, "value") else child
+    return value if isinstance(value, dict) else {}
+
+
+def build_filter_menu(feed):
+    """Return the optional feed filter-menu configuration."""
+    from ..base_blocks.css import build_design_css
+
+    value = _first_stream_value(feed.filter_menu)
+    if not value or not value.get("enabled"):
+        return {"enabled": False}
+    return {
+        "enabled": True,
+        "label": value.get("label") or "Filters",
+        "icon": value.get("icon"),
+        "style": value.get("style") or "dropdown",
+        "default_open": bool(value.get("default_open")),
+        "include_layout_toggle": bool(value.get("include_layout_toggle")),
+        "trigger_css": build_design_css(
+            {"button_appearance": value.get("trigger_appearance")}
+        )
+        or "btn",
+        "panel_css": build_design_css(value.get("panel_design")),
+        "container_css": build_design_css(value.get("container_design")),
+    }
+
+
 def build_filters(feed, config, params, request=None, page=None):
     """Return the UI definitions for the feed's selected filters."""
     from ..base_blocks.css import build_button_state_css, build_design_css
+    from ..base_blocks.utils import build_class
 
+    menu_enabled = build_filter_menu(feed)["enabled"]
     filters = []
     for value in _selected_filters(feed):
         composite = (value.get("key") or "").strip()
@@ -286,6 +319,7 @@ def build_filters(feed, config, params, request=None, page=None):
         filter_type = spec.get("type", "choice")
         appearance = value.get("button_appearance") or {}
         active_state = appearance.get("active") if hasattr(appearance, "get") else None
+        menu_item_css = build_design_css(value.get("menu_item_design"))
         entry = {
             "key": filter_key,
             "type": filter_type,
@@ -295,6 +329,11 @@ def build_filters(feed, config, params, request=None, page=None):
             "multi": bool(spec.get("multi")),
             "autocomplete": bool(spec.get("autocomplete")),
             "collapsed": bool(value.get("collapsed")),
+            "container_css": build_class(
+                build_design_css(value.get("container_design")),
+                menu_item_css if menu_enabled else "",
+            ),
+            "menu_item_css": menu_item_css,
             "button_css": build_design_css(
                 {"button_appearance": value.get("button_appearance")}
             )
@@ -536,6 +575,8 @@ def choose_item_stream(plan, obj, context):
 
 def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
     """Render a slice of ``feed`` and return the template context data."""
+    from ..base_blocks.css import build_design_css
+
     config = get_context_model(feed.context_model)
     result = {
         "items_html": "",
@@ -545,6 +586,15 @@ def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
         "page_size": feed.page_size,
         "filters": [],
         "submit_css": "btn",
+        "filter_menu": build_filter_menu(feed),
+        "filter_panel_css": build_design_css(
+            _first_stream_value(feed.filter_panel_design)
+        ),
+        "filter_layout_css": build_design_css(_first_stream_value(feed.filter_layout)),
+        "layout_toggle_css": build_design_css(
+            {"button_appearance": _first_stream_value(feed.layout_toggle_appearance)}
+        )
+        or "btn btn-sm",
     }
     result.update(resolve_layout(feed, override, request))
     get_submit_css = getattr(feed, "get_submit_css", None)

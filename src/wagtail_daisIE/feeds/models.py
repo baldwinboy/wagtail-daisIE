@@ -11,10 +11,11 @@ from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.fields import StreamField
 
-from ..base_blocks.button import ButtonAppearanceBlock
+from ..base_blocks import ButtonAppearanceBlock, DesignBlock, LayoutBlock
 from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.css import build_design_css
 from ..base_blocks.design import TypographyDesignBlock
+from ..choicelist import ChoiceList
 from ..dynamic.feeds import (
     gap_choices,
     layout_choices,
@@ -23,7 +24,17 @@ from ..dynamic.feeds import (
 )
 from ..dynamic.panels import FeedContextModelHelpPanel
 from ..dynamic.registry import get_context_model_choices, get_filter_choices
+from ..icons.blocks import IconChooserBlock
 from .blocks_data import ITEM_BLOCKS, FeedItemVariantBlock
+
+
+FILTER_MENU_STYLE_CHOICES = ChoiceList(
+    [
+        ("dropdown", _("Dropdown")),
+        ("modal", _("Modal")),
+    ],
+    "FILTER_MENU_STYLE_CHOICES",
+)
 
 
 class FeedFilterBlock(DaisieStructBlock):
@@ -38,6 +49,14 @@ class FeedFilterBlock(DaisieStructBlock):
         help_text=_("Shown instead of the filter's default label."),
     )
     collapsed = blocks.BooleanBlock(default=False, required=False)
+    container_design = DesignBlock(
+        required=False,
+        help_text=_("Design for the filter's wrapper."),
+    )
+    menu_item_design = DesignBlock(
+        required=False,
+        help_text=_("Additional design when shown inside the filter menu."),
+    )
     button_appearance = ButtonAppearanceBlock(
         required=False,
         label=_("Filter buttons"),
@@ -62,11 +81,78 @@ class FeedFilterBlock(DaisieStructBlock):
                 "collapsed",
             ],
             settings=[
+                "container_design",
+                "menu_item_design",
                 "button_appearance",
                 "input_design",
                 "label_design",
             ],
             heading=_("Filter"),
+        )
+
+
+class FeedFilterMenuBlock(DaisieStructBlock):
+    """Optional menu that contains the filters and the layout toggle."""
+
+    enabled = blocks.BooleanBlock(
+        default=False,
+        required=False,
+        label=_("Show filters in a menu"),
+    )
+    label = blocks.CharBlock(
+        max_length=128,
+        default="Filters",
+        required=False,
+        label=_("Trigger label"),
+    )
+    icon = IconChooserBlock(required=False)
+    style = blocks.ChoiceBlock(
+        choices=FILTER_MENU_STYLE_CHOICES,
+        default="dropdown",
+        required=False,
+    )
+    default_open = blocks.BooleanBlock(
+        default=False,
+        required=False,
+        label=_("Open by default"),
+    )
+    include_layout_toggle = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_("Include the layout toggle"),
+    )
+    trigger_appearance = ButtonAppearanceBlock(
+        required=False,
+        label=_("Trigger appearance"),
+    )
+    panel_design = DesignBlock(
+        required=False,
+        label=_("Menu panel design"),
+    )
+    container_design = DesignBlock(
+        required=False,
+        label=_("Menu container design"),
+    )
+
+    class Meta:
+        icon = "sliders"
+        label = _("Filter menu")
+        collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=[
+                "enabled",
+                "style",
+                "label",
+                "icon",
+            ],
+            settings=[
+                "default_open",
+                "include_layout_toggle",
+                "trigger_appearance",
+                "panel_design",
+                "container_design",
+            ],
+            heading=_("Filter menu"),
         )
 
 
@@ -134,6 +220,39 @@ class Feed(ClusterableModel):
         use_json_field=True,
         verbose_name=_("Filters"),
         help_text=_("Choose and order the filters to show."),
+        collapsed=True,
+    )
+    filter_menu = StreamField(
+        [("menu", FeedFilterMenuBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Filter menu"),
+        help_text=_("Optionally place the filters and layout toggle in a menu."),
+        collapsed=True,
+    )
+    filter_panel_design = StreamField(
+        [("design", DesignBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Filter area design"),
+        collapsed=True,
+    )
+    filter_layout = StreamField(
+        [("layout", LayoutBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Filter controls layout"),
+        collapsed=True,
+    )
+    layout_toggle_appearance = StreamField(
+        [("appearance", ButtonAppearanceBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Layout toggle appearance"),
         collapsed=True,
     )
     item = StreamField(
@@ -236,7 +355,17 @@ class Feed(ClusterableModel):
                 "data-action": "change->w-rules#resolve",
             },
         ),
-        FieldPanel("filters"),
+        MultiFieldPanel(
+            [
+                FieldPanel("filters"),
+                FieldPanel("filter_menu"),
+                FieldPanel("filter_panel_design"),
+                FieldPanel("filter_layout"),
+                FieldPanel("layout_toggle_appearance"),
+            ],
+            heading=_("Filters"),
+            classname="collapsed",
+        ),
         FieldPanel("item"),
         FieldPanel("item_variants"),
     ]

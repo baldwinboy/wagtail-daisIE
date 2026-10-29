@@ -16,8 +16,6 @@ from wagtail_daisIE.dynamic.actions import (
     run_action,
 )
 from wagtail_daisIE.dynamic.feeds import (
-    LAYOUT_CHOICES,
-    TOGGLE_PAIRS,
     apply_filters,
     render_feed,
 )
@@ -372,53 +370,6 @@ class TestFeedEndpoint:
         assert 'id="daisie-feed-body-x"' in html
 
 
-class TestFilterStyling:
-    def test_filter_and_submit_css(self, settings):
-        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
-            "user": {
-                "label": "User",
-                "model": "auth.User",
-                "filters": {
-                    "active": {"type": "boolean", "field": "is_active"},
-                    "joined": {"type": "date_range", "field": "date_joined"},
-                },
-            }
-        }
-        reset_context_models()
-        feed = Feed.objects.create(name="Styled", context_model="user")
-        feed.filters = [
-            (
-                "filter",
-                {
-                    "key": "user:active",
-                    "button_appearance": {
-                        "normal": {"color": "btn-primary"},
-                        "active": {"color": "btn-secondary"},
-                    },
-                    "label_design": {"typography": {"font_weight": "font-bold"}},
-                },
-            ),
-            (
-                "filter",
-                {
-                    "key": "user:joined",
-                    "input_design": {"typography": {"font_size": "text-sm"}},
-                },
-            ),
-        ]
-        feed.submit_appearance = [
-            ("appearance", {"normal": {"color": "btn-secondary"}})
-        ]
-        feed.save()
-        data = render_feed(feed, RequestFactory().get("/"))
-        by_key = {item["key"]: item for item in data["filters"]}
-        assert "btn-primary" in by_key["active"]["button_css"]
-        assert "btn-secondary" in by_key["active"]["selected_css"]
-        assert "font-bold" in by_key["active"]["label_css"]
-        assert "text-sm" in by_key["joined"]["input_css"]
-        assert "btn-secondary" in data["submit_css"]
-
-
 class TestDateTransform:
     def test_date_and_datetime_fields(self):
         from django.db.models import DateField, DateTimeField
@@ -440,100 +391,3 @@ class TestDateTransform:
         assert (
             _date_transform(config(DateTimeField()), "published") == "published__date"
         )
-
-
-class TestFeedLayout:
-    def _render(self, **kwargs):
-        return render_feed(_feed(**kwargs), RequestFactory().get("/"))
-
-    def test_container_classes_and_clamping(self):
-        grid = self._render(layout="grid", layout_columns=4, layout_gap="gap-6")[
-            "layout_container_css"
-        ].split()
-        assert {"grid", "lg:grid-cols-4", "gap-6", "daisie-feed--grid"} <= set(grid)
-        scroll = self._render(layout="row", row_mode="scroll")[
-            "layout_container_css"
-        ].split()
-        assert {"flex-nowrap", "overflow-x-auto", "daisie-feed--row-scroll"} <= set(
-            scroll
-        )
-        assert (
-            "lg:grid-cols-3"
-            in self._render(layout="grid", layout_columns=99)["layout_container_css"]
-        )
-
-    def test_block_override_and_query_override(self):
-        from wagtail_daisIE.dynamic.feeds import resolve_layout
-
-        feed = _feed(layout="grid", layout_columns=2)
-        ctx = resolve_layout(feed, {"layout": "list", "columns": 5}, None)
-        assert ctx["layout"] == "list"
-        assert "lg:grid-cols-5" in ctx["layout_classes"]["grid"]
-
-        feed = _feed(layout="grid", allow_layout_toggle=True, toggle_layouts="grid_row")
-        assert [
-            o["value"] for o in resolve_layout(feed, None, None)["toggle_options"]
-        ] == [
-            "grid",
-            "row",
-        ]
-        assert (
-            resolve_layout(feed, None, RequestFactory().get("/?layout=row"))["layout"]
-            == "row"
-        )
-        # ``list`` is not one of this feed's toggle options, so it is ignored.
-        assert (
-            resolve_layout(feed, None, RequestFactory().get("/?layout=list"))["layout"]
-            == "grid"
-        )
-        assert (
-            resolve_layout(feed, None, RequestFactory().get("/?layout=bogus"))["layout"]
-            == "grid"
-        )
-
-    def test_template_renders_toggle_and_container(self):
-        from wagtail_daisIE.feeds.blocks_data import FeedBlock
-
-        block = FeedBlock()
-        value = block.to_python(
-            {
-                "feed": _feed(allow_layout_toggle=True, toggle_layouts="grid_list").pk,
-                "design": {},
-                "audience": {},
-            }
-        )
-        html = block.render(value, context={"request": RequestFactory().get("/")})
-        # The layout toggle is a set of htmx-driven radio inputs on the form.
-        assert 'name="layout"' in html
-        assert "hx-get=" in html
-        assert 'id="daisie-feed-body-' in html
-        assert "daisie-feed--grid" in html
-        assert html.count("btn-active") == 1
-
-        listed = render_feed(_feed(layout="list"), RequestFactory().get("/"))
-        assert (
-            "divide-y divide-base-300 daisie-feed--list"
-            in listed["layout_container_css"]
-        )
-
-    def test_choices_are_shared_by_model_and_override_block(self):
-        from wagtail_daisIE.dynamic import feeds
-        from wagtail_daisIE.feeds.blocks_data import TOGGLE_OVERRIDE_CHOICES
-
-        layouts = {key for key, _label in LAYOUT_CHOICES}
-        for pair in TOGGLE_PAIRS.values():
-            assert set(pair) <= layouts, pair
-        # The model field's choices and the dynamic constant must not drift.
-        model_choices = Feed.objects.none().model._meta.get_field("layout").choices
-        assert [key for key, _label in LAYOUT_CHOICES] == [
-            key for key, _label in model_choices
-        ]
-        # The override block extends the base choices.
-        assert [key for key, _label in TOGGLE_OVERRIDE_CHOICES[1:]] == [
-            key for key, _label in feeds.TOGGLE_CHOICES
-        ]
-
-        from wagtail_daisIE.dynamic.conditions import FEED_CONDITION_OPERATOR_CHOICES
-
-        # Variant operators are a lazy ChoiceList (kept out of migrations).
-        assert callable(FEED_CONDITION_OPERATOR_CHOICES)

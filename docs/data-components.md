@@ -137,6 +137,11 @@ Feed fields:
   an action, and the action (or a plain button) can make the whole card
   clickable (see [Clickable cards](#clickable-cards)).
 
+Because a container in an item design can itself hold a feed or calendar, a data
+block that would re-enter its own design is blocked at render time and rejected
+by the block's `clean()` validation. See
+[block-palettes.md](block-palettes.md#runtime-data-recursion).
+
 Inside the item blocks the instance is available under the model key, e.g.
 `{{ bread.name }}`, `{{ bread.image }}` (with an image block in *From context*
 mode), `{{ bread.url }}` and an action button with target `bread.pk`. Eager
@@ -296,7 +301,14 @@ depend on the filter type:
   active state (with DaisyUI’s `btn-active` as a fallback).
 * **Input filters** (date, date range, price range, search, sort, autocomplete)
   expose **Input design** (typography and input styling).
-* All filters expose **Label design** (typography for the legend).
+* All filters expose **Label design** (typography for the legend),
+  **Container design** (the fieldset/wrapper) and **Menu item design** (extra
+  styling when the feed uses a filter menu).
+* **Collapsed** renders a filter inside a collapsible control.
+* **Feed filter menu** can place the filters and the layout toggle inside a
+  dropdown or modal, with its own trigger appearance, panel design and
+  container design. **Include the layout toggle** controls whether the layout
+  switch moves into the menu.
 
 Date and date-range filters work with both `DateField` and `DateTimeField`
 (datetimes are compared by date).

@@ -90,7 +90,7 @@ class NewsletterSignupBlock(ThemedBlock):
 
     class Meta:
         icon = "mail"
-        group = _("Newsletter")
+        group = _("Data")
         collapsed = True
         template = "wagtail_daisIE/blocks/newsletter_signup.html"
         form_layout = blocks.BlockGroup(

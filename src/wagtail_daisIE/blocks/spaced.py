@@ -1,13 +1,13 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks.compact import DaisieStreamBlock
 from ..choicelist import ChoiceList
 from .cards import CONTENT_BLOCKS
 from .icons import IconChooserBlock
 from .inline import HeaderBlock
 from .link import InlineLinkBlock
 from .section import SectionBlock
+from .stream import InlineStreamBlock, LayoutStreamBlock
 
 
 LIST_ORDERING_CHOICES = ChoiceList(
@@ -21,9 +21,7 @@ LIST_ORDERING_CHOICES = ChoiceList(
 
 
 class SpacedBlock(SectionBlock):
-    content = DaisieStreamBlock(
-        CONTENT_BLOCKS,
-    )
+    content = LayoutStreamBlock()
 
     class Meta:
         abstract = True
@@ -52,6 +50,13 @@ class ListBlock(SpacedBlock):
         )
 
 
+class ListInlineBlock(ListBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("List (inline)")
+
+
 class LinkListBlock(SpacedBlock):
     heading = HeaderBlock(required=False)
     content = blocks.ListBlock(InlineLinkBlock(), label=_("Links"))
@@ -76,9 +81,5 @@ LIST_CONTENT_BLOCKS = [
 
 
 class SpacedBlockWithList(SpacedBlock):
-    content = DaisieStreamBlock(
-        LIST_CONTENT_BLOCKS,
-    )
-
     class Meta:
         abstract = True

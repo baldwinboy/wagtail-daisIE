@@ -88,6 +88,19 @@ field) no longer produce a migration. This is safe because `StreamField` is a
 `JSONField`: there is no schema/DDL change. The trade-off is that the migration
 is no longer an audit trail for block shape; see the guards below.
 
+### Child palettes do not create migrations
+
+Container blocks (rows, cards, tabs, mockups, feeds' item designs, …) resolve
+their children from `blocks/palettes.py` through `PaletteStreamBlock`. Changing
+a palette therefore changes only the live block definition, not the migration:
+the parent block is stored as `RegisteredBlock` and the palette is rebuilt when
+the migration is loaded. If `makemigrations` reports an expanded
+`StructBlock`/`StreamBlock` tree after a palette change, a palette stream block
+was constructed with arguments (which makes it non-declarative); fix the block
+definition rather than committing the migration. Palette changes still must add
+block types, never remove or rename existing ones (see
+[block-palettes.md](block-palettes.md)).
+
 ## Runtime is unaffected
 
 Compaction changes only what is written to and read from migration files.

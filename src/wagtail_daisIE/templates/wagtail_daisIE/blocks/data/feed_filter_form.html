@@ -1,0 +1,39 @@
+{% load i18n %}
+<form
+  method="get"
+  class="{% if filter_panel_css %}{{ filter_panel_css }}{% else %}mb-6 space-y-4{% endif %}"
+  data-daisie-feed-form
+  hx-get="{{ feed_url }}"
+  hx-target="#daisie-feed-body-{{ block.id }}"
+  hx-swap="outerHTML"
+  hx-trigger="change, input changed delay:400ms from:find input[type='search']"
+>
+  <input type="hidden" name="block" value="{{ block.id }}" />
+  <input type="hidden" name="offset" value="0" />
+  <div{% if filter_layout_css %} class="{{ filter_layout_css }}"{% endif %}>
+    {% for filter in filters %}
+      {% include "wagtail_daisIE/blocks/data/feed_filter.html" with filter=filter %}
+    {% endfor %}
+  </div>
+  {% if allow_layout_toggle and toggle_options %}
+    {% if not filter_menu.enabled or filter_menu.include_layout_toggle %}
+      <div class="join {{ layout_toggle_css|default:'btn btn-sm' }}" role="radiogroup" aria-label="{% translate 'Layout' %}">
+        {% for option in toggle_options %}
+          <label class="{{ layout_toggle_css|default:'btn btn-sm' }} join-item{% if option.value == layout %} btn-active{% endif %}">
+            <input
+              type="radio"
+              name="layout"
+              value="{{ option.value }}"
+              class="sr-only"
+              {% if option.value == layout %}checked{% endif %}
+            />
+            {{ option.label }}
+          </label>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
+  <noscript>
+    <button type="submit" class="{{ submit_css }}">{% translate "Apply" %}</button>
+  </noscript>
+</form>

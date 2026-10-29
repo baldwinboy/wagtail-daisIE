@@ -1,13 +1,13 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks.compact import DaisieStreamBlock
 from ..dynamic.action_blocks import ActionBlock
 from .base import ThemedBlock
 from .inline import HeaderBlock, InlineRichTextBlock, InlineTextBlock
 from .link import ButtonBlock, InlineLinkBlock
 from .media import EmbedBlock, ImageBlock
 from .section import SectionBlock
+from .stream import CardContentStreamBlock, InlineCardContentStreamBlock
 
 
 def _card_is_clickable(content):
@@ -55,10 +55,7 @@ INLINE_CARD_CONTENT = [
 
 
 class InlineCardBlock(ThemedBlock):
-    content = DaisieStreamBlock(
-        INLINE_CARD_CONTENT,
-        label=_("Card content"),
-    )
+    content = InlineCardContentStreamBlock()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -88,10 +85,7 @@ CARD_CONTENT_BLOCKS = [
 
 
 class CardBlock(SectionBlock):
-    content = DaisieStreamBlock(
-        CARD_CONTENT_BLOCKS,
-        label=_("Card content"),
-    )
+    content = CardContentStreamBlock()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)

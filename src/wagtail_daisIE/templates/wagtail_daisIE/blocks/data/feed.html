@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n wagtail_daisIE_tags %}
 {% if audience_allowed %}
   <div
     id="daisie-feed-{{ block.id }}"
@@ -6,40 +6,45 @@
     data-daisie-feed
   >
     {% if filters or allow_layout_toggle and toggle_options %}
-      <form
-        method="get"
-        class="mb-6 space-y-4"
-        data-daisie-feed-form
-        hx-get="{{ feed_url }}"
-        hx-target="#daisie-feed-body-{{ block.id }}"
-        hx-swap="outerHTML"
-        hx-trigger="change, input changed delay:400ms from:find input[type='search']"
-      >
-        <input type="hidden" name="block" value="{{ block.id }}" />
-        <input type="hidden" name="offset" value="0" />
-        {% for filter in filters %}
-          {% include "wagtail_daisIE/blocks/data/feed_filter.html" with filter=filter %}
-        {% endfor %}
-        {% if allow_layout_toggle and toggle_options %}
-          <div class="join" role="radiogroup" aria-label="{% translate 'Layout' %}">
-            {% for option in toggle_options %}
-              <label class="{{ submit_css|default:'btn btn-sm' }} join-item{% if option.value == layout %} btn-active{% endif %}">
-                <input
-                  type="radio"
-                  name="layout"
-                  value="{{ option.value }}"
-                  class="sr-only"
-                  {% if option.value == layout %}checked{% endif %}
-                />
-                {{ option.label }}
+      {% if filter_menu.enabled %}
+        {% if filter_menu.style == "modal" %}
+          <label for="daisie-filter-menu-{{ block.id }}" class="{{ filter_menu.trigger_css }}">
+            {% if filter_menu.icon %}{% daisyui_icon filter_menu.icon %}{% endif %}
+            {{ filter_menu.label }}
+          </label>
+          <input
+            type="checkbox"
+            id="daisie-filter-menu-{{ block.id }}"
+            class="modal-toggle"
+            {% if filter_menu.default_open %}checked{% endif %}
+          />
+          <div class="modal {{ filter_menu.container_css }}" role="dialog">
+            <div class="modal-box {{ filter_menu.panel_css }}">
+              {% include "wagtail_daisIE/blocks/data/feed_filter_form.html" %}
+              <label for="daisie-filter-menu-{{ block.id }}" class="btn mt-4">
+                {% translate "Close" %}
               </label>
-            {% endfor %}
+            </div>
+            <label class="modal-backdrop" for="daisie-filter-menu-{{ block.id }}">
+              {% translate "Close" %}
+            </label>
+          </div>
+        {% else %}
+          <div class="menu p-0">
+            <details class="{{ filter_menu.container_css }}"{% if filter_menu.default_open %} open{% endif %}>
+              <summary class="{{ filter_menu.trigger_css }}">
+                {% if filter_menu.icon %}{% daisyui_icon filter_menu.icon %}{% endif %}
+                {{ filter_menu.label }}
+              </summary>
+              <div class="{{ filter_menu.panel_css }}">
+                {% include "wagtail_daisIE/blocks/data/feed_filter_form.html" %}
+              </div>
+            </details>
           </div>
         {% endif %}
-        <noscript>
-          <button type="submit" class="{{ submit_css }}">{% translate "Apply" %}</button>
-        </noscript>
-      </form>
+      {% else %}
+        {% include "wagtail_daisIE/blocks/data/feed_filter_form.html" %}
+      {% endif %}
     {% endif %}
 
     {% include "wagtail_daisIE/blocks/data/feed_body.html" with block_id=block.id empty_message=value.feed.empty_message %}

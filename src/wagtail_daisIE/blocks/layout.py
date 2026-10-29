@@ -7,6 +7,7 @@ from wagtail_daisIE.choices import (
 from wagtail_daisIE.widgets import DaisyUIIntegerBlock, DaisyUINumberSliderWidget
 
 from .spaced import SpacedBlockWithList
+from .stream import InlineStreamBlock
 
 
 def _layout_form_layout(children, extra_settings):
@@ -60,6 +61,20 @@ class ColumnBlock(SpacedBlockWithList):
         )
 
 
+class RowInlineBlock(RowBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Row (inline)")
+
+
+class ColumnInlineBlock(ColumnBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Column (inline)")
+
+
 class GridBlock(SpacedBlockWithList):
     num_columns = DaisyUIIntegerBlock(
         default=2,
@@ -78,3 +93,10 @@ class GridBlock(SpacedBlockWithList):
             ["num_columns", "content"],
             [],
         )
+
+
+class GridInlineBlock(GridBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Grid (inline)")

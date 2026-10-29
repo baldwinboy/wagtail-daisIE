@@ -12,7 +12,7 @@ from ..base_blocks import (
     collapsed_group,
 )
 from ..base_blocks.audience import AudienceBlock, evaluate_audience
-from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..base_blocks.css import build_design_css
 from ..base_blocks.link import LinkDestinationBlock, link_url
 from ..choicelist import ChoiceList
@@ -27,12 +27,15 @@ from ..choices import (
     TABS_SIZE_CHOICES,
     TABS_STYLE_CHOICES,
 )
-from ..dynamic.action_blocks import ActionBlock, ActionFormBlock
 from ..icons.blocks import IconChooserBlock
-from .inline import InlineTextBlock
-from .inputs import AUTOCOMPLETE_BLOCKS, INPUT_BLOCKS
-from .link import LabelLinkBlock
-from .spaced import LIST_CONTENT_BLOCKS, SpacedBlock
+from .spaced import SpacedBlock
+from .stream import (
+    DrawerSideStreamBlock,
+    DropdownItemsStreamBlock,
+    InlineStreamBlock,
+    SlideContentStreamBlock,
+    TabContentStreamBlock,
+)
 
 
 JOIN_ITEM_TYPE_CHOICES = ChoiceList(
@@ -92,6 +95,27 @@ class IndicatorBlock(SpacedBlock):
         )
 
 
+class IndicatorInlineBlock(IndicatorBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Indicator (inline)")
+
+
+class StackInlineBlock(StackBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Stack (inline)")
+
+
+class AuraInlineBlock(AuraBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Aura (inline)")
+
+
 class MaskBlock(ThemedBlock):
     image = WagtailImageBlock()
     shape = blocks.ChoiceBlock(choices=MASK_SHAPE_CHOICES, default="mask-squircle")
@@ -114,13 +138,7 @@ class DropdownBlock(ThemedBlock):
         default="",
         required=False,
     )
-    content = DaisieStreamBlock(
-        [
-            ("link", LabelLinkBlock()),
-            ("text", InlineTextBlock()),
-        ],
-        label=_("Items"),
-    )
+    content = DropdownItemsStreamBlock()
 
     class Meta:
         icon = "arrow-down"
@@ -149,15 +167,6 @@ class SwapBlock(ThemedBlock):
         )
 
 
-TAB_CONTENT_BLOCKS = [
-    *LIST_CONTENT_BLOCKS,
-    *INPUT_BLOCKS,
-    *AUTOCOMPLETE_BLOCKS,
-    ("action", ActionBlock()),
-    ("action_form", ActionFormBlock()),
-]
-
-
 class TabItemBlock(DaisieStructBlock):
     label = blocks.CharBlock(max_length=128)
     key = blocks.CharBlock(
@@ -169,7 +178,7 @@ class TabItemBlock(DaisieStructBlock):
     )
     icon = IconChooserBlock(required=False)
     audience = AudienceBlock()
-    content = DaisieStreamBlock(TAB_CONTENT_BLOCKS)
+    content = TabContentStreamBlock()
 
     class Meta:
         icon = "doc-full"
@@ -184,6 +193,13 @@ class TabItemBlock(DaisieStructBlock):
             ],
             settings=["audience"],
         )
+
+
+class TabItemInlineBlock(TabItemBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Tab (inline)")
 
 
 class TabsBlock(ThemedBlock):
@@ -235,14 +251,25 @@ class TabsBlock(ThemedBlock):
         )
 
 
+class TabsInlineBlock(TabsBlock):
+    tabs = blocks.ListBlock(TabItemInlineBlock())
+
+    class Meta:
+        label = _("Tabs (inline)")
+
+
 class CarouselSlideBlock(DaisieStructBlock):
     image = WagtailImageBlock()
     caption = blocks.CharBlock(max_length=255, required=False, blank=True)
+    content = SlideContentStreamBlock()
 
     class Meta:
         icon = "image"
         label = _("Slide")
         collapsed = True
+        form_layout = blocks.BlockGroup(
+            children=["image", "caption", "content"],
+        )
 
 
 class CarouselBlock(ThemedBlock):
@@ -382,8 +409,15 @@ class HeroBlock(SpacedBlock):
         )
 
 
+class HeroInlineBlock(HeroBlock):
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Hero (inline)")
+
+
 class DrawerBlock(SpacedBlock):
-    side = DaisieStreamBlock(LIST_CONTENT_BLOCKS, label=_("Sidebar"))
+    side = DrawerSideStreamBlock()
 
     class Meta:
         abstract = False
@@ -395,6 +429,14 @@ class DrawerBlock(SpacedBlock):
             children=["side", "content"],
             settings=["design", "alignment", "audience"],
         )
+
+
+class DrawerInlineBlock(DrawerBlock):
+    side = InlineStreamBlock()
+    content = InlineStreamBlock()
+
+    class Meta:
+        label = _("Drawer (inline)")
 
 
 class FilterBlock(ThemedBlock):

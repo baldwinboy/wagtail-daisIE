@@ -20,6 +20,7 @@ them to pages, and build navigation menus from the same block components.
 - [Forms](docs/forms.md)
 - [Approval workflows](docs/approval.md)
 - [Data components](docs/data-components.md)
+- [Block palettes](docs/block-palettes.md)
 - [htmx](docs/htmx.md)
 - [Notifications](docs/notifications.md)
 - [django-allauth](docs/allauth.md)

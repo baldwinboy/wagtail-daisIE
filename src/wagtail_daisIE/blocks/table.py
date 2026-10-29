@@ -15,7 +15,7 @@ class TableBlock(ThemedTableBlock):
 
     class Meta:
         icon = "table"
-        group = _("Table")
+        group = _("Layout")
         template = "wagtail_daisIE/blocks/table.html"
         collapsed = True
         form_layout = blocks.BlockGroup(

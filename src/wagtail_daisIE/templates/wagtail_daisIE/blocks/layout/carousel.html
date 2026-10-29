@@ -1,4 +1,4 @@
-{% load wagtailimages_tags %}
+{% load wagtailcore_tags wagtailimages_tags %}
 {% if audience_allowed and value.slides %}
   <div class="carousel {{ value.orientation }} w-full {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     {% for slide in value.slides %}
@@ -6,6 +6,7 @@
         {% image slide.image width-1000 as img %}
         <img src="{{ img.url }}" alt="{{ slide.image.title }}" class="w-full" />
         {% if slide.caption %}<span class="mt-2 text-sm text-base-content/70">{{ slide.caption }}</span>{% endif %}
+        {% if slide.content %}<div class="w-full">{% for child in slide.content %}{% include_block child %}{% endfor %}</div>{% endif %}
       </div>
     {% endfor %}
   </div>

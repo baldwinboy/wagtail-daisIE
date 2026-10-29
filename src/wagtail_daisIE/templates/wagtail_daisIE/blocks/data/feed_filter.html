@@ -1,4 +1,11 @@
 {% load i18n static %}
+{% if filter.collapsed %}
+  <details class="collapse collapse-arrow border border-base-300 {{ filter.container_css }}">
+    <summary class="collapse-title font-medium {{ filter.label_css }}">{{ filter.label }}</summary>
+    <div class="collapse-content">
+{% else %}
+  <div class="{{ filter.container_css }}">
+{% endif %}
 {% if filter.type == "choice" %}
     <fieldset class="fieldset">
         <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
@@ -102,4 +109,10 @@
             placeholder="{{ filter.label }}"
         />
     </fieldset>
+{% endif %}
+{% if filter.collapsed %}
+    </div>
+  </details>
+{% else %}
+  </div>
 {% endif %}

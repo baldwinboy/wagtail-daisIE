@@ -204,9 +204,19 @@ import cycle with `dynamic.action_blocks` (cards and menus both expose the Actio
 block). Cards may contain an Action block, and either a button or an action can
 set `make_parent_clickable` to turn the whole card into its click target.
 
+### Child palettes and lazy containers
+
+`palettes.py` names the child-block sets containers accept (`inline`,
+`inline_layout`, `layout`, `dropdown`, `marquee`). `stream.py` provides
+`PaletteStreamBlock`, which resolves its children from that registry on first
+access and serialises as a stable `RegisteredBlock`. The palettes are finite:
+full layouts contain inline counterparts only, and inline counterparts contain
+inline elements. See [block-palettes.md](block-palettes.md) for the exact
+palette of each container and for the restricted blocks.
+
 `TabItemBlock` carries an optional `icon`, `key` and `audience`, and its
-`content` stream is `LIST_CONTENT_BLOCKS` plus the data-input blocks and the
-Action/Action-form blocks, so a tab can hold working mini-forms. The tab strip
+`content` stream uses the `layout` palette, so a tab can hold full-layout
+content and inline counterparts. The tab strip
 is rendered as DaisyUI `label.tab` controls containing a hidden radio, which
 keeps the icon/label visible while remaining pure CSS; the radio group is scoped
 per enclosing block id (the same `block.id` convention used by inputs, drawer,

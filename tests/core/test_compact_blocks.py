@@ -56,3 +56,30 @@ def test_shipped_migration_block_keys_resolve():
                 found += 1
                 assert get_block(key) is not None, f"{path}: {key}"
     assert found
+
+
+def test_layout_palette_deconstructs_compactly():
+    from wagtail.blocks.definition_lookup import BlockDefinitionLookupBuilder
+
+    from wagtail_daisIE.blocks.stream import LayoutStreamBlock
+
+    lookup = BlockDefinitionLookupBuilder()
+    path, _args, _kwargs = LayoutStreamBlock().deconstruct_with_lookup(lookup)
+
+    assert path == "wagtail_daisIE.blockref.RegisteredBlock"
+    assert lookup.get_lookup_as_dict() == {}
+
+
+def test_container_streamfield_does_not_expand_the_palette():
+    from wagtail.fields import StreamField
+
+    from wagtail_daisIE.blocks.layout import RowBlock
+
+    field = StreamField([("row", RowBlock())], blank=True)
+    lookup = field.deconstruct()[3]["block_lookup"]
+    paths = {entry[0] for entry in lookup.values()}
+
+    assert paths
+    assert all(path.endswith("RegisteredBlock") for path in paths)
+    assert "wagtail.blocks.StructBlock" not in paths
+    assert "wagtail.blocks.StreamBlock" not in paths

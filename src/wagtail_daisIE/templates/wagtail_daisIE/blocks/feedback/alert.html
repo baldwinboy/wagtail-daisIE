@@ -1,10 +1,11 @@
-{% load notifications wagtail_daisIE_tags %}
+{% load notifications wagtail_daisIE_tags wagtailcore_tags %}
 {% if audience_allowed %}
   <div
     class="alert {{ value.color }} {{ value.style }} {{ value.direction }}{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
     role="alert"
   >
     {% if value.icon %}<span aria-hidden="true">{% daisyui_icon value.icon %}</span>{% endif %}
-    <div class="daisie-richtext">{% daisie_richtext value.content %}</div>
+    {% if value.content %}<div class="daisie-richtext">{% daisie_richtext value.content %}</div>{% endif %}
+    {% if value.body %}<div class="daisie-richtext">{% for child in value.body %}{% include_block child %}{% endfor %}</div>{% endif %}
   </div>
 {% endif %}

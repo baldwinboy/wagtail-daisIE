@@ -51,6 +51,49 @@ Template:
 {% endif %}
 ```
 
+## Add a container block
+
+Container blocks must not build their child list at import time: a palette can
+contain a block that itself contains the container. Use a declarative
+`PaletteStreamBlock` subclass and register its palette in
+`blocks/palettes.py`:
+
+```python
+# blocks/palettes.py
+def _my_inline_container():
+    from .palettes import get_palette
+
+    return list(get_palette("inline"))
+
+
+_BUILDERS["my_inline_container"] = _my_inline_container
+```
+
+```python
+# blocks/my_block.py
+from ..base_blocks import ThemedBlock
+from .stream import PaletteStreamBlock
+
+
+class MyInlineContainerStreamBlock(PaletteStreamBlock):
+    palette = "my_inline_container"
+
+
+class MyInlineContainerBlock(ThemedBlock):
+    content = MyInlineContainerStreamBlock()
+```
+
+Use `inline` for an inline counterpart, `inline_layout` for a specialized
+container, and `layout` only for a full common layout. Never put a full layout
+inside `layout`.
+
+`PaletteStreamBlock` rejects constructor arguments on purpose; put the label and
+`required` flag in the subclass `Meta` so the block stays declarative and
+compact in migrations. If the containing `StructBlock` has no explicit
+`Meta.form_layout`, add one: without it, Wagtail reads `child_blocks` while the
+class is being constructed and resolves the palette at import time. See
+[block-palettes.md](block-palettes.md) and [migrations.md](migrations.md).
+
 ## Add an icon provider
 
 Subclass `wagtail_daisIE.icons.providers.base.IconProvider` and register it:

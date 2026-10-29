@@ -18,5 +18,6 @@ class IconChooserBlock(FieldBlock):
 
     class Meta:
         icon = "image"
+        group = _("Display")
         label = _("Icon")
         template = "wagtail_daisIE/blocks/icon.html"

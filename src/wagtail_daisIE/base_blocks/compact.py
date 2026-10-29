@@ -22,6 +22,8 @@ from wagtail.blocks.base import DeclarativeSubBlocksMetaclass
 
 from wagtail_daisIE.blockref import register_block
 
+from .groups import group_rank
+
 
 class CompactBlockMetaclass(DeclarativeSubBlocksMetaclass):
     """Register every concrete block under a path-independent key."""
@@ -66,4 +68,6 @@ class DaisieStructBlock(
 class DaisieStreamBlock(
     CompactBlockMixin, blocks.StreamBlock, metaclass=CompactBlockMetaclass
 ):
-    pass
+    def grouped_child_blocks(self):
+        groups = super().grouped_child_blocks()
+        return sorted(groups, key=lambda item: group_rank(item[0]))

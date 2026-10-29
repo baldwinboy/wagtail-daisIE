@@ -1,7 +1,7 @@
 # Reusable blocks
 
 A **reusable block** is a saved, admin-designed section of content that can be
-imported into other pages, forms, menus, feed item cards and emails. It is a
+imported into other pages, forms, feed item cards and emails. It is a
 **live reference**: editing the saved entry updates every place that imports it.
 
 Reusable blocks are found under **Design → Reusable blocks** (web) and
@@ -36,8 +36,8 @@ values all apply as if the content were placed directly.
 2. On any page, add a **Reusable block** and choose *Homepage promo*.
 3. Later, edit *Homepage promo* once to update it everywhere.
 
-The block also appears in menu item streams, so a designed call-to-action can be
-shared between a page and a navigation menu.
+The block is available on page bodies and in full layout palettes. It is not
+offered in menu-item streams.
 
 ## Email example
 

@@ -21,7 +21,6 @@ from .cards import InlineCardBlock
 from .link import ButtonBlock, LabelLinkBlock
 from .media import ImageBlock
 from .registry import menu_block_contributions, register_menu_block
-from .reusable import ReusableBlockBlock
 
 
 SEARCH_FORM_METHOD_CHOICES = ChoiceList(
@@ -190,7 +189,6 @@ MENU_ITEM_BLOCKS = [
     ("header", HeaderBlock()),
     ("text", InlineTextBlock()),
     ("action", ActionBlock()),
-    ("reusable", ReusableBlockBlock()),
 ]
 
 if "wagtail_daisIE.notifications" in settings.INSTALLED_APPS:

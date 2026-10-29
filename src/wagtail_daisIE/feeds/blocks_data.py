@@ -6,6 +6,7 @@ from collections import OrderedDict
 from datetime import date
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.urls import NoReverseMatch, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
@@ -14,6 +15,7 @@ from wagtail.snippets.blocks import SnippetChooserBlock
 from ..base_blocks import ThemedBlock
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from ..blocks.content_blocks import PAGE_CONTENT_BLOCKS
+from ..blocks.stream import InlineLayoutStreamBlock
 from ..choices.utils import ChoiceList
 from ..dynamic.action_blocks import ActionBlock
 from ..dynamic.conditions import (
@@ -39,12 +41,18 @@ from ..dynamic.feeds import (
 from ..dynamic.feeds import (
     request_and_page as _request_and_page,
 )
+from ..dynamic.recursion import guard_render, iter_nested_stream_blocks
 from ..dynamic.registry import get_context_model, get_context_model_choices
 
 
 #: Blocks an admin can use to design a feed item or calendar event card —
 #: the same set as a page body, plus action buttons.
 ITEM_BLOCKS = [*PAGE_CONTENT_BLOCKS, ("action", ActionBlock())]
+
+
+class EventStreamBlock(InlineLayoutStreamBlock):
+    class Meta:
+        label = _("Event card")
 
 
 #: Block choices mirror the ``Feed`` fields, with a blank "use the feed's
@@ -227,16 +235,19 @@ class FeedBlock(ThemedBlock):
         limit = request.GET.get("limit") if request else None
 
         override = (value or {}).get("layout") or {}
-        context.update(
-            render_feed(
-                feed,
-                request,
-                offset=offset,
-                limit=limit,
-                page=page,
-                override=override,
+        with guard_render("feed", feed.pk, context=context) as allowed:
+            if not allowed:
+                return context
+            context.update(
+                render_feed(
+                    feed,
+                    request,
+                    offset=offset,
+                    limit=limit,
+                    page=page,
+                    override=override,
+                )
             )
-        )
         try:
             context["feed_url"] = reverse(
                 "wagtail_daisIE_dynamic:feed_items", args=[feed.pk]
@@ -244,6 +255,22 @@ class FeedBlock(ThemedBlock):
         except NoReverseMatch:
             context["feed_url"] = ""
         return context
+
+    def clean(self, value):
+        value = super().clean(value)
+        feed = value.get("feed")
+        pk = getattr(feed, "pk", None)
+        if pk is not None:
+            for stream in (feed.item, feed.item_variants):
+                for block_type, child in iter_nested_stream_blocks(stream):
+                    if block_type != "feed":
+                        continue
+                    nested = getattr(child.get("feed"), "pk", None)
+                    if nested == pk:
+                        raise ValidationError(
+                            _("A feed cannot include itself in its item design.")
+                        )
+        return value
 
     class Meta:
         icon = "list-ul"
@@ -264,7 +291,7 @@ class CalendarBlock(ThemedBlock):
         label=_("Model"),
     )
     date_field = blocks.CharBlock(default="added_on")
-    event = DaisieStreamBlock(ITEM_BLOCKS, label=_("Event card"))
+    event = EventStreamBlock()
     initial_date = blocks.DateBlock(required=False)
     limit = blocks.IntegerBlock(
         min_value=1, max_value=500, default=200, label=_("Maximum events")
@@ -307,23 +334,31 @@ class CalendarBlock(ThemedBlock):
             date_field
         )
         objects = list(queryset[: int(value.get("limit") or 200)])
-        base = _base_context(parent_context)
-        stream = value.get("event")
-        event_block = self.child_blocks["event"]
-        grouped = OrderedDict()
-        for obj in objects:
-            raw = getattr(obj, date_field)
-            day = raw.date() if hasattr(raw, "date") else raw
-            if day is None:
-                continue
-            iso = day.isoformat()
-            ctx = dict(base)
-            ctx[key] = obj
-            grouped.setdefault(iso, []).append(_render_stream(stream, ctx, event_block))
+        token = ("calendar", key, date_field)
+        with guard_render(*token, context=context) as allowed:
+            if not allowed:
+                context["initial_iso"] = initial.isoformat() if initial else ""
+                return context
 
-        context["days"] = [
-            {"iso": iso, "events": events} for iso, events in grouped.items()
-        ]
+            base = _base_context(parent_context)
+            stream = value.get("event")
+            event_block = self.child_blocks["event"]
+            grouped = OrderedDict()
+            for obj in objects:
+                raw = getattr(obj, date_field)
+                day = raw.date() if hasattr(raw, "date") else raw
+                if day is None:
+                    continue
+                iso = day.isoformat()
+                ctx = dict(base)
+                ctx[key] = obj
+                grouped.setdefault(iso, []).append(
+                    _render_stream(stream, ctx, event_block)
+                )
+
+            context["days"] = [
+                {"iso": iso, "events": events} for iso, events in grouped.items()
+            ]
         if initial:
             context["initial_iso"] = initial.isoformat()
         elif context["days"]:
@@ -331,6 +366,22 @@ class CalendarBlock(ThemedBlock):
         else:
             context["initial_iso"] = date.today().isoformat()
         return context
+
+    def clean(self, value):
+        value = super().clean(value)
+        context_model = value.get("context_model")
+        date_field = value.get("date_field")
+        for block_type, child in iter_nested_stream_blocks(value.get("event")):
+            if block_type != "calendar":
+                continue
+            if (
+                child.get("context_model") == context_model
+                and child.get("date_field") == date_field
+            ):
+                raise ValidationError(
+                    _("A calendar cannot include itself in its event design.")
+                )
+        return value
 
     class Meta:
         icon = "date"
