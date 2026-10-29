@@ -145,6 +145,24 @@ applied automatically.
 
 A **Feed block** in a page or menu references a Feed snippet.
 
+### Showing the total count
+
+The feed body no longer renders a hard-coded item count. The total number of
+matched items is still computed by `render_feed()` and is available in the feed
+body template context as `{{ total }}`; it is also exposed on the body container
+as `data-daisie-feed-total="{{ total }}"` (alongside `data-daisie-feed-body`)
+for client-side use. The empty status element
+`<div data-daisie-feed-status aria-live="polite"></div>` is kept for HTMX
+accessibility and is left unpopulated by the package.
+
+If a visible count is needed, do not edit `feed_body.html` to embed one. Instead:
+
+* Use a text/header block whose text contains `{{ total }}` — `{{ ... }}`
+  expressions are resolved by `{% daisie_markup %}` wherever `total` is in
+  context.
+* Override `wagtail_daisIE/blocks/data/feed_body.html` in your project.
+* Or add a dedicated `FeedCountBlock` / template tag in a later change.
+
 ### Item variants
 
 By default every item uses one **Item design**. **Item variants** add alternate

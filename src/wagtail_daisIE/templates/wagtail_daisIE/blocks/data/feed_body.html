@@ -1,5 +1,5 @@
 {% load i18n %}
-<div id="daisie-feed-body-{{ block_id }}">
+<div id="daisie-feed-body-{{ block_id }}" data-daisie-feed-body="{{ block_id }}" data-daisie-feed-total="{{ total }}">
   <div
     id="daisie-feed-items-{{ block_id }}"
     data-daisie-feed-items
@@ -11,9 +11,7 @@
     <p class="text-base-content/70">{{ empty_message }}</p>
   {% endif %}
 
-  <p class="mt-3 text-sm" role="status" aria-live="polite" data-daisie-feed-status>
-    {% blocktranslate count total=total %}{{ total }} item{% plural %}{{ total }} items{% endblocktranslate %}
-  </p>
+  <div data-daisie-feed-status aria-live="polite"></div>
 
   {% if has_more %}
     <div class="mt-4 text-center">
