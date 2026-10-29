@@ -1,0 +1,16 @@
+{% load i18n %}
+<div class="daisyui-slider-semantics w-flex w-flex-wrap w-gap-2"
+     role="radiogroup"
+     aria-label="{% trans 'Preset values' %}"
+     data-daisie-preset-slider-target="semantics">
+    {% for option in widget.semantic_options %}
+        <label class="daisyui-slider-semantic">
+            <input type="radio"
+                   class="w-sr-only"
+                   name="{{ widget.name }}-preset"
+                   value="{{ option.value }}"
+                   {% if option.selected %}checked{% endif %}>
+            <span>{{ option.label }}</span>
+        </label>
+    {% endfor %}
+</div>

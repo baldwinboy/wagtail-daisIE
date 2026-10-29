@@ -5,10 +5,14 @@ compiler, no CLI, and no Node.js in production.
 
 ```
 choices/*  ──►  daisie_safelist  ──►  tailwind/safelist.css
-                                        │
-tailwind/input.css  ──►  tailwindcss CLI  ──►  static/wagtail_daisIE/css/daisie.css
-                                                                   │
-                                          {% daisyui_styles %} ────┘  (render-blocking <link>)
+                    │                     │
+                    │                     └─ tailwind/input.css ──► daisie.css
+                    │
+                    └──────────────►  tailwind/responsive-safelist.css
+                                          │
+                    tailwind/responsive-input.css ──► daisie-responsive.css
+                                                          │
+                              {% daisyui_styles %} ───────┘  (opt-in <link>)
 ```
 
 ## How it works
@@ -18,13 +22,18 @@ tailwind/input.css  ──►  tailwindcss CLI  ──►  static/wagtail_daisIE
    `manage.py daisie_safelist` walks `choices/*` (including the dict groups),
    the feed layout literals and the integer-driven ranges (border width,
    table border spacing, grid columns), then writes `@source inline(...)`
-   directives to `tailwind/safelist.css`.
+   directives to `tailwind/safelist.css`. It also writes
+   `tailwind/responsive-safelist.css` with the breakpoint-prefixed variants for
+   the utilities exposed by responsive overrides.
 2. **Build** — `tailwind/input.css` (`@import "tailwindcss"` + `@plugin
-   "daisyui"` + the extended typography scale + `@import "./safelist.css"`) is
-   compiled by the npm `tailwindcss` CLI into the committed
-   `src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css`.
+   "daisyui"` + the shared `theme.css` typography scale + `@import
+   "./safelist.css"`) is compiled by the npm `tailwindcss` CLI into the
+   committed `src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css`.
+   `tailwind/responsive-input.css` compiles the theme scale plus
+   `responsive-safelist.css` into the opt-in `daisie-responsive.css`.
 3. **Serve** — `{% daisyui_styles %}` emits a render-blocking
-   `<link rel="stylesheet" …>` so there is no flash of unstyled content.
+   `<link rel="stylesheet" …>`; when `WAGTAIL_DAISIE_RESPONSIVE_CSS` is true it
+   appends the responsive stylesheet after the base one.
 4. **Arbitrary colours** — `bg-[#0080ff]`, `decoration-[#…]` and their
    `hover:`/`active:` variants are unpredictable, so
    `wagtail_daisIE.middleware.ArbitraryCSSMiddleware` scans the rendered HTML and
@@ -36,11 +45,13 @@ tailwind/input.css  ──►  tailwindcss CLI  ──►  static/wagtail_daisIE
 ## Regenerating
 
 ```bash
-just build-css   # daisie_safelist, then npm run build:css
+just build-css   # daisie_safelist, npm run build:css, npm run build:css:responsive
 ```
 
-Commit the updated `tailwind/safelist.css` and `static/wagtail_daisIE/css/daisie.css`
-after changing any class choices.
+Commit the updated `tailwind/safelist.css`,
+`tailwind/responsive-safelist.css`, `static/wagtail_daisIE/css/daisie.css` and
+`static/wagtail_daisIE/css/daisie-responsive.css` after changing any class
+choices.
 
 ## Configuration
 
@@ -49,6 +60,9 @@ after changing any class choices.
 MIDDLEWARE += [
     "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
 ]
+
+# Include the opt-in responsive utilities stylesheet.
+WAGTAIL_DAISIE_RESPONSIVE_CSS = True
 ```
 
 ```django
@@ -59,9 +73,13 @@ MIDDLEWARE += [
 
 ## Notes
 
-- **Storage** — `daisie.css` is a normal static file (collected by
-  `collectstatic`); arbitrary-colour CSS is cached in the default cache
-  (`daisie:arbitrary:css:<sha256>`).
+- **Storage** — `daisie.css` and `daisie-responsive.css` are normal static
+  files (collected by `collectstatic`); arbitrary-colour CSS is cached in the
+  default cache (`daisie:arbitrary:css:<sha256>`).
+- **Responsive overrides** — design blocks can store a sparse list of
+  `{breakpoint, utility}` rows. The responsive stylesheet is opt-in because it
+  adds every breakpoint variant of the available utilities; without the setting
+  the classes render but have no styles.
 - **Failure mode** — if `ArbitraryCSSMiddleware` fails it logs a warning and
   leaves the response untouched; pages never 500.
 - **Backgrounds** — design backgrounds are `BackgroundStreamBlock` values
@@ -74,3 +92,5 @@ MIDDLEWARE += [
 2. Use a custom colour (e.g. `bg-[#0080ff]`) and confirm the rule is injected.
 3. Change a choice in `choices/*`, run `just build-css`, and confirm the class
    is present in the rebuilt `daisie.css`.
+4. Set `WAGTAIL_DAISIE_RESPONSIVE_CSS = True`, add a responsive override, and
+   confirm the second link and the prefixed class (e.g. `md:p-8`) are present.

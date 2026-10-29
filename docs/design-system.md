@@ -124,15 +124,29 @@ and from `browserconfig.xml`.
 
 ## CSS production (committed Tailwind + DaisyUI)
 
-The stylesheet is prebuilt and committed (`static/wagtail_daisIE/css/daisie.css`)
-and linked with `{% daisyui_styles %}`. It contains Tailwind, daisyUI and every
-class enumerated in `choices/*` (via the generated `tailwind/safelist.css`).
-Arbitrary colour utilities are generated at request time by
-`ArbitraryCSSMiddleware`. See [assets.md](assets.md).
+The base stylesheet is prebuilt and committed
+(`static/wagtail_daisIE/css/daisie.css`) and linked with `{% daisyui_styles %}`.
+It contains Tailwind, daisyUI and every class enumerated in `choices/*` (via the
+generated `tailwind/safelist.css`). The opt-in responsive stylesheet
+(`daisie-responsive.css`) adds breakpoint variants. Arbitrary colour utilities
+are generated at request time by `ArbitraryCSSMiddleware`. See
+[assets.md](assets.md).
 
 Because the safelist is generated from `choices/*`, runtime-built class strings
 (for example the button hover/active variants and the feed layout containers in
 `dynamic/feeds.py`) are covered automatically.
+
+### Responsive design
+
+Design blocks accept a sparse list of `{breakpoint, utility}` entries. The
+admin edits them with four controls — Design area → Property → Side → Value —
+reusing the design panel's slider plus native selects for text alignment and
+layout properties. Side is shown only for padding, margin and gap (Wagtail's
+`w-rules`); the matching control is switched with `w-zone`.
+Entries render as prefixed classes (`md:p-8 lg:text-2xl`) and are stored only
+when an editor adds one. The breakpoint variants live in the opt-in
+`daisie-responsive.css`, enabled with `WAGTAIL_DAISIE_RESPONSIVE_CSS = True`.
+See [assets.md](assets.md).
 
 ### Backgrounds
 

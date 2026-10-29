@@ -22,6 +22,7 @@ from wagtail_daisIE.choices import (
 
 from .compact import DaisieStructBlock
 from .css import build_design_css
+from .responsive import responsive_overrides
 
 
 class LayoutBlock(DaisieStructBlock):
@@ -47,6 +48,7 @@ class LayoutBlock(DaisieStructBlock):
         choices=ALIGNMENT_CHOICES, required=False, label=_("Align")
     )
     gap = blocks.ChoiceBlock(choices=GAP_CHOICES["ALL"], required=False, label=_("Gap"))
+    responsive = responsive_overrides()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -65,6 +67,7 @@ class LayoutBlock(DaisieStructBlock):
                 "justify",
                 "align",
                 "gap",
+                "responsive",
             ],
             heading=_("Layout"),
         )

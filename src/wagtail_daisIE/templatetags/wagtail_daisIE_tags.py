@@ -2,7 +2,7 @@ from django import template
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.templatetags.static import static
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
 
@@ -11,16 +11,22 @@ register = template.Library()
 
 @register.simple_tag
 def daisyui_styles():
-    """Render the render-blocking stylesheet link for the committed DaisyUI CSS.
+    """Render the stylesheet link(s) for the committed DaisyUI CSS.
+
+    The responsive stylesheet is opt-in through
+    ``WAGTAIL_DAISIE_RESPONSIVE_CSS`` and must be loaded after the base
+    stylesheet so its media-query utilities win.
 
     Usage::
 
         {% load wagtail_daisIE_tags %}
         {% daisyui_styles %}
     """
-    return format_html(
-        '<link rel="stylesheet" href="{}">',
-        static("wagtail_daisIE/css/daisie.css"),
+    links = [static("wagtail_daisIE/css/daisie.css")]
+    if getattr(settings, "WAGTAIL_DAISIE_RESPONSIVE_CSS", False):
+        links.append(static("wagtail_daisIE/css/daisie-responsive.css"))
+    return format_html_join(
+        "\n", '<link rel="stylesheet" href="{}">', ((link,) for link in links)
     )
 
 

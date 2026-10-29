@@ -1,0 +1,89 @@
+{% load i18n %}
+<div class="daisyui-responsive-widget w-flex w-flex-col w-gap-2"
+     data-controller="daisie-responsive-utility w-rules daisie-preset-slider"
+     data-action="change->w-rules#resolve"
+     data-current-area="{{ widget.current_area }}"
+     data-current-property="{{ widget.current_property }}"
+     data-current-side="{{ widget.current_side }}"
+     data-current-widget="{{ widget.current_widget }}"
+     data-current-has-sides="{{ widget.current_has_sides|yesno:'1,0' }}">
+    <div class="daisyui-responsive-fields w-grid w-gap-2">
+        <label class="daisyui-responsive-field w-flex w-flex-col w-gap-1">
+            <span>{% trans "Design area" %}</span>
+            <select data-daisie-responsive-utility-target="area">
+                {% for area in widget.areas %}
+                    <option value="{{ area.key }}"
+                            {% if area.key == widget.current_area %}selected{% endif %}>{{ area.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="daisyui-responsive-field w-flex w-flex-col w-gap-1">
+            <span>{% trans "Property" %}</span>
+            <select name="{{ widget.property_field_name }}"
+                    data-daisie-responsive-utility-target="property">
+                {% for property in widget.properties %}
+                    <option value="{{ property.key }}"
+                            data-area="{{ property.area }}"
+                            data-widget="{{ property.widget }}"
+                            data-has-sides="{{ property.has_sides|yesno:'1,0' }}"
+                            data-sides="{{ property.sides }}"
+                            {% if property.key == widget.current_property %}selected{% endif %}>{{ property.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="daisyui-responsive-field w-flex w-flex-col w-gap-1"
+               data-daisie-responsive-utility-target="sideWrapper"
+               data-w-rules-target="show enable"
+               data-w-rules='{{ widget.side_rules_json }}'
+               {% if not widget.current_has_sides %}hidden{% endif %}>
+            <span>{% trans "Side" %}</span>
+            <select data-daisie-responsive-utility-target="side">
+                {% for side in widget.sides %}
+                    <option value="{{ side.key }}"
+                            {% if side.key == widget.current_side %}selected{% endif %}>{{ side.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+
+    <div class="daisyui-responsive-value w-flex w-flex-col w-gap-2">
+        <label class="daisyui-responsive-field w-flex w-flex-col w-gap-1
+                      daisyui-responsive-control
+                      {% if widget.current_widget == 'select' %}daisyui-responsive--active{% else %}daisyui-responsive--inactive{% endif %}"
+               for="{{ widget.attrs.id }}"
+               data-daisie-responsive-utility-target="valueWrapper"
+               data-controller="w-zone"
+               data-action="daisie:widget-changed@window->w-zone#switch"
+               data-w-zone-switch-key-value="select"
+               data-w-zone-active-class="daisyui-responsive--active"
+               data-w-zone-inactive-class="daisyui-responsive--inactive">
+            <span>{% trans "Value" %}</span>
+            <select name="{{ widget.name }}"
+                    id="{{ widget.attrs.id }}"
+                    data-daisie-responsive-utility-target="value"
+                    data-daisie-preset-slider-target="select">
+                {% for group_name, options, index in widget.optgroups %}
+                    {% if group_name %}<optgroup label="{{ group_name }}">{% endif %}
+                        {% for option in options %}
+                            {% include option.template_name with widget=option %}
+                        {% endfor %}
+                    {% if group_name %}</optgroup>{% endif %}
+                {% endfor %}
+            </select>
+        </label>
+
+        <div class="daisyui-responsive-slider daisyui-responsive-control w-flex w-flex-col w-gap-2
+                    {% if widget.current_widget == 'slider' %}daisyui-responsive--active{% else %}daisyui-responsive--inactive{% endif %}"
+             data-daisie-responsive-utility-target="slider"
+             data-controller="w-zone"
+             data-action="daisie:widget-changed@window->w-zone#switch"
+             data-w-zone-switch-key-value="slider"
+             data-w-zone-active-class="daisyui-responsive--active"
+             data-w-zone-inactive-class="daisyui-responsive--inactive">
+            {% include "wagtail_daisIE/admin/daisyui_slider_semantics.html" %}
+            {% include "wagtail_daisIE/admin/daisyui_slider_range.html" %}
+        </div>
+    </div>
+</div>

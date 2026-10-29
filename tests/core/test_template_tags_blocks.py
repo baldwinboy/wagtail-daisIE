@@ -1,6 +1,7 @@
 import pytest
 
 from django.template import Context, Template
+from django.test import override_settings
 
 from wagtail_daisIE.menus.models import DaisyUIMenu
 from wagtail_daisIE.models import (
@@ -169,3 +170,16 @@ class TestMenuTag:
             template.render(Context({"name": "Nonexistent", "extra": ""})).strip() == ""
         )
         assert template.render(Context({"name": "Known", "extra": ""})).strip() != ""
+
+
+class TestStyles:
+    def test_base_stylesheet_only_by_default(self):
+        html = _render("{% daisyui_styles %}", {})
+        assert "daisie.css" in html
+        assert "daisie-responsive.css" not in html
+
+    @override_settings(WAGTAIL_DAISIE_RESPONSIVE_CSS=True)
+    def test_responsive_stylesheet_is_opt_in(self):
+        html = _render("{% daisyui_styles %}", {})
+        assert "daisie.css" in html
+        assert "daisie-responsive.css" in html

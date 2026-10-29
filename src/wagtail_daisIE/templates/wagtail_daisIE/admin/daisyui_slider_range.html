@@ -1,0 +1,12 @@
+{% load i18n %}
+<div class="w-flex w-items-center w-gap-2">
+    <input type="range" class="daisyui-slider-range w-flex-1 w-w-full"
+           data-daisie-preset-slider-target="range"
+           min="0" max="{{ widget.slider_max }}" step="1"
+           value="{{ widget.slider_index }}"
+           aria-valuetext="{{ widget.selected_label }}"
+           aria-label="{{ widget.range_aria_label }}">
+    <span class="daisyui-slider-value w-shrink-0 w-text-end"
+          data-daisie-preset-slider-target="value"
+          aria-live="polite">{{ widget.selected_label }}</span>
+</div>

@@ -1,5 +1,5 @@
-{% load i18n wagtailadmin_tags %}
-<div class="daisyui-slider-widget w-flex w-flex-col w-gap-2" id="{{ widget.attrs.id }}"
+{% load i18n %}
+<div class="w-flex w-flex-col w-gap-2" id="{{ widget.attrs.id }}"
      data-controller="daisie-preset-slider">
     <select name="{{ widget.name }}" class="w-sr-only"
             data-daisie-preset-slider-target="select"
@@ -15,31 +15,6 @@
         {% endfor %}
     </select>
 
-    <div class="daisyui-slider-semantics w-flex w-flex-wrap w-gap-2" role="group"
-         aria-label="{{ widget.attrs.aria_label|default:'' }}">
-        {% for group in widget.opt_groups %}
-            {% if group.label != 'Preset sizes' %}
-                {% for option in group.options %}
-                    <button type="button" class="daisyui-slider-semantic"
-                            data-daisie-preset-semantic="1"
-                            data-value="{{ option.value }}"
-                            data-action="click->daisie-preset-slider#selectSemantic"
-                            aria-pressed="{% if option.selected %}true{% else %}false{% endif %}">
-                        {{ option.label }}
-                    </button>
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
-    </div>
-
-    <div class="daisyui-slider-row w-flex w-items-center w-gap-2">
-        <input type="range" class="daisyui-slider-range w-flex-1"
-               data-daisie-preset-slider-target="range"
-               min="0" max="{{ widget.slider_max }}" step="1"
-               value="{{ widget.slider_index }}"
-               aria-valuetext="{{ widget.selected_label }}"
-               aria-label="{{ widget.attrs.aria_label|default:'' }}">
-        <span class="daisyui-slider-value" data-daisie-preset-slider-target="value"
-              aria-live="polite">{{ widget.selected_label }}</span>
-    </div>
+    {% include "wagtail_daisIE/admin/daisyui_slider_semantics.html" %}
+    {% include "wagtail_daisIE/admin/daisyui_slider_range.html" %}
 </div>

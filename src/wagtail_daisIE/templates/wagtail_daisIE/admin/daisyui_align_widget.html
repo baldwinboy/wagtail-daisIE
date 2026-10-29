@@ -1,7 +1,7 @@
 {% load i18n wagtailadmin_tags %}
-<div class="daisyui-align-widget" id="{{ widget.attrs.id }}">
+<div class="daisyui-align-widget w-flex w-flex-wrap" id="{{ widget.attrs.id }}">
 {% for tile in widget.tiles %}
-    <label class="daisyui-align-tile{% if tile.selected %} daisyui-align-tile--active{% endif %}" title="{{ tile.label }}">
+    <label class="daisyui-align-tile w-flex w-items-center w-justify-center w-border w-border-solid{% if tile.selected %} daisyui-align-tile--active{% endif %}" title="{{ tile.label }}">
         <input type="radio" name="{{ widget.name }}" value="{{ tile.value }}"
                {% if tile.selected %}checked{% endif %}>
         <svg viewBox="0 0 20 20" class="daisyui-align-icon" aria-hidden="true">

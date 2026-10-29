@@ -10,6 +10,7 @@ the ``block_css`` template variable.
 from wagtail_daisIE.choices import GRID_COLUMNS, MAIN_LAYOUT_CLASSES
 from wagtail_daisIE.choices.utils import normalize_auto_class
 
+from .responsive import build_responsive_css
 from .utils import build_border_width, build_class
 
 
@@ -327,5 +328,6 @@ def build_design_css(value):
             builder(value.get(key))
             for key, builder in _DESIGN_BUILDERS.items()
             if key in value
-        )
+        ),
+        build_responsive_css(value.get("responsive")),
     )

@@ -15,12 +15,35 @@ COMMITTED_SAFELIST = (
     / "tailwind"
     / "safelist.css"
 )
+COMMITTED_RESPONSIVE_SAFELIST = (
+    Path(__file__).resolve().parents[2]
+    / "src"
+    / "wagtail_daisIE"
+    / "tailwind"
+    / "responsive-safelist.css"
+)
 
 
 def _generate(tmp_path):
     path = tmp_path / "safelist.css"
-    call_command("daisie_safelist", output=str(path))
+    responsive = tmp_path / "responsive-safelist.css"
+    call_command(
+        "daisie_safelist",
+        output=str(path),
+        responsive_output=str(responsive),
+    )
     return path.read_text(encoding="utf-8")
+
+
+def _generate_responsive(tmp_path):
+    path = tmp_path / "safelist.css"
+    responsive = tmp_path / "responsive-safelist.css"
+    call_command(
+        "daisie_safelist",
+        output=str(path),
+        responsive_output=str(responsive),
+    )
+    return responsive.read_text(encoding="utf-8")
 
 
 def _directives(text):
@@ -81,5 +104,15 @@ def test_numeric_and_template_ranges_are_declared(tmp_path):
         assert value in directives
 
 
+def test_responsive_safelist_declares_breakpoint_variants(tmp_path):
+    directives = _directives(_generate_responsive(tmp_path))
+
+    for value in ("p-8", "text-2xl", "gap-4", "grid-cols-3", "flex-wrap"):
+        assert f"{{sm:,md:,lg:}}{value}" in directives
+
+
 def test_committed_safelist_matches_the_generator(tmp_path):
     assert _generate(tmp_path) == COMMITTED_SAFELIST.read_text(encoding="utf-8")
+    assert _generate_responsive(tmp_path) == COMMITTED_RESPONSIVE_SAFELIST.read_text(
+        encoding="utf-8"
+    )

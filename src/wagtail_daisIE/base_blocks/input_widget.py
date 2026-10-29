@@ -28,6 +28,7 @@ from wagtail_daisIE.choices import (
 
 from .compact import DaisieStructBlock
 from .design import SpacedDesignBlock, TypographyDesignBlock
+from .responsive import responsive_overrides
 
 
 #: The presentation of a file-input block.
@@ -81,6 +82,7 @@ class TrayDesignBlock(SpacedDesignBlock):
     justify = blocks.ChoiceBlock(choices=JUSTIFY_CHOICES, required=False)
     align = blocks.ChoiceBlock(choices=ALIGNMENT_CHOICES, required=False)
     gap = blocks.ChoiceBlock(choices=GAP_CHOICES["ALL"], required=False)
+    responsive = responsive_overrides()
 
     class Meta:
         icon = "sliders"
@@ -100,6 +102,7 @@ class TrayDesignBlock(SpacedDesignBlock):
                 "padding",
                 "margin",
                 "box",
+                "responsive",
             ],
             heading=_("Tray design"),
         )
@@ -111,6 +114,7 @@ class ItemDesignBlock(TypographyDesignBlock):
         required=False,
         label=_("Shape"),
     )
+    responsive = responsive_overrides()
 
     class Meta:
         icon = "sliders"
@@ -125,6 +129,7 @@ class ItemDesignBlock(TypographyDesignBlock):
                 "padding",
                 "margin",
                 "box",
+                "responsive",
             ],
             heading=_("Item design"),
         )
@@ -137,6 +142,8 @@ class InputWidgetDesignBlock(TypographyDesignBlock):
     ``DaisieFormField.input_design`` migrations. Upload-only controls live in
     :class:`UploadWidgetDesignBlock`.
     """
+
+    responsive = responsive_overrides()
 
     class Meta:
         icon = "sliders"
@@ -151,6 +158,7 @@ class InputWidgetDesignBlock(TypographyDesignBlock):
                 "padding",
                 "margin",
                 "box",
+                "responsive",
             ],
             heading=_("Input design"),
         )

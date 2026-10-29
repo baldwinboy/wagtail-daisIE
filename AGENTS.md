@@ -283,7 +283,9 @@ When adding a block, subclass the appropriate `Themed*Block` from
   layout literals and the integer-driven ranges. It
   is served through staticfiles and linked with `{% daisyui_styles %}`; there is
   no runtime compile. Regenerate with `just build-css` after changing class
-  choices. Arbitrary colour utilities (`bg-[#…]`, `decoration-[#…]`, with
+  choices. Responsive overrides use the opt-in `daisie-responsive.css` built
+  from `responsive-input.css` and `responsive-safelist.css`
+  (`WAGTAIL_DAISIE_RESPONSIVE_CSS = True`). Arbitrary colour utilities (`bg-[#…]`, `decoration-[#…]`, with
   `hover:`/`active:`) are generated at request time by
   `wagtail_daisIE.middleware.ArbitraryCSSMiddleware`. Design backgrounds are
   `BackgroundStreamBlock` values rendered as an inline `block_style` (not

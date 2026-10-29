@@ -1,13 +1,13 @@
 {% load i18n wagtailadmin_tags %}
 <details class="daisyui-swatch-accordion" name="daisie-swatch-widget">
     <summary class="w-label-3">{{ widget.label }}</summary>
-    <div id="{{ widget.attrs.id }}" class="daisyui-swatch-widget"
+    <div id="{{ widget.attrs.id }}" class="daisyui-swatch-widget w-grid"
          data-controller="daisie-swatch"
          data-action="click@document->daisie-swatch#onOutsideClick coloris:pick@document->daisie-swatch#onColorisPick"
          data-daisie-swatch-coloris-options-value="{{ widget.coloris_options_json }}"
          data-daisie-swatch-prefix-value="{{ widget.prefix }}">
         {% for tile in widget.tiles %}
-            <label class="daisyui-swatch-tile{% if tile.selected %} daisyui-swatch-tile--active{% endif %}"
+            <label class="daisyui-swatch-tile w-flex w-flex-col w-items-center w-border w-border-solid{% if tile.selected %} daisyui-swatch-tile--active{% endif %}"
                    {% if tile.is_custom %}data-action="click->daisie-swatch#toggleInline"{% endif %}>
                 <input type="radio" name="{{ widget.name }}" value="{{ tile.value }}"
                        class="daisyui-swatch-radio"
@@ -29,7 +29,7 @@
                 {% else %}
                     <span class="daisyui-swatch-chip" style="background-color: {{ tile.color }};" aria-hidden="true"></span>
                 {% endif %}
-                <span class="daisyui-swatch-label">{{ tile.label }}</span>
+                <span class="daisyui-swatch-label w-truncate w-w-full">{{ tile.label }}</span>
             </label>
         {% endfor %}
     </div>

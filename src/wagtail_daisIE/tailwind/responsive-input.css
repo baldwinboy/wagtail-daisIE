@@ -1,0 +1,19 @@
+/*
+ * Entry CSS for the opt-in responsive stylesheet.
+ *
+ * This build intentionally excludes preflight, daisyUI components and the
+ * marquee/component CSS. It contains the shared theme scale plus the
+ * breakpoint variants generated from `tailwind/responsive-safelist.css`.
+ *
+ * `npm run build:css:responsive` runs the CLI with `--cwd` pointed at this
+ * directory so automatic source detection cannot pull base utilities into the
+ * responsive output.
+ *
+ * Loaded after `daisie.css` only when `WAGTAIL_DAISIE_RESPONSIVE_CSS` is on.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import './theme.css';
+
+@import 'tailwindcss/utilities.css' layer(utilities);
+@import './responsive-safelist.css';

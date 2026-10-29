@@ -8,6 +8,12 @@ from django.forms import ValidationError, widgets
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
+from wagtail_daisIE.choices.responsive import (
+    RESPONSIVE_DESIGN_AREAS,
+    RESPONSIVE_GROUPS_BY_KEY,
+    RESPONSIVE_SIDES,
+    RESPONSIVE_UTILITY_META,
+)
 from wagtail_daisIE.choices.utils import is_auto_utility
 
 
@@ -411,6 +417,15 @@ class DaisyUISliderWidget(widgets.Select):
             )
         context["widget"]["options"] = options
         context["widget"]["opt_groups"] = self._build_opt_groups(options)
+        context["widget"]["semantic_options"] = [
+            option
+            for group in context["widget"]["opt_groups"]
+            if group["label"] != _("Preset sizes")
+            for option in group["options"]
+        ]
+        context["widget"]["range_aria_label"] = (
+            attrs.get("aria_label") if attrs and attrs.get("aria_label") else _("Value")
+        )
         # The range slider covers every option; semantic buttons are quick
         # access shortcuts for the standalone/responsive values.
         selected_index = 0
@@ -577,6 +592,150 @@ class DaisyUIAlignWidget(widgets.RadioSelect):
                 }
             )
         context["widget"]["tiles"] = tiles
+        return context
+
+
+class DaisyUIResponsiveUtilityWidget(widgets.Select):
+    """Four-step responsive editor: area -> property -> side -> value.
+
+    The native value ``<select>`` remains the submitted field and the no-JS
+    fallback. All options are rendered server-side with ``data-*`` metadata;
+    the editor controller filters them and ``w-zone`` switches the value
+    control.
+    """
+
+    template_name = "wagtail_daisIE/admin/daisyui_responsive_utility_widget.html"
+
+    @property
+    def media(self):
+        return forms.Media(
+            js=[
+                "wagtail_daisIE/js/preset_slider_controller.js",
+                "wagtail_daisIE/js/responsive_utility_controller.js",
+            ]
+        )
+
+    def create_option(
+        self, name, value, label, selected, index, subindex=None, attrs=None
+    ):
+        """Keep the filter metadata on the option.
+
+        Django's ``Select`` sets ``option_inherits_attrs = False`` and discards
+        the ``attrs`` passed to ``create_option``, so merge them back into the
+        rendered option here.
+        """
+        option = super().create_option(name, value, label, selected, index, subindex)
+        if attrs:
+            option["attrs"].update(attrs)
+        return option
+
+    def optgroups(self, name, value, attrs=None):
+        """Render every option with the metadata the editor filters on."""
+        if isinstance(value, (list, tuple)):
+            value = value[0] if value else ""
+
+        selected_value = value or ""
+        current_meta = RESPONSIVE_UTILITY_META.get(
+            selected_value,
+            ("spacing", "padding", "all"),
+        )
+        groups = []
+
+        for index, ((area_key, property_key, side_key), (label, options)) in enumerate(
+            RESPONSIVE_GROUPS_BY_KEY.items()
+        ):
+            group_options = []
+            for option_index, (option_value, option_label) in enumerate(options):
+                # Only the current group's empty option is the selected "None".
+                selected = option_value == selected_value and (
+                    option_value != ""
+                    or (area_key, property_key, side_key) == current_meta
+                )
+                group_options.append(
+                    self.create_option(
+                        name,
+                        option_value,
+                        option_label,
+                        selected,
+                        option_index,
+                        attrs={
+                            "data-area": area_key,
+                            "data-property": property_key,
+                            "data-side": side_key,
+                        },
+                    )
+                )
+            groups.append((label, group_options, index))
+
+        return groups
+
+    def get_context(self, name, value, attrs=None):
+        context = super().get_context(name, value, attrs)
+        widget_ctx = context["widget"]
+        area_key, property_key, side_key = RESPONSIVE_UTILITY_META.get(
+            value, ("spacing", "padding", "all")
+        )
+
+        areas = [
+            {"key": area["key"], "label": area["label"]}
+            for area in RESPONSIVE_DESIGN_AREAS
+        ]
+        properties = []
+        current_property = None
+        for area in RESPONSIVE_DESIGN_AREAS:
+            for prop in area["properties"]:
+                item = {
+                    "key": prop["key"],
+                    "label": prop["label"],
+                    "area": area["key"],
+                    "has_sides": prop["has_sides"],
+                    "widget": prop["widget"],
+                    "sides": ",".join(
+                        side_key for side_key, _label, _choices in prop["sides"]
+                    ),
+                }
+                properties.append(item)
+                if area["key"] == area_key and prop["key"] == property_key:
+                    current_property = item
+
+        property_field_name = f"{name}-property"
+        widget_ctx["areas"] = areas
+        widget_ctx["properties"] = properties
+        widget_ctx["property_field_name"] = property_field_name
+        widget_ctx["sides"] = [
+            {"key": key, "label": label} for key, label in RESPONSIVE_SIDES
+        ]
+        widget_ctx["side_rules_json"] = json.dumps(
+            {property_field_name: ["padding", "margin", "gap"]}
+        )
+        widget_ctx["current_area"] = area_key
+        widget_ctx["current_property"] = property_key
+        widget_ctx["current_side"] = side_key
+        widget_ctx["current_value"] = value or ""
+        widget_ctx["current_widget"] = (
+            current_property["widget"] if current_property else "slider"
+        )
+        widget_ctx["current_has_sides"] = (
+            current_property["has_sides"] if current_property else True
+        )
+
+        widget_ctx["semantic_options"] = []
+        widget_ctx["range_aria_label"] = _("Value")
+
+        _group_label, options = RESPONSIVE_GROUPS_BY_KEY.get(
+            (area_key, property_key, side_key),
+            ("", []),
+        )
+        selected_index = 0
+        selected_label = options[0][1] if options else ""
+        for index, (option_value, option_label) in enumerate(options):
+            if option_value == value:
+                selected_index = index
+                selected_label = option_label
+                break
+        widget_ctx["slider_max"] = max(0, len(options) - 1)
+        widget_ctx["slider_index"] = selected_index
+        widget_ctx["selected_label"] = selected_label
         return context
 
 

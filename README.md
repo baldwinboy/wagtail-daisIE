@@ -462,6 +462,9 @@ WAGTAIL_DAISIE_ACTIONS = {
 WAGTAIL_DAISIE_HTMX = True
 WAGTAIL_DAISIE_HTMX_VERSION = 2
 
+# Opt-in responsive utilities stylesheet (breakpoint overrides; default off).
+WAGTAIL_DAISIE_RESPONSIVE_CSS = True
+
 # Optional: self-hosted Cally for the calendar block.
 WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally@0.9.2"
 ```

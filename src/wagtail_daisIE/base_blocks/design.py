@@ -11,6 +11,7 @@ from .compact import DaisieStructBlock
 from .css import build_background_style, build_design_css
 from .layout_design import LayoutBlock
 from .mjml import build_design_style
+from .responsive import build_responsive_css, responsive_overrides
 from .size import BlockSizeBlock, InlineSizeBlock, MediaSizeBlock
 from .table import TableAppearanceBlock
 from .typography import TypographyBlock
@@ -153,13 +154,14 @@ class MainDesignBlock(SpacedDesignBlock):
         choices=MAIN_LAYOUT_CHOICES,
         default="column",
     )
+    responsive = responsive_overrides()
 
     class Meta:
         icon = "sliders"
         label = _("Main design")
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=["layout", *_SPACED_CHILDREN],
+            children=["layout", *_SPACED_CHILDREN, "responsive"],
             heading=_("Main design"),
         )
 
@@ -250,6 +252,7 @@ class MenuItemDesignBlock(TypographyDesignBlock):
     """
 
     spacing = SpacingBlock()
+    responsive = responsive_overrides()
 
     class Meta:
         icon = "sliders"
@@ -264,6 +267,7 @@ class MenuItemDesignBlock(TypographyDesignBlock):
                 "padding",
                 "margin",
                 "box",
+                "responsive",
             ],
             heading=_("Menu item defaults"),
         )
@@ -272,6 +276,7 @@ class MenuItemDesignBlock(TypographyDesignBlock):
 class ThemedBlock(DaisieStructBlock):
     audience = AudienceBlock()
     design = DesignBlock()
+    responsive = responsive_overrides()
 
     default_css_key = "container"
 
@@ -280,7 +285,10 @@ class ThemedBlock(DaisieStructBlock):
         parent_context = parent_context or {}
         key = f"{self.default_css_key}_css"
         channel = parent_context.get(key, "")
-        own = build_design_css(value.get("design"))
+        own = build_class(
+            build_design_css(value.get("design")),
+            build_responsive_css(value.get("responsive")),
+        )
         context["block_css"] = build_class(
             channel,
             parent_context.get("menu_default_css", ""),
@@ -306,7 +314,29 @@ class ThemedBlock(DaisieStructBlock):
         abstract = True
         form_layout = blocks.BlockGroup(
             children=[],
-            settings=["design", "audience"],
+            settings=["design", "responsive", "audience"],
+        )
+
+    def get_form_layout(self):
+        """Keep ``responsive`` in the settings area on every themed block.
+
+        Themed subclasses often declare their own ``Meta.form_layout``; without
+        this, the inherited responsive block would be appended to the main
+        content area instead of the collapsed settings panel.
+        """
+        layout = super().get_form_layout()
+        children = [child for child in layout.children if child != "responsive"]
+        settings = [child for child in layout.settings if child != "responsive"]
+        settings.append("responsive")
+        return blocks.BlockGroup(
+            children=children,
+            settings=settings,
+            heading=layout.heading,
+            classname=layout.classname,
+            help_text=layout.help_text,
+            icon=layout.icon,
+            attrs=layout.attrs,
+            label_format=layout.label_format,
         )
 
 

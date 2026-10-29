@@ -61,13 +61,38 @@
   }
 
   class PresetSliderController extends Controller {
-    static targets = ['select', 'range', 'value'];
+    static targets = ['select', 'range', 'value', 'semantics'];
 
     connect() {
       this.selectTarget_ = this.hasSelectTarget ? this.selectTarget : null;
       this.rangeTarget_ = this.hasRangeTarget ? this.rangeTarget : null;
       this.valueTarget_ = this.hasValueTarget ? this.valueTarget : null;
 
+      var needsSemantics =
+        this.hasSemanticsTarget && this.semanticsTarget.children.length === 0;
+      this.refresh(needsSemantics);
+
+      this.onRangeInput = this.handleRangeInput.bind(this);
+      if (this.rangeTarget_) {
+        this.rangeTarget_.addEventListener('input', this.onRangeInput);
+      }
+
+      this.onSemanticChange = this.onSemanticChange.bind(this);
+      if (this.hasSemanticsTarget) {
+        this.semanticsTarget.addEventListener('change', this.onSemanticChange);
+      }
+
+      this.syncFromSelect();
+    }
+
+    /**
+     * Re-cache the options and refresh the range/readout.
+     *
+     * ``rebuildSemantics`` is used by the responsive editor, whose value
+     * options change when the editor changes property or side. The design
+     * sliders keep their server-rendered buttons.
+     */
+    refresh(rebuildSemantics) {
       this.allValues = [];
       this.allTexts = [];
       if (this.selectTarget_) {
@@ -79,33 +104,57 @@
           }.bind(this),
         );
       }
-
-      this.onRangeInput = this.handleRangeInput.bind(this);
       if (this.rangeTarget_) {
-        this.rangeTarget_.addEventListener('input', this.onRangeInput);
+        this.rangeTarget_.max = String(Math.max(0, this.allValues.length - 1));
+      }
+      if (rebuildSemantics) {
+        this.rebuildSemantics();
+      }
+      this.syncFromSelect();
+    }
+
+    rebuildSemantics() {
+      if (!this.hasSemanticsTarget) return;
+
+      while (this.semanticsTarget.firstChild) {
+        this.semanticsTarget.removeChild(this.semanticsTarget.firstChild);
       }
 
-      var buttons = this.element.querySelectorAll(
-        '[data-daisie-preset-semantic]',
-      );
+      var radioName =
+        (this.selectTarget_.name || this.selectTarget_.id) + '-preset';
+
       Array.prototype.forEach.call(
-        buttons,
-        function (btn) {
-          btn.addEventListener(
-            'click',
-            function () {
-              this.selectSemantic(btn.getAttribute('data-value') || '');
-            }.bind(this),
-          );
+        this.selectTarget_.options,
+        function (option) {
+          if (!isSemantic(option.value, option)) return;
+          var label = document.createElement('label');
+          label.className = 'daisyui-slider-semantic';
+
+          var input = document.createElement('input');
+          input.type = 'radio';
+          input.className = 'w-sr-only';
+          input.name = radioName;
+          input.value = option.value;
+
+          var text = document.createElement('span');
+          text.textContent = option.text;
+
+          label.appendChild(input);
+          label.appendChild(text);
+          this.semanticsTarget.appendChild(label);
         }.bind(this),
       );
-
-      this.syncFromSelect();
     }
 
     disconnect() {
       if (this.rangeTarget_) {
         this.rangeTarget_.removeEventListener('input', this.onRangeInput);
+      }
+      if (this.hasSemanticsTarget) {
+        this.semanticsTarget.removeEventListener(
+          'change',
+          this.onSemanticChange,
+        );
       }
     }
 
@@ -113,17 +162,14 @@
       if (!this.selectTarget_) return;
       var value = this.selectTarget_.value;
       var option = this.findOption(value);
-      var isSem = option ? isSemantic(option.value, option) : false;
 
-      var buttons = this.element.querySelectorAll(
-        '[data-daisie-preset-semantic]',
-      );
-      Array.prototype.forEach.call(buttons, function (btn) {
-        btn.setAttribute(
-          'aria-pressed',
-          String(btn.getAttribute('data-value') === value && isSem),
-        );
-      });
+      if (this.hasSemanticsTarget) {
+        this.semanticsTarget
+          .querySelectorAll('input[type="radio"]')
+          .forEach(function (input) {
+            input.checked = input.value === value;
+          });
+      }
 
       var idx = this.allValues.indexOf(String(value));
       if (idx === -1) idx = 0;
@@ -135,6 +181,11 @@
       if (this.rangeTarget_) {
         this.rangeTarget_.setAttribute('aria-valuetext', text || '');
       }
+    }
+
+    onSemanticChange(event) {
+      if (!event.target.matches('input[type="radio"]')) return;
+      this.selectSemantic(event.target.value);
     }
 
     selectSemantic(value) {
@@ -157,19 +208,7 @@
       if (value !== undefined) {
         this.selectTarget_.value = value;
       }
-      var buttons = this.element.querySelectorAll(
-        '[data-daisie-preset-semantic]',
-      );
-      Array.prototype.forEach.call(buttons, function (btn) {
-        btn.setAttribute('aria-pressed', 'false');
-      });
-      this.updateReadout(this.allTexts[idx] || value);
-      if (this.rangeTarget_) {
-        this.rangeTarget_.setAttribute(
-          'aria-valuetext',
-          this.allTexts[idx] || value || '',
-        );
-      }
+      this.syncFromSelect();
       if (this.selectTarget_) {
         this.selectTarget_.dispatchEvent(
           new Event('change', { bubbles: true }),
