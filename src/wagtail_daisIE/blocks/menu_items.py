@@ -67,6 +67,21 @@ class MenuLogo(ImageBlock):
         ),
     )
 
+    def get_context(self, value, parent_context=None):
+        value = value or {}
+        context = super().get_context(value, parent_context)
+        design = value.get("design") or {}
+        size = design.get("size") or {}
+        width = (size.get("width") or {}).get("width") or size.get("size")
+        height = (size.get("height") or {}).get("height") or size.get("size")
+        defaults = []
+        if not width:
+            defaults.append("w-auto")
+        if not height:
+            defaults.append("h-16")
+        context["menu_logo_default_css"] = " ".join(defaults)
+        return context
+
     class Meta:
         abstract = False
         icon = "image"

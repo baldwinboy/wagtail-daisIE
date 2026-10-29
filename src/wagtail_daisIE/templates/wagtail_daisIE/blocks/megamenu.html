@@ -1,11 +1,18 @@
 {% load i18n wagtailcore_tags notifications wagtail_daisIE_tags %}
 <div class="daisyui-menu megamenu megamenu-full {{ megamenu_extra|default:'' }} {{ menu_design_css }} {{ menu_css }}" id="daisie-megamenu-{{ menu.pk }}"{% if megamenu_popover %} popover{% endif %}{% if menu_design_style %} style="{{ menu_design_style }}"{% endif %}>
   <span class="megamenu-active"></span>
+  <style>
+    @media (hover: hover) {
+      .megamenu .megamenu-trigger:hover + .megamenu-submenu,
+      .megamenu .megamenu-submenu:hover { display: block; }
+    }
+    .megamenu .megamenu-submenu:target { display: block; }
+  </style>
   {% for item in menu_items %}
     {% if item.block_type == "link_list" %}
       {% daisie_block_css item.value.heading as heading_css %}
-      <button popovertarget="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}"><span class="{{ heading_css }}">{% daisie_markup item.value.heading.text %}</span></button>
-      <div id="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}" popover>
+      <button class="megamenu-trigger" popovertarget="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}"><span class="{{ heading_css }}">{% daisie_markup item.value.heading.text %}</span></button>
+      <div id="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}" popover class="megamenu-submenu">
         <ul class="menu w-full md:menu-horizontal">
           {% for link in item.value.content %}
             <li>{% include_block link %}</li>

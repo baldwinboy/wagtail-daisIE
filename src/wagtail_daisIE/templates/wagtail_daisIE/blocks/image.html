@@ -5,12 +5,12 @@
       <figure class="not-prose m-0">
         {% if resolved_image %}
           {% image resolved_image width-1200 as img %}
-          <img {{ img.attrs }} class="max-w-full h-auto rounded-box" />
+          <img {{ img.attrs }} class="{% if block_css %}{{ block_css }} {% endif %}max-w-full object-contain rounded-box" />
         {% elif resolved_image_url %}
-          <img src="{{ resolved_image_url }}" alt="{{ resolved_image_alt }}" class="max-w-full h-auto rounded-box" />
+          <img src="{{ resolved_image_url }}" alt="{{ resolved_image_alt }}" class="{% if block_css %}{{ block_css }} {% endif %}max-w-full object-contain rounded-box" />
         {% elif value.image %}
           {% image value.image width-1200 as img %}
-          <img {{ img.attrs }} class="max-w-full h-auto rounded-box" />
+          <img {{ img.attrs }} class="{% if block_css %}{{ block_css }} {% endif %}max-w-full object-contain rounded-box" />
         {% endif %}
         {% if value.caption or value.attribution %}
           <figcaption class="mt-2 text-sm text-base-content/70">

@@ -139,12 +139,13 @@ class TableDesignBlock(DesignBlock):
 
 class SpacedDesignBlock(DesignBlock):
     spacing = SpacingBlock()
+    responsive = responsive_overrides()
 
     class Meta:
         icon = "sliders"
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=_SPACED_CHILDREN,
+            children=[*_SPACED_CHILDREN, "responsive"],
             heading=_("Design"),
         )
 
@@ -302,6 +303,10 @@ class ThemedBlock(DaisieStructBlock):
         context["block_style"] = build_background_style(
             value.get("design")
         ) or parent_context.get("menu_default_style", "")
+        context["menu_default_css"] = (parent_context or {}).get("menu_default_css", "")
+        context["menu_default_style"] = (parent_context or {}).get(
+            "menu_default_style", ""
+        )
         audience_keys = (value.get("audience") or {}).get("audience") or []
         request = parent_context.get("request")
         context["audience_allowed"] = evaluate_audience(audience_keys, request)

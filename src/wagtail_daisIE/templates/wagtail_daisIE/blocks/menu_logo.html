@@ -1,12 +1,12 @@
 {% load wagtailimages_tags %}
 {% if audience_allowed %}
-  <div class="inline-block align-middle {% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+  <div class="inline-block align-middle">
     {% if resolved_image %}
-      {% image resolved_image width-400 as img %}<img src="{{ img.url }}" alt="{% firstof value.alt resolved_image.title fallback_alt '' %}" class="max-h-full w-auto max-w-full" />
+      {% image resolved_image width-400 as img %}<img src="{{ img.url }}" alt="{% firstof value.alt resolved_image.title fallback_alt '' %}" class="{% if block_css %}{{ block_css }} {% endif %}{% if menu_logo_default_css %}{{ menu_logo_default_css }} {% endif %}max-w-full object-contain"{% if block_style %} style="{{ block_style }}"{% endif %} />
     {% elif resolved_image_url %}
-      <img src="{{ resolved_image_url }}" alt="{% firstof value.alt resolved_image_alt fallback_alt '' %}" class="max-h-full w-auto max-w-full" />
+      <img src="{{ resolved_image_url }}" alt="{% firstof value.alt resolved_image_alt fallback_alt '' %}" class="{% if block_css %}{{ block_css }} {% endif %}{% if menu_logo_default_css %}{{ menu_logo_default_css }} {% endif %}max-w-full object-contain"{% if block_style %} style="{{ block_style }}"{% endif %} />
     {% elif value.image %}
-      {% image value.image width-400 as img %}<img src="{{ img.url }}" alt="{% firstof value.alt value.image.title fallback_alt '' %}" class="max-h-full w-auto max-w-full" />
+      {% image value.image width-400 as img %}<img src="{{ img.url }}" alt="{% firstof value.alt value.image.title fallback_alt '' %}" class="{% if block_css %}{{ block_css }} {% endif %}{% if menu_logo_default_css %}{{ menu_logo_default_css }} {% endif %}max-w-full object-contain"{% if block_style %} style="{{ block_style }}"{% endif %} />
     {% endif %}
   </div>
 {% endif %}

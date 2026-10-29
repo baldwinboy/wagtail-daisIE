@@ -65,3 +65,18 @@ matrix.
   development-only).
 - A runtime Node requirement for the package's default install.
 - Per-page CSS duplication of daisyUI and the typography scale.
+
+## Menus: submenu container design
+
+### Current state
+
+Megamenu submenu panels (popover containers) are rendered with fixed classes
+and have no dedicated design StreamField. `menu_design` covers the outer
+container and `item_design` covers individual items, but submenu panels cannot
+be targeted independently.
+
+### Planned
+
+- Add a `submenu_design` (or reuse a spaced design block) to `DaisyUIMenu`.
+- Wire it into `megamenu.html` for the popover panel.
+- Support responsive overrides for submenu containers.

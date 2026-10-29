@@ -12,7 +12,7 @@
       <ul class="list-disc">
     {% endif %}
       {% for child in value.content %}
-        <li>{% include_block child %}</li>
+        <li>{% include_block child with menu_default_css=menu_default_css|default:"" menu_default_style=menu_default_style|default:"" %}</li>
       {% endfor %}
     {% if value.ordering == "list-decimal" %}</ol>{% else %}</ul>{% endif %}
   </div>
