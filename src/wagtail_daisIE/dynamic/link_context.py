@@ -62,14 +62,7 @@ def _context_model_groups():
                 "description": _("The resolved value, if any."),
             }
         ]
-        if config.url_source or config.supports_url:
-            items.append(
-                {
-                    "token": f"{{{{ {key}.url }}}}",
-                    "description": _("URL derived from the model's url_source."),
-                }
-            )
-        for doc in config.field_docs(limit=12):
+        for doc in config.help_fields(limit=12):
             items.append(
                 {
                     "token": f"{{{{ {key}.{doc['name']} }}}}",

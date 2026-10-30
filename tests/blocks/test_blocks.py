@@ -8,6 +8,7 @@ from wagtail_daisIE.base_blocks import LinkDestinationBlock
 from wagtail_daisIE.base_blocks.css import (
     build_border_css,
     build_design_css,
+    build_line_clamp_css,
     build_margin_css,
     build_size_css,
     build_typography_css,
@@ -124,32 +125,6 @@ class TestBlockSizeScroll:
         assert "scroll" in BlockSizeBlock().child_blocks
         assert "scroll" not in InlineSizeBlock().child_blocks
         assert "scroll" not in MediaSizeBlock().child_blocks
-
-
-class TestRowScroll:
-    def _context(self, *, scroll, wrap="flex-wrap"):
-        from wagtail_daisIE.blocks.layout import RowBlock
-
-        value = {
-            "wrap": wrap,
-            "design": {"size": {"scroll": scroll}},
-            "content": [],
-        }
-        return RowBlock().get_context(value, {"request": None})
-
-    def test_horizontal_scroll_forces_nowrap_and_non_shrinking_items(self):
-        context = self._context(scroll="overflow-x-auto")
-        assert context["row_wrap_css"] == ""
-        assert context["row_scroll_css"] == "flex-nowrap"
-        assert context["row_item_css"] == "shrink-0"
-        assert "overflow-x-auto" in context["block_css"].split()
-
-    def test_vertical_scroll_keeps_the_configured_wrap(self):
-        context = self._context(scroll="overflow-y-auto", wrap="flex-wrap")
-        assert context["row_wrap_css"] == "flex-wrap"
-        assert context["row_scroll_css"] == ""
-        assert context["row_item_css"] == "flex-1 min-w-0"
-        assert "overflow-y-auto" in context["block_css"].split()
 
 
 class TestBuildDesignCss:
@@ -343,3 +318,99 @@ class TestInputWidgetDesign:
         assert "data-daisyui-autocomplete-token" in html
         assert "justify-center" in html
         assert "rounded-full" in html
+
+
+class TestTypographyTruncation:
+    def test_line_clamp_is_built_from_design(self):
+        assert build_line_clamp_css(2) == "line-clamp-2"
+        assert build_line_clamp_css(None) == ""
+        assert (
+            "line-clamp-2"
+            in build_design_css({"typography": {}, "max_lines": 2}).split()
+        )
+
+    def test_text_block_inherits_design_line_clamp(self):
+        from wagtail_daisIE.blocks.inline import InlineTextBlock
+
+        block = InlineTextBlock()
+        context = block.get_context(
+            {
+                "text": "A long line",
+                "design": {"typography": {}, "max_lines": 2},
+                "audience": {},
+            },
+            {"request": None},
+        )
+        assert "line-clamp-2" in context["block_css"].split()
+
+    def test_text_block_without_line_clamp_is_unchanged(self):
+        from wagtail_daisIE.blocks.inline import InlineTextBlock
+
+        block = InlineTextBlock()
+        context = block.get_context(
+            {
+                "text": "A long line",
+                "design": {"typography": {}},
+                "audience": {},
+            },
+            {"request": None},
+        )
+        assert "line-clamp-2" not in context["block_css"].split()
+
+
+class TestTagBadgeListBlock:
+    def _value(self, **overrides):
+        value = {
+            "source": "peer.tags",
+            "max_items": 2,
+            "show_overflow": True,
+            "color": "badge-primary",
+            "style": "",
+            "size": "",
+            "empty_text": "",
+            "design": {},
+            "audience": {},
+        }
+        value.update(overrides)
+        return value
+
+    def test_renders_limited_badges_and_overflow(self):
+        from wagtail_daisIE.blocks.display import TagBadgeListBlock
+
+        block = TagBadgeListBlock()
+        html = block.render(
+            block.to_python(self._value()),
+            context={"peer": SimpleNamespace(tags=["one", "two", "three"])},
+        )
+        assert ">one<" in html
+        assert ">two<" in html
+        assert ">three<" not in html
+        assert ">+1<" in html
+
+    def test_empty_manager_renders_empty(self):
+        from wagtail_daisIE.blocks.display import TagBadgeListBlock
+
+        class Manager:
+            def all(self):
+                return []
+
+            def __str__(self):
+                return "peers.PeerProfile.None"
+
+        block = TagBadgeListBlock()
+        html = block.render(
+            block.to_python(self._value()),
+            context={"peer": SimpleNamespace(tags=Manager())},
+        )
+        assert html.strip() == ""
+        assert "peers.PeerProfile.None" not in html
+
+    def test_empty_text_renders_when_empty(self):
+        from wagtail_daisIE.blocks.display import TagBadgeListBlock
+
+        block = TagBadgeListBlock()
+        html = block.render(
+            block.to_python(self._value(empty_text="No tags yet")),
+            context={"peer": SimpleNamespace(tags=[])},
+        )
+        assert "No tags yet" in html

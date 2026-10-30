@@ -2,7 +2,12 @@
 
 from django.db import models
 
-from wagtail_daisIE.detail_pages.models import ModelDetailPage, ModelDetailTemplate
+from wagtail_daisIE.detail_pages.models import (
+    GeneratedPagesIndexPage,
+    GeneratedPagesRouteMixin,
+    ModelDetailPage,
+    ModelDetailTemplate,
+)
 from wagtail_daisIE.pages import StyledPageMixin
 
 
@@ -23,7 +28,11 @@ class WidgetDetailPage(ModelDetailPage):
     template = "wagtail_daisIE/test/detail.html"
 
 
-class WidgetIndexPage(StyledPageMixin):
+class WidgetGeneratedPagesIndexPage(GeneratedPagesIndexPage):
+    template = "wagtail_daisIE/test/detail.html"
+
+
+class WidgetIndexPage(GeneratedPagesRouteMixin, StyledPageMixin):
     template = "wagtail_daisIE/test/detail.html"
 
 

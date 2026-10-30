@@ -27,7 +27,7 @@ from wagtail.models import (
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
 
-from wagtail_daisIE.detail_pages.models import ModelDetailPage, ModelDetailTemplate
+from wagtail_daisIE.detail_pages.models import GeneratedPagesIndexPage, GeneratedPagesRouteMixin, ModelDetailPage, ModelDetailTemplate
 from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.pages import StyledPageMixin
 
@@ -401,12 +401,21 @@ class BreadSuggestionFormPage(DaisieFormPage):
     subpage_types = []
 
 
-class BreadIndexPage(StyledPageMixin):
+
+class BreadGeneratedPagesIndexPage(GeneratedPagesIndexPage):
+    """Admin-only container for generated bread pages."""
+
+    parent_page_types = ["blog.BreadIndexPage"]
+    subpage_types = ["blog.BreadDetailPage"]
+
+
+class BreadIndexPage(GeneratedPagesRouteMixin, StyledPageMixin):
     """Navigable bread listing; holds the breads Feed block."""
 
     template = "blog/bread_index_page.html"
     parent_page_types = ["home.HomePage"]
-    subpage_types = ["blog.BreadDetailPage"]
+    subpage_types = ["blog.BreadGeneratedPagesIndexPage"]
+    max_count = 1
 
 
 class BreadDetailTemplate(ModelDetailTemplate):
@@ -421,5 +430,5 @@ class BreadDetailPage(ModelDetailPage):
     """Auto-generated page for one ``Bread``."""
 
     template = "blog/bread_detail_page.html"
-    parent_page_types = ["blog.BreadIndexPage"]
+    parent_page_types = ["blog.BreadGeneratedPagesIndexPage"]
     subpage_types = []

@@ -29,6 +29,8 @@ from ..choices import (
     SKELETON_SHAPE_CHOICES,
     STAT_COLOR_CHOICES,
 )
+from ..dynamic.resolvers import resolve_object
+from ..dynamic.values import iter_values
 from ..icons.blocks import IconChooserBlock
 
 
@@ -54,6 +56,65 @@ class BadgeBlock(ThemedTypographyBlock):
         template = "wagtail_daisIE/blocks/display/badge.html"
         form_layout = blocks.BlockGroup(
             children=["text", "color", "style", "size"],
+            settings=["design", "audience"],
+        )
+
+
+class TagBadgeListBlock(ThemedTypographyBlock):
+    source = blocks.CharBlock(
+        required=False,
+        max_length=255,
+        label=_("Tags expression"),
+        help_text=_("e.g. {{ peer_profile.tags }}"),
+    )
+    max_items = blocks.IntegerBlock(
+        default=5,
+        min_value=1,
+        max_value=20,
+        label=_("Maximum tags"),
+    )
+    show_overflow = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_("Show “+N more”"),
+    )
+    color = blocks.ChoiceBlock(choices=BADGE_COLOR_CHOICES, default="", required=False)
+    style = blocks.ChoiceBlock(choices=BADGE_STYLE_CHOICES, default="", required=False)
+    size = blocks.ChoiceBlock(choices=BADGE_SIZE_CHOICES, default="", required=False)
+    empty_text = blocks.CharBlock(
+        required=False,
+        blank=True,
+        max_length=255,
+        help_text=_("Shown when there are no tags. Leave empty to render nothing."),
+    )
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        value = value or {}
+        tags = iter_values(resolve_object(value.get("source"), context))
+        max_items = int(value.get("max_items") or 5)
+        context["tag_badges"] = [
+            tag if isinstance(tag, str) else str(getattr(tag, "name", tag))
+            for tag in tags[:max_items]
+        ]
+        context["tag_overflow"] = max(len(tags) - max_items, 0)
+        return context
+
+    class Meta:
+        icon = "tag"
+        group = _("Display")
+        collapsed = True
+        template = "wagtail_daisIE/blocks/display/tag_badges.html"
+        form_layout = blocks.BlockGroup(
+            children=[
+                "source",
+                "max_items",
+                "show_overflow",
+                "color",
+                "style",
+                "size",
+                "empty_text",
+            ],
             settings=["design", "audience"],
         )
 
@@ -320,6 +381,7 @@ __all__ = [
     "KbdBlock",
     "SkeletonBlock",
     "StatBlock",
+    "TagBadgeListBlock",
     "TextRotateBlock",
     "TimelineBlock",
     "TimelineItemBlock",

@@ -66,7 +66,9 @@ def _restore(text):
 def _compile(source):
     template = _TEMPLATE_CACHE.get(source)
     if template is None:
-        template = Template(source)
+        # The filter appended to every expression is registered by the
+        # notifications template library.
+        template = Template("{% load notifications %}" + source)
         if len(_TEMPLATE_CACHE) >= _TEMPLATE_CACHE_LIMIT:
             _TEMPLATE_CACHE.clear()
         _TEMPLATE_CACHE[source] = template
@@ -90,6 +92,9 @@ def render_placeholders(text, context, *, escape_literals=True, escape_values=Tr
     escape_values:
         Whether substituted values are HTML-escaped. Always true except when
         producing a plain-text representation (e.g. an email subject header).
+
+    Every expression is passed through the ``daisie_value`` filter so ``None``,
+    empty managers/querysets and empty sequences render as an empty string.
     """
     if text is None:
         return ""
@@ -105,7 +110,10 @@ def render_placeholders(text, context, *, escape_literals=True, escape_values=Tr
             part = _replace(part, _BRACE_SENTINELS)
             pieces.append(escape(part) if escape_literals else part)
         else:
-            pieces.append("{{ " + part + " }}")
+            expression = part.rstrip()
+            if "|daisie_value" not in expression:
+                expression += "|daisie_value"
+            pieces.append("{{ " + expression + " }}")
 
     rendered = _compile("".join(pieces)).render(
         Context(context, autoescape=escape_values)
@@ -127,6 +135,8 @@ def render_expression(expression, context):
         expression = expression[2:-2].strip()
     if not expression:
         return ""
+    if "|daisie_value" not in expression:
+        expression += "|daisie_value"
     return _compile("{{ " + expression + " }}").render(
         Context(context, autoescape=True)
     )

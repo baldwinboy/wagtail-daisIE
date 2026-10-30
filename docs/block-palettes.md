@@ -70,8 +70,8 @@ They are not available in:
 ## Inline elements
 
 The `inline` palette contains the inline elements from the block inventory:
-text, media, display, links, navigation, feedback, inputs, forms, table,
-marquee, dropdown and similar leaf blocks.
+text, media, display (including badge and tag badge list), links, navigation,
+feedback, inputs, forms, table, marquee, dropdown and similar leaf blocks.
 
 `accordion` is not an inline element because its item content is Tier 0 + Tier 1;
 it is a specialized container.

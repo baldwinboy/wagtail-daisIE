@@ -8,17 +8,20 @@ from wagtail_daisIE.detail_pages.bridges import (
     disconnect_signals,
     find_detail_page,
 )
+from wagtail_daisIE.detail_pages.exceptions import DetailPageConfigurationError
 from wagtail_daisIE.detail_pages.registry import (
     detail_page_for_instance,
     get_detail_page,
     reset_detail_pages,
 )
+from wagtail_daisIE.detail_pages.validation import validate_detail_pages
 from wagtail_daisIE.dynamic.registry import reset_context_models
 from wagtail_daisIE.models import DaisyUITheme
 from wagtail_daisIE.test.models import (
     Widget,
     WidgetDetailPage,
     WidgetDetailTemplate,
+    WidgetGeneratedPagesIndexPage,
     WidgetIndexPage,
 )
 
@@ -44,6 +47,7 @@ def _detail_pages(settings):
             "page_type": "wagtail_daisIE_test.WidgetDetailPage",
             "parent": "wagtail_daisIE_test.WidgetIndexPage",
             "template_page": "wagtail_daisIE_test.WidgetDetailTemplate",
+            "generated_index": "wagtail_daisIE_test.WidgetGeneratedPagesIndexPage",
             "lookup_field": "slug",
             "lookup_in": "path",
             "publish_field": "is_available",
@@ -68,13 +72,27 @@ def _make_index():
     return page
 
 
-def _make_template(index, **kwargs):
-    root = Page.get_first_root_node()
-    page = WidgetDetailTemplate(
-        title="Widget design", detail_key="widget", parent_page=index, **kwargs
+def _make_generated_index(index):
+    page = WidgetGeneratedPagesIndexPage(
+        title="Generated widgets", slug="generated-widgets"
     )
-    root.add_child(instance=page)
+    index.add_child(instance=page)
     return page
+
+
+def _make_template(**kwargs):
+    root = Page.get_first_root_node()
+    page = WidgetDetailTemplate(title="Widget design", detail_key="widget", **kwargs)
+    root.add_child(instance=page)
+    page.save_revision().publish()
+    return page
+
+
+def _structure():
+    index = _make_index()
+    generated = _make_generated_index(index)
+    template = _make_template()
+    return index, generated, template
 
 
 class TestRegistry:
@@ -85,18 +103,15 @@ class TestRegistry:
 
 
 class TestSync:
-    def test_create_live_or_draft_and_update(self):
-        _make_template(_make_index())
+    def test_create_live_and_update(self):
+        _index, generated, _template = _structure()
         live = Widget.objects.create(
             name="Sourdough", slug="sourdough", is_available=True
         )
         page = WidgetDetailPage.objects.get(source_object_id=live.pk)
         assert page.live is True
         assert page.detail_key == "widget"
-        assert page.get_parent().slug == "widgets-index"
-
-        draft = Widget.objects.create(name="Rye", slug="rye", is_available=False)
-        assert WidgetDetailPage.objects.get(source_object_id=draft.pk).live is False
+        assert page.get_parent().specific == generated
 
         live.name = "Sourdough v2"
         live.save()
@@ -104,8 +119,21 @@ class TestSync:
         assert page.title == "Sourdough v2"
         assert WidgetDetailPage.objects.filter(source_object_id=live.pk).count() == 1
 
+    def test_non_public_record_creates_no_page_and_deletes_existing(self):
+        _structure()
+        draft = Widget.objects.create(name="Rye", slug="rye", is_available=False)
+        assert not WidgetDetailPage.objects.filter(source_object_id=draft.pk).exists()
+
+        draft.is_available = True
+        draft.save()
+        assert WidgetDetailPage.objects.filter(source_object_id=draft.pk).exists()
+
+        draft.is_available = False
+        draft.save()
+        assert not WidgetDetailPage.objects.filter(source_object_id=draft.pk).exists()
+
     def test_find_detail_page_and_guards(self):
-        _make_template(_make_index())
+        _structure()
         widget = Widget.objects.create(
             name="Sourdough", slug="sourdough", is_available=True
         )
@@ -119,21 +147,20 @@ class TestSync:
         assert find_detail_page(config, Widget(name="Unsaved")) is None
 
     def test_delete_removes_page_and_fixes_tree(self):
-        index = _make_index()
-        _make_template(index)
+        _index, generated, _template = _structure()
         widget = Widget.objects.create(
             name="Sourdough", slug="sourdough", is_available=True
         )
         widget.delete()
         assert WidgetDetailPage.objects.filter(source_object_id=widget.pk).count() == 0
-        index.refresh_from_db()
-        assert index.numchild == 0
+        generated.refresh_from_db()
+        assert generated.numchild == 0
 
 
-class TestDesignInheritance:
-    def test_design_source_opt_out_and_binding(self):
+class TestTemplateContext:
+    def test_renders_template_bindings_and_page_has_no_design_fields(self):
         theme = DaisyUITheme.objects.create(name="brand", default=True)
-        template = _make_template(_make_index(), page_theme=theme)
+        template = _make_template(page_theme=theme)
         template.context_bindings = [
             {
                 "type": "binding",
@@ -147,20 +174,39 @@ class TestDesignInheritance:
         ]
         template.save()
         template.save_revision().publish()
+        _make_generated_index(_make_index())
         widget = Widget.objects.create(
             name="Sourdough", slug="sourdough", is_available=True
         )
         page = WidgetDetailPage.objects.get(source_object_id=widget.pk)
-        assert page.design_template_id == template.pk
-        assert page.get_design_source() == template
 
-        page.refresh_from_db()
+        assert not hasattr(page, "body")
+        assert not hasattr(page, "design_template")
+        assert not hasattr(page, "use_template_design")
+        assert not hasattr(page, "page_design")
+
         context = page.get_context(RequestFactory().get(page.url))
+        assert context["detail_template"] == template
+        assert context["detail_template_body"] == template.body
         assert context["widget"] == widget
+        assert context["daisyui_theme"] == theme
 
-        page.use_template_design = False
-        page.save()
-        assert page.get_design_source() == page
+    def test_missing_template_raises(self):
+        index = _make_index()
+        _make_generated_index(index)
+        with pytest.raises(DetailPageConfigurationError):
+            Widget.objects.create(
+                name="No template", slug="no-template", is_available=True
+            )
+
+    def test_duplicate_template_raises(self):
+        _structure()
+        root = Page.get_first_root_node()
+        root.add_child(
+            instance=WidgetDetailTemplate(title="Duplicate", detail_key="widget")
+        )
+        with pytest.raises(DetailPageConfigurationError):
+            validate_detail_pages(records=True)
 
 
 class TestSignals:
@@ -172,6 +218,7 @@ class TestSignals:
         assert WidgetDetailPage.objects.filter(slug="after").count() == 0
 
         connect_signals()
+        _structure()
         widget = Widget.objects.create(name="Back", slug="back", is_available=True)
         connect_signals()
         assert WidgetDetailPage.objects.filter(source_object_id=widget.pk).count() == 1

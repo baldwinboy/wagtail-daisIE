@@ -189,6 +189,25 @@ class ContextModel:
             )
         return docs
 
+    def help_fields(self, limit=None):
+        """Return documentation fields for help/chooser UI.
+
+        Unlike :meth:`field_docs` this may include dynamic expressions such as
+        ``key.url`` that are not concrete model fields. It must not be used by
+        code that needs assignable model fields.
+        """
+        fields = self.field_docs(limit=limit)
+        if self.url_source or self.supports_url:
+            fields.append(
+                {
+                    "name": "url",
+                    "label": str(_("URL derived from the generated detail page")),
+                    "type": "url",
+                    "choices": [],
+                }
+            )
+        return fields
+
     def form_fields(self):
         """Return ``{"name", "label"}`` for the model's concrete editable fields.
 
@@ -341,6 +360,7 @@ def get_context_models_state():
             "lookupIn": config.lookup_in_kind,
             "urlSource": config.url_source,
             "fields": config.field_docs(),
+            "helpFields": config.help_fields(),
             "examples": config.examples(),
         }
     return state

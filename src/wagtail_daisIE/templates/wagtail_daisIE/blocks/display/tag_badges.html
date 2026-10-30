@@ -1,0 +1,15 @@
+{% load notifications %}
+{% if audience_allowed %}
+  {% if tag_badges %}
+    <span class="inline-flex flex-wrap items-center gap-1{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+      {% for tag in tag_badges %}
+        <span class="badge {{ value.color }} {{ value.style }} {{ value.size }}">{{ tag }}</span>
+      {% endfor %}
+      {% if value.show_overflow and tag_overflow %}
+        <span class="badge {{ value.color }} {{ value.style }} {{ value.size }}">+{{ tag_overflow }}</span>
+      {% endif %}
+    </span>
+  {% elif value.empty_text %}
+    <span class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>{% daisie_markup value.empty_text %}</span>
+  {% endif %}
+{% endif %}

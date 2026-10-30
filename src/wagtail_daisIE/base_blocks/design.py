@@ -53,6 +53,13 @@ class TypographyDesignBlock(BaseDesignBlock):
     background = BackgroundStreamBlock()
     size = InlineSizeBlock()
     typography = TypographyBlock()
+    max_lines = blocks.IntegerBlock(
+        min_value=1,
+        max_value=6,
+        required=False,
+        label=_("Maximum lines"),
+        help_text=_("Clamp text to this many lines. Leave empty for no truncation."),
+    )
 
     class Meta:
         icon = "sliders"
@@ -60,6 +67,7 @@ class TypographyDesignBlock(BaseDesignBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "typography",
+                "max_lines",
                 *_BLOCK_CHILDREN,
             ],
             heading=_("Design"),
@@ -262,6 +270,7 @@ class MenuItemDesignBlock(TypographyDesignBlock):
         form_layout = blocks.BlockGroup(
             children=[
                 "typography",
+                "max_lines",
                 "size",
                 "spacing",
                 "background",

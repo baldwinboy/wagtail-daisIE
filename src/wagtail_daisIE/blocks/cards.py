@@ -3,6 +3,7 @@ from wagtail import blocks
 
 from ..dynamic.action_blocks import ActionBlock
 from .base import ThemedBlock
+from .display import TagBadgeListBlock
 from .inline import HeaderBlock, InlineRichTextBlock, InlineTextBlock
 from .link import ButtonBlock, InlineLinkBlock
 from .media import EmbedBlock, ImageBlock
@@ -40,6 +41,7 @@ BASE_CONTENT_BLOCKS = [
     ("button", ButtonBlock()),
     ("inline_link", InlineLinkBlock()),
     ("embed", EmbedBlock()),
+    ("tag_badges", TagBadgeListBlock()),
 ]
 
 INLINE_CARD_CONTENT = [

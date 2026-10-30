@@ -28,6 +28,12 @@ The **help panel** on the Email template editor lists everything available,
 including per-bridge and per-allauth variables, and links to Django's date
 filter reference.
 
+Empty values render as an empty string: `None`, empty managers, empty
+querysets and empty lists/tuples/sets. Non-empty managers and querysets render
+as a readable comma-separated value, so `{{ peer_profile.tags }}` never prints
+a manager representation such as `peers.PeerProfile.None`. Existing filters
+still run first, e.g. `{{ payload.missing|default:"friend" }}`.
+
 ## Bridges
 
 A bridge maps a business event to an email template. Configure it in settings:

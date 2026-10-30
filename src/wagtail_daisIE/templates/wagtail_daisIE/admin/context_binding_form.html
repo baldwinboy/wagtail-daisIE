@@ -52,11 +52,11 @@ The first non-whitespace output must be a single root element: Wagtail applies
                         {% endfor %}
                     </ul>
                 {% endif %}
-                {% if model.fields %}
+                {% if model.helpFields %}
                     <details>
                         <summary style="display: list-item;" class="w-summary">{% trans "Available fields" %}</summary>
                         <ul class="w-summary__list">
-                            {% for field in model.fields %}
+                            {% for field in model.helpFields %}
                                 <li><code>{{ field.name }}</code> &mdash; {{ field.label }}</li>
                             {% endfor %}
                         </ul>

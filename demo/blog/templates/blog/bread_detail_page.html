@@ -13,8 +13,8 @@
             <p>{{ bread.description }}</p>
         {% endif %}
 
-        {% if page.body %}
-            {% for block in page.body %}
+        {% if detail_template.body %}
+            {% for block in detail_template.body %}
                 {% include_block block %}
             {% endfor %}
         {% endif %}

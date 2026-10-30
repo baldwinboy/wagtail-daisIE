@@ -24,6 +24,7 @@ from django.utils.safestring import mark_safe
 from wagtail.templatetags.wagtailcore_tags import richtext as _richtext
 
 from ..base_blocks.markup import render_inline_markup, strip_inline_markup
+from ..dynamic.values import normalize_text_value
 from ..notifications.context import context_from_template_context
 from ..notifications.placeholders import render_expression, render_placeholders
 
@@ -105,6 +106,12 @@ def daisie_markup(context, value, allow_links=True):
         render_placeholders(value, data, escape_literals=True),
         allow_links=allow_links,
     )
+
+
+@register.filter
+def daisie_value(value):
+    """Render empty managers, querysets and sequences as an empty string."""
+    return normalize_text_value(value)
 
 
 @register.filter

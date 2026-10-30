@@ -323,6 +323,20 @@ in the demo); its item cards include an **Add to basket** / **Remove** action,
 with a separate **Clear basket** action on the page whose confirmation alert is
 shown after the basket is emptied.
 
+## Tag badge lists
+
+The **Tag badge list** block turns a dynamic tags expression into badges:
+
+- **Tags expression** — `{{ peer_profile.tags }}` or another manager/queryset
+- **Maximum tags** — 1–20, default 5
+- **Show “+N more”** — displays the remaining count
+- **Empty text** — optional message when there are no tags
+- badge colour, style and size
+
+Empty managers/querysets render nothing and never leak a value such as
+`peers.PeerProfile.None`. Use it in feed item cards or page bodies wherever a
+record has tags.
+
 ## Calendar
 
 The **Calendar** block renders a [Cally](https://cally.dev) date picker and, for

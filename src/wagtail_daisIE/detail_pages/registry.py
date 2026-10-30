@@ -9,6 +9,7 @@ Projects declare which context models get a dedicated Wagtail page::
             "page_type": "blog.BreadDetailPage",
             "parent": "blog.BreadIndexPage",
             "template_page": "blog.BreadDetailTemplate",
+            "generated_index": "blog.BreadGeneratedPagesIndexPage",
             "lookup_field": "slug",
             "lookup_in": "path",
             "publish_field": "is_available",
@@ -29,6 +30,7 @@ from dataclasses import dataclass, field
 from django.conf import settings
 
 from ..dynamic.registry import resolve_model
+from .exceptions import DetailPageConfigurationError
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +50,7 @@ class DetailPageConfig:
     page_type_path: str = ""
     parent_path: str = ""
     template_page_path: str = ""
+    generated_index_path: str = ""
     lookup_field: str = "pk"
     lookup_in: str = "path"
     publish_field: str = ""
@@ -58,6 +61,7 @@ class DetailPageConfig:
     _resolved_page_type: object = field(default=None, repr=False)
     _resolved_parent: object = field(default=None, repr=False)
     _resolved_template_page: object = field(default=None, repr=False)
+    _resolved_generated_index: object = field(default=None, repr=False)
 
     @property
     def model(self):
@@ -80,10 +84,49 @@ class DetailPageConfig:
     @property
     def template_page_model(self):
         if self._resolved_template_page is None:
-            self._resolved_template_page = resolve_model(
-                self.template_page_path or self.parent_path
-            )
+            self._resolved_template_page = resolve_model(self.template_page_path)
         return self._resolved_template_page
+
+    @property
+    def generated_index_model(self):
+        if self._resolved_generated_index is None:
+            self._resolved_generated_index = resolve_model(self.generated_index_path)
+        return self._resolved_generated_index
+
+    def get_template_page(self):
+        """Return the single live template page, or raise."""
+        model = self.template_page_model
+        if model is None:
+            raise DetailPageConfigurationError(
+                f"Detail type {self.key!r} has no template_page configured."
+            )
+        pages = model.objects.filter(detail_key=self.key)
+        if pages.count() != 1:
+            raise DetailPageConfigurationError(
+                f"Detail type {self.key!r} needs exactly one template page; "
+                f"found {pages.count()}."
+            )
+        page = pages.first()
+        if not page.live:
+            raise DetailPageConfigurationError(
+                f"Template page for detail type {self.key!r} is not live."
+            )
+        return page.specific
+
+    def get_generated_index_page(self):
+        """Return the single generated index page, or raise."""
+        model = self.generated_index_model
+        if model is None:
+            raise DetailPageConfigurationError(
+                f"Detail type {self.key!r} has no generated_index configured."
+            )
+        pages = model.objects.all()
+        if pages.count() != 1:
+            raise DetailPageConfigurationError(
+                f"Detail type {self.key!r} needs exactly one generated index; "
+                f"found {pages.count()}."
+            )
+        return pages.first()
 
     def __str__(self):
         return str(self.label or self.key)
@@ -98,6 +141,7 @@ def _build_detail_page(key, raw):
         page_type_path=raw.get("page_type", ""),
         parent_path=raw.get("parent", ""),
         template_page_path=raw.get("template_page", ""),
+        generated_index_path=raw.get("generated_index", ""),
         lookup_field=(raw.get("lookup_field", "pk") or "pk"),
         lookup_in=(raw.get("lookup_in", "path") or "path").lower(),
         publish_field=raw.get("publish_field", "") or "",

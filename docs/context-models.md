@@ -56,6 +56,23 @@ Anywhere a block renders text you can use `{{ key.field }}`:
 Only `{{ ... }}` variable expressions with Django filters are supported;
 template tags are shown literally.
 
+Empty values render consistently as an empty string:
+
+- `None` → empty
+- an empty manager or queryset → empty
+- an empty list/tuple/set → empty
+- a non-empty manager/queryset → a readable comma-separated value
+
+This means `{{ peer_profile.tags }}` never renders a manager representation
+such as `peers.PeerProfile.None`. Existing filters still run first, so
+`{{ user.first_name|default:"friend" }}` and
+`{{ meeting.scheduled_at|date:"j F Y" }}` behave as expected.
+
+The context-model help panel also lists `{{ key.url }}` for URL-sourced models
+and models with a configured `url_source`. This is a help-only dynamic
+expression, not a database field; it is derived from the generated detail page
+or the configured URL source.
+
 ### Date and time formatting
 
 Use Django's `date`/`time` filters:
@@ -90,6 +107,24 @@ expression such as `{{ meeting.url }}`. The value may resolve to a page,
 document, object with `.url`/`get_absolute_url()`, or a plain URL string.
 For safety only `http`, `https`, `mailto` and `tel` schemes are allowed
 (relative URLs are fine); anything else renders an empty `href`.
+
+## Tag badges and text truncation
+
+The **Tag badge list** display block renders a manager or queryset expression
+as individual DaisyUI badges:
+
+- **Tags expression** — for example `{{ peer_profile.tags }}`
+- **Maximum tags** — defaults to 5 (1–20)
+- **Show “+N more”** — adds an overflow badge
+- optional badge colour, style, size and empty-state text
+
+Empty values render nothing unless **Empty text** is set. The block never
+prints a raw manager/queryset.
+
+Text and rich-text blocks can be clamped through **Design → Maximum lines** on
+their `TypographyDesignBlock`. Choose 1–6 lines, or leave it empty for no
+truncation. Clamping uses CSS `line-clamp-*` utilities, so rich-text markup is
+never sliced mid-tag.
 
 ## Bindings
 

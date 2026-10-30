@@ -61,6 +61,23 @@ class EmailSolidSpacedDesignBlock(SpacedDesignBlock):
 class EmailSolidTypographyDesignBlock(TypographyDesignBlock):
     background = TextBackgroundBlock()
 
+    class Meta:
+        icon = "sliders"
+        collapsed = True
+        # MJML cannot reliably clamp lines, so omit ``max_lines`` here.
+        form_layout = blocks.BlockGroup(
+            children=[
+                "typography",
+                "size",
+                "background",
+                "border",
+                "padding",
+                "margin",
+                "box",
+            ],
+            heading=_("Design"),
+        )
+
 
 class EmailSolidButtonDesignBlock(ButtonDesignBlock):
     background = TextBackgroundBlock()

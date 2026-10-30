@@ -43,6 +43,7 @@ INLINE_BLOCK_KEYS = frozenset(
         "copyright",
         "blockquote",
         "badge",
+        "tag_badges",
         "kbd",
         "divider",
         "avatar",

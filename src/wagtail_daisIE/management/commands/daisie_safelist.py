@@ -57,6 +57,8 @@ RANGE_DIRECTIVES = (
     "border-spacing-y-{1..96}",
     # GridBlock.num_columns (min_value=1, max_value=6).
     "md:grid-cols-{1..6}",
+    # TypographyDesignBlock.max_lines (min_value=1, max_value=6).
+    "line-clamp-{1..6}",
 )
 
 

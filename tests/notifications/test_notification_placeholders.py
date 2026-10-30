@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from wagtail_daisIE.dynamic.values import normalize_text_value
 from wagtail_daisIE.notifications.placeholders import (
     extract_variables,
     get_placeholder_groups,
@@ -7,6 +8,14 @@ from wagtail_daisIE.notifications.placeholders import (
     render_placeholders,
     validate_text,
 )
+
+
+class _Manager:
+    def __init__(self, values):
+        self._values = values
+
+    def all(self):
+        return self._values
 
 
 class TestRenderPlaceholders:
@@ -42,6 +51,25 @@ class TestRenderPlaceholders:
             == "A&B"
         )
 
+    def test_empty_managers_and_sequences_render_empty(self):
+        assert (
+            render_placeholders(
+                "{{ payload.tags }}",
+                {"payload": {"tags": _Manager([])}},
+            )
+            == ""
+        )
+        assert (
+            render_placeholders(
+                "{{ payload.tags }}",
+                {"payload": {"tags": _Manager(["one", "two"])}},
+            )
+            == "one, two"
+        )
+        assert (
+            render_placeholders("{{ payload.items }}", {"payload": {"items": []}}) == ""
+        )
+
     def test_unknown_and_literal_tags(self):
         assert render_placeholders("x{{ payload.missing }}y", {"payload": {}}) == "xy"
         source = "{% if x %}hi{% endif %}"
@@ -65,7 +93,23 @@ class TestExpressionAndExtraction:
         )
         for source, context, expected in [
             ("payload.missing", {"payload": {}}, ""),
-            ("payload.title", {"payload": {"title": None}}, "None"),
+            ("payload.title", {"payload": {"title": None}}, ""),
+            ("payload.items", {"payload": {"items": []}}, ""),
+            (
+                "payload.items",
+                {"payload": {"items": ["one", "two"]}},
+                "one, two",
+            ),
+            (
+                "payload.tags",
+                {"payload": {"tags": _Manager([])}},
+                "",
+            ),
+            (
+                "payload.tags",
+                {"payload": {"tags": _Manager(["one", "two"])}},
+                "one, two",
+            ),
             (
                 "payload.name",
                 {"payload": {"name": "<b>Bread</b>"}},
@@ -76,8 +120,33 @@ class TestExpressionAndExtraction:
         ]:
             assert render_expression(source, context) == expected
 
+        assert (
+            render_expression(
+                'payload.date|date:"j F Y"',
+                {"payload": {"date": datetime(2026, 11, 12, 9, 30)}},
+            )
+            == "12 November 2026"
+        )
+        assert (
+            render_expression('payload.missing|default:"friend"', {"payload": {}})
+            == "friend"
+        )
+
         text = "{{ now|date:'Y' }} {{ payload.meeting.title }} {{ site.site_name }}"
         assert extract_variables(text) == ["now", "payload", "site"]
+
+
+class TestValueNormalisation:
+    def test_empty_and_non_empty_values(self):
+        assert normalize_text_value(None) == ""
+        assert normalize_text_value([]) == ""
+        assert normalize_text_value(()) == ""
+        assert normalize_text_value(set()) == ""
+        assert normalize_text_value(_Manager([])) == ""
+        assert normalize_text_value(_Manager(["one", "two"])) == "one, two"
+        assert normalize_text_value(["one", "two"]) == "one, two"
+        assert normalize_text_value("Ada") == "Ada"
+        assert normalize_text_value(7) == "7"
 
 
 class TestValidationAndHelp:

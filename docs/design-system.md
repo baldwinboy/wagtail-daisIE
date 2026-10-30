@@ -10,7 +10,7 @@ All primitives live in `wagtail_daisIE.base_blocks`.
 | `DesignBlock` | size, background, border, padding, margin, box | `ThemedBlock` |
 | `MediaDesignBlock` | as `DesignBlock`, with media size/aspect | images, embeds |
 | `SpacedDesignBlock` | as `DesignBlock`, plus gap spacing | sections, rows |
-| `TypographyDesignBlock` | typography, size, background, border, padding, margin, box | text blocks |
+| `TypographyDesignBlock` | typography, max lines, size, background, border, padding, margin, box | text blocks |
 | `ButtonDesignBlock` | as `InlineSpacedDesignBlock`, plus button appearance | buttons |
 | `MainDesignBlock` | as `SpacedDesignBlock`, plus `layout` (column/row/grid) | `DaisyUITheme.main_design`, `StyledPageMixin.main_design` |
 | `MenuItemDesignBlock` | `TypographyDesignBlock` + spacing | `DaisyUIMenu.item_design` |
@@ -27,6 +27,11 @@ so migrations store them as a stable registry key rather than a frozen tree (see
 each group's builder output. Each builder lives in `base_blocks/css.py` and
 returns a space-separated string, e.g. `build_typography_css` returns
 `text-primary-content font-heading text-xl`.
+
+`TypographyDesignBlock.max_lines` adds `line-clamp-<n>` through
+`build_line_clamp_css`. Values are 1–6; an empty value leaves text
+untruncated. The class is safelisted as `line-clamp-{1..6}` and clamps text with
+CSS rather than slicing HTML, so rich-text markup stays intact.
 
 Font families store the theme role (or custom name) and render as
 `font-<role>`, matching the `--font-<role>` custom properties emitted by

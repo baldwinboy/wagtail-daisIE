@@ -1495,3 +1495,4 @@
 @source inline("border-spacing-x-{1..96}");
 @source inline("border-spacing-y-{1..96}");
 @source inline("md:grid-cols-{1..6}");
+@source inline("line-clamp-{1..6}");

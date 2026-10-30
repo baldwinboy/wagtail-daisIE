@@ -196,8 +196,9 @@ Composes `base_blocks` into editor-facing blocks: `content.py` (`ContentBlock`),
 `content_blocks.py` (`PAGE_CONTENT_BLOCKS`), `cards.py`, `inline.py`, `link.py`,
 `layout.py`, `layout_components.py` (hero, drawer, stack, aura, indicator, mask,
 dropdown, swap, tabs, carousel, pagination, FAB, filter, join), `display.py`
-(badge, kbd, divider, avatar, stat, countdown, skeleton, text-rotate, chat,
-timeline, diff, hover-gallery/3d), `mockups.py`, `breadcrumbs.py`, `marquee.py`,
+(badge, tag badge list, kbd, divider, avatar, stat, countdown, skeleton,
+text-rotate, chat, timeline, diff, hover-gallery/3d), `mockups.py`,
+`breadcrumbs.py`, `marquee.py`,
 `media.py`, `spaced.py`, `accordion.py`, `blockquote.py`, `menu_items.py`. The
 package `__init__` imports the heavy composition modules lazily to avoid an
 import cycle with `dynamic.action_blocks` (cards and menus both expose the Action

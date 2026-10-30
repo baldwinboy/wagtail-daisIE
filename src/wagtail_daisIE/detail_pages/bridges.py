@@ -7,8 +7,8 @@ import logging
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from wagtail.coreutils import find_available_slug, slugify
-from wagtail.models import Page
 
+from .exceptions import DetailPageConfigurationError
 from .registry import get_detail_pages
 
 
@@ -32,26 +32,6 @@ def find_detail_page(config, instance):
     ).first()
 
 
-def _template_page(config):
-    model = config.template_page_model
-    if model is None:
-        return None
-    return model.objects.live().first() or model.objects.first()
-
-
-def _parent_page(config):
-    template = _template_page(config)
-    chosen = getattr(template, "parent_page", None) if template is not None else None
-    if chosen is not None:
-        return chosen
-    model = config.parent_model
-    if model is not None:
-        page = model.objects.live().first() or model.objects.first()
-        if page is not None:
-            return page
-    return Page.objects.filter(depth=2).first()
-
-
 def _apply_fields(page, config, instance, parent=None):
     page.title = str(getattr(instance, config.title_source, "") or page.title)
     if parent is None:
@@ -59,45 +39,61 @@ def _apply_fields(page, config, instance, parent=None):
     raw_slug = str(getattr(instance, config.slug_source, "") or "")
     requested = slugify(raw_slug) or page.slug
     if parent is not None:
+        listing = parent.get_parent()
+        if listing is not None:
+            collision = (
+                listing.get_children()
+                .filter(slug=requested)
+                .exclude(pk=page.pk)
+                .exists()
+            )
+            if collision:
+                raise DetailPageConfigurationError(
+                    f"Detail slug {requested!r} collides with a child of {listing!r}."
+                )
         page.slug = find_available_slug(parent, requested, ignore_page_id=page.pk)
     else:
         page.slug = requested
     page.detail_key = config.key
     page.source_content_type = ContentType.objects.get_for_model(type(instance))
     page.source_object_id = instance.pk
-    if page.design_template_id is None:
-        page.design_template = _template_page(config)
     return page
 
 
 def sync_detail_page(config, instance, *, created=False):
-    """Create or refresh the detail page for ``instance``."""
+    """Create, refresh or delete the detail page for ``instance``."""
     page_type = config.page_type
     if page_type is None or instance.pk is None:
         return None
 
+    publish = not config.publish_field or bool(
+        getattr(instance, config.publish_field, False)
+    )
     page = find_detail_page(config, instance)
+
+    # Non-public entities have no generated page at all.
+    if not publish:
+        if page is not None:
+            page.delete()
+        return None
+
+    # Both lookups are exact and raise DetailPageConfigurationError.
+    config.get_template_page()
+    parent = config.get_generated_index_page()
+
     if page is None:
-        parent = _parent_page(config)
-        if parent is None:
-            logger.warning("No parent page for detail type %r", config.key)
-            return None
         page = page_type(title=str(instance), slug="")
         page.live = False
         page = _apply_fields(page, config, instance, parent)
         parent.add_child(instance=page)
     else:
         page = page.specific
-        page = _apply_fields(page, config, instance)
+        if page.get_parent().pk != parent.pk:
+            page.move(parent, pos="last-child")
+        page = _apply_fields(page, config, instance, parent)
         page.save()
 
-    publish = not config.publish_field or bool(
-        getattr(instance, config.publish_field, False)
-    )
-    if publish:
-        page.save_revision().publish()
-    else:
-        page.save_revision()
+    page.save_revision().publish()
     return page
 
 
@@ -122,6 +118,9 @@ def make_save_receiver(config):
     def receiver(sender, instance, **kwargs):
         try:
             sync_detail_page(config, instance, created=kwargs.get("created", False))
+        except DetailPageConfigurationError:
+            logger.exception("Detail page configuration failed for %r", config.key)
+            raise
         except Exception:
             logger.exception("Detail page sync failed for %r", config.key)
 

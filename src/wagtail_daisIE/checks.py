@@ -1,7 +1,7 @@
 """System checks for optional-but-recommended project wiring."""
 
 from django.conf import settings
-from django.core.checks import Warning, register
+from django.core.checks import Error, Warning, register
 
 
 @register()
@@ -35,3 +35,16 @@ def check_htmx_middleware(app_configs, **kwargs):
             )
         )
     return errors
+
+
+@register()
+def check_detail_page_configs(app_configs, **kwargs):
+    """Validate ``WAGTAIL_DAISIE_DETAIL_PAGES`` without database access."""
+    from .detail_pages.exceptions import DetailPageConfigurationError
+    from .detail_pages.validation import validate_detail_pages
+
+    try:
+        validate_detail_pages(records=False)
+    except DetailPageConfigurationError as exc:
+        return [Error(str(exc), id="wagtail_daisIE.E001")]
+    return []

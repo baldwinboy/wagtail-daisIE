@@ -107,6 +107,19 @@ class TestRegistry:
         assert state["owner"]["modes"] == ["automatic"]
         assert state["target"]["modes"] == ["url", "fixed"]
         assert state["target"]["fields"]
+        assert "url" not in {field["name"] for field in state["target"]["fields"]}
+        assert "url" in {field["name"] for field in state["target"]["helpFields"]}
+        assert "url" not in {field["name"] for field in state["owner"]["helpFields"]}
+
+    def test_help_fields_include_url_but_form_fields_do_not(self):
+        target = get_context_model("target")
+        owner = get_context_model("owner")
+
+        assert "url" in {field["name"] for field in target.help_fields()}
+        assert "url" not in {field["name"] for field in target.field_docs()}
+        assert "url" not in {field["name"] for field in target.form_fields()}
+
+        assert "url" not in {field["name"] for field in owner.help_fields()}
 
 
 class TestResolution:

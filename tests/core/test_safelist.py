@@ -93,6 +93,7 @@ def test_numeric_and_template_ranges_are_declared(tmp_path):
         "border-spacing-x-{1..96}",
         "border-spacing-y-{1..96}",
         "md:grid-cols-{1..6}",
+        "line-clamp-{1..6}",
     ):
         assert value in directives
     for value in (

@@ -12,6 +12,7 @@ from wagtail.models import Page, PanelPlaceholder
 
 from ..dynamic.resolvers import parse_bindings, resolve_context_models
 from ..pages import StyledPageMixin
+from .exceptions import DetailPageConfigurationError
 
 
 def _is_title_panel(panel):
@@ -23,6 +24,8 @@ def _is_title_panel(panel):
 
 class ModelDetailTemplate(StyledPageMixin):
     """A non-navigable page holding the shared design for a detail type."""
+
+    max_count = 1
 
     detail_key = models.CharField(
         max_length=64,
@@ -74,7 +77,43 @@ class ModelDetailTemplate(StyledPageMixin):
         raise Http404
 
 
-class ModelDetailPage(StyledPageMixin):
+class GeneratedPagesIndexPage(Page):
+    """Admin-only container for generated detail pages."""
+
+    is_creatable = False
+    max_count = 1
+
+    class Meta:
+        abstract = True
+
+    def get_url_parts(self, request=None):
+        """Return ``None``: the generated index is never navigable."""
+        return None
+
+    def serve(self, request, *args, **kwargs):
+        raise Http404
+
+
+class GeneratedPagesRouteMixin:
+    """Route public URLs into a child generated-index page.
+
+    Generated pages live under an admin-only index, so the public tree path
+    would normally include that index. This mixin lets the listing page route
+    ``/<detail-slug>/`` directly into the generated index's children.
+    """
+
+    def route(self, request, path_components):
+        if path_components:
+            for child in self.get_children().specific():
+                if isinstance(child, GeneratedPagesIndexPage):
+                    try:
+                        return child.route(request, path_components)
+                    except Http404:
+                        continue
+        return super().route(request, path_components)
+
+
+class ModelDetailPage(Page):
     """A page generated from, and kept in sync with, a model instance."""
 
     is_creatable = False
@@ -95,33 +134,8 @@ class ModelDetailPage(StyledPageMixin):
         verbose_name=_("Source record"),
     )
     source = GenericForeignKey("source_content_type", "source_object_id")
-    design_template = models.ForeignKey(
-        Page,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="+",
-        verbose_name=_("Shared design page"),
-    )
-    use_template_design = models.BooleanField(
-        default=True,
-        verbose_name=_("Use shared design"),
-        help_text=_(
-            "Inherit theme, background, layout and bindings from the shared "
-            "design page."
-        ),
-    )
 
-    content_panels = StyledPageMixin.content_panels + [
-        MultiFieldPanel(
-            [
-                FieldPanel("design_template"),
-                FieldPanel("use_template_design"),
-            ],
-            heading=_("Detail page"),
-            classname="collapsed",
-        ),
-    ]
+    content_panels = Page.content_panels
 
     class Meta:
         abstract = True
@@ -132,13 +146,16 @@ class ModelDetailPage(StyledPageMixin):
             )
         ]
 
-    def get_design_source(self):
-        """Return the page whose design this page renders with."""
-        if self.use_template_design:
-            template = self.design_template
-            if template is not None and template.pk != self.pk:
-                return template.specific
-        return self
+    def get_template_page(self):
+        """Return the single shared template page, or raise."""
+        from .registry import get_detail_page
+
+        config = get_detail_page(self.detail_key)
+        if config is None:
+            raise DetailPageConfigurationError(
+                f"No detail-page configuration for {self.detail_key!r}."
+            )
+        return config.get_template_page()
 
     def get_context(self, request, *args, **kwargs):
         request.daisie_path_params = {
@@ -146,13 +163,42 @@ class ModelDetailPage(StyledPageMixin):
             "slug": self.slug,
             **(getattr(request, "daisie_path_params", None) or {}),
         }
+        template = self.get_template_page()
         context = super().get_context(request, *args, **kwargs)
-        source = self.get_design_source()
-        if source is not self:
-            context["daisyui_theme"] = source.get_daisyui_theme()
-            context["daisyui_page_background_css"] = source.get_page_background_css()
-            for category, css in source.get_page_design_css().items():
-                context[f"{category}_css"] = css
-            bindings = {**parse_bindings(source), **parse_bindings(self)}
-            context.update(resolve_context_models(request, self, bindings=bindings))
+        context["detail_template"] = template
+        context["detail_template_body"] = template.body
+        context["daisyui_theme"] = template.get_daisyui_theme()
+        context["daisyui_page_background_css"] = template.get_page_background_css()
+        context["daisyui_main_css"] = template.get_main_design_css()
+        context["daisyui_main_style"] = template.get_main_design_style()
+        for category, css in template.get_page_design_css().items():
+            context[f"{category}_css"] = css
+        context.update(
+            resolve_context_models(request, self, bindings=parse_bindings(template))
+        )
         return context
+
+    def serve(self, request, *args, **kwargs):
+        template = self.get_template_page()
+        if not template.page_audience_allowed(request):
+            return template.audience_denied_response(request)
+        return super().serve(request, *args, **kwargs)
+
+    def get_url_parts(self, request=None):
+        """Return the public URL parts, omitting the generated-index segment."""
+        parent = self.get_parent()
+        if parent is None:
+            return None
+        parent = parent.specific
+        if not isinstance(parent, GeneratedPagesIndexPage):
+            raise DetailPageConfigurationError(
+                f"{self!r} must be a child of a GeneratedPagesIndexPage."
+            )
+        url_parent = parent.get_parent()
+        if url_parent is None:
+            return None
+        parts = url_parent.specific.get_url_parts(request)
+        if parts is None:
+            return None
+        site_id, root_url, page_path = parts
+        return site_id, root_url, f"{page_path}{self.slug}/"

@@ -298,6 +298,7 @@ WAGTAIL_DAISIE_DETAIL_PAGES = {
         "page_type": "blog.BreadDetailPage",
         "parent": "blog.BreadIndexPage",
         "template_page": "blog.BreadDetailTemplate",
+        "generated_index": "blog.BreadGeneratedPagesIndexPage",
         "lookup_field": "pk",
         "lookup_in": "path",
         "publish_field": "is_available",

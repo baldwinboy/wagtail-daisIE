@@ -201,6 +201,11 @@ def build_typography_css(value):
     )
 
 
+def build_line_clamp_css(value):
+    """Return the line-clamp utility for a ``TypographyDesignBlock`` value."""
+    return f"line-clamp-{value}" if value else ""
+
+
 def build_button_state_css(value, variant=""):
     if not value:
         return ""
@@ -328,6 +333,7 @@ _DESIGN_BUILDERS = {
     "margin": build_margin_css,
     "box": build_box_css,
     "typography": build_typography_css,
+    "max_lines": build_line_clamp_css,
     "button_appearance": build_button_css,
     "table_appearance": build_table_css,
     "layout": build_layout_css,

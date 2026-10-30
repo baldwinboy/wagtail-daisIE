@@ -36,6 +36,7 @@ from blog.models import (
     BlogPage,
     Bread,
     BreadDetailTemplate,
+    BreadGeneratedPagesIndexPage,
     BreadIndexPage,
     BreadSuggestionFormPage,
     Person,
@@ -756,9 +757,22 @@ def _breads_feed():
     )
 
 
+def _ensure_bread_generated_index(index):
+    existing = BreadGeneratedPagesIndexPage.objects.child_of(index).first()
+    if existing is not None:
+        return existing
+    page = BreadGeneratedPagesIndexPage(
+        title="Generated bread pages",
+        slug="generated-breads",
+    )
+    index.add_child(instance=page)
+    return page
+
+
 def _ensure_bread_index_page(home, theme, *, force=False):
     existing = BreadIndexPage.objects.child_of(home).filter(slug="breads").first()
     if existing and not force:
+        _ensure_bread_generated_index(existing)
         return existing
     if existing:
         existing.delete()
@@ -781,6 +795,7 @@ def _ensure_bread_index_page(home, theme, *, force=False):
     )
     page.save()
     page.save_revision().publish()
+    _ensure_bread_generated_index(page)
     return page
 
 
