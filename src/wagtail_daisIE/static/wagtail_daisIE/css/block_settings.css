@@ -1,3 +1,4 @@
+/* stylelint-disable declaration-no-important */
 /*
  * Admin styling for the DaisyUI StreamBlock settings controls:
  * colour swatches, preset sliders and text-alignment icons.
@@ -18,7 +19,7 @@
   align-items: start;
   display: grid;
   gap: var(--daisyui-settings-gap);
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280, 1fr));
 }
 /* stylelint-enable selector-disallowed-list */
 
@@ -138,14 +139,16 @@
 }
 
 .daisyui-slider-semantic input[type='radio'] {
-  clip: rect(0px, 0px, 0px, 0px) !important;
+  clip-path: rect(0, 0, 0, 0) !important;
   height: 1px !important;
   position: absolute !important;
   width: 1px !important;
-  border-width: 0px !important;
+  border-width: 0 !important;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value */
   margin: -1px !important;
   overflow: hidden !important;
-  padding: 0px !important;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value */
+  padding: 0 !important;
   white-space: nowrap !important;
 }
 

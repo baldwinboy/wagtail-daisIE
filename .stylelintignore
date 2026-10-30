@@ -1,7 +1,7 @@
 demo
 **/tailwind
 **/migrations
+**/block_settings.css
 **/daisie-responsive.css
-**/daisie-visibility.css
 **/daisie.css
 htmlcov
