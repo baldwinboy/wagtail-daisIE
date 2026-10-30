@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.6.2...v3.7.0) (2026-10-30)
+
+
+### Features
+
+* add responsive design ([b3cc314](https://github.com/baldwinboy/wagtail-daisIE/commit/b3cc3148811651db9ecc61db6376a8bae8dd7590))
+* admin-controlled block visibility design ([0108f96](https://github.com/baldwinboy/wagtail-daisIE/commit/0108f9614e9856f034da94d6f884fa23775e93e7))
+* expand container palettes ([fbc4836](https://github.com/baldwinboy/wagtail-daisIE/commit/fbc48363fd4d751a9e43f9e3645f61c8dd929276))
+* per-child layout item controls ([3e2395a](https://github.com/baldwinboy/wagtail-daisIE/commit/3e2395aa4ac02c8ae3d994b087cb61a0c7a00041))
+
+
+### Bug Fixes
+
+* add missing classes ([c14f953](https://github.com/baldwinboy/wagtail-daisIE/commit/c14f953a748ed468523a000a792c5987e51e411a))
+* amend css lint ([3f5e550](https://github.com/baldwinboy/wagtail-daisIE/commit/3f5e5501525d55f95c63040d88733fecb3018f21))
+* ignore daisy sheets ([2fc186c](https://github.com/baldwinboy/wagtail-daisIE/commit/2fc186c49508ebda4cbe2e4a3f5cb76156b753ba))
+* menu design ([5715784](https://github.com/baldwinboy/wagtail-daisIE/commit/5715784bbb8b55e519bba36afad642e169ecac02))
+* migrate sliders ([cfd3d60](https://github.com/baldwinboy/wagtail-daisIE/commit/cfd3d60ba4613cf44cbe0f18df160e7d27413aba))
+* remove hard-coded total ([4a4a603](https://github.com/baldwinboy/wagtail-daisIE/commit/4a4a603fab36041c5ebd5a0e2c03c941a89b9ee2))
+
+
+### Documentation
+
+* add agent operating contract to AGENTS.md ([d7833cd](https://github.com/baldwinboy/wagtail-daisIE/commit/d7833cd6ea9314602becb78a6b801bef211ff4f6))
+
 ## [3.6.2](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.6.1...v3.6.2) (2026-10-26)
 
 
