@@ -2,7 +2,11 @@
 {% if audience_allowed %}
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-{{ value.num_columns|default:2 }} {{ block_css|default:"" }} {{ alignment_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     {% for child in value.content %}
-      <div>{% include_block child %}</div>
+      {% if child.block_type == "layout_item" or child.block_type == "layout_item_inline" %}
+        {% include_block child %}
+      {% else %}
+        <div>{% include_block child %}</div>
+      {% endif %}
     {% endfor %}
   </div>
 {% endif %}

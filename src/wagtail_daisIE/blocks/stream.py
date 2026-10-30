@@ -95,6 +95,48 @@ class LayoutStreamBlock(PaletteStreamBlock):
         label = _("Content")
 
 
+class RowContentStreamBlock(PaletteStreamBlock):
+    palette = "row_content"
+
+    class Meta:
+        label = _("Row content")
+
+
+class ColumnContentStreamBlock(PaletteStreamBlock):
+    palette = "column_content"
+
+    class Meta:
+        label = _("Column content")
+
+
+class GridContentStreamBlock(PaletteStreamBlock):
+    palette = "grid_content"
+
+    class Meta:
+        label = _("Grid content")
+
+
+class InlineRowContentStreamBlock(PaletteStreamBlock):
+    palette = "inline_row_content"
+
+    class Meta:
+        label = _("Row content")
+
+
+class InlineColumnContentStreamBlock(PaletteStreamBlock):
+    palette = "inline_column_content"
+
+    class Meta:
+        label = _("Column content")
+
+
+class InlineGridContentStreamBlock(PaletteStreamBlock):
+    palette = "inline_grid_content"
+
+    class Meta:
+        label = _("Grid content")
+
+
 class CardContentStreamBlock(LayoutStreamBlock):
     class Meta:
         label = _("Card content")
@@ -149,15 +191,21 @@ class FeedbackBodyStreamBlock(InlineLayoutStreamBlock):
 __all__ = [
     "AccordionItemContentStreamBlock",
     "CardContentStreamBlock",
+    "ColumnContentStreamBlock",
     "DrawerSideStreamBlock",
     "DropdownItemsStreamBlock",
     "FeedbackBodyStreamBlock",
+    "GridContentStreamBlock",
     "InlineCardContentStreamBlock",
+    "InlineColumnContentStreamBlock",
+    "InlineGridContentStreamBlock",
     "InlineLayoutStreamBlock",
+    "InlineRowContentStreamBlock",
     "InlineStreamBlock",
     "LayoutStreamBlock",
     "MarqueeContentStreamBlock",
     "PaletteStreamBlock",
+    "RowContentStreamBlock",
     "SlideContentStreamBlock",
     "TabContentStreamBlock",
 ]

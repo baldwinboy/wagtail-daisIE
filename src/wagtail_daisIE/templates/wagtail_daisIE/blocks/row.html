@@ -1,10 +1,14 @@
 {% load wagtailcore_tags wagtail_daisIE_tags %}
 {% if audience_allowed %}
   <div class="flex {{ row_wrap_css }} {{ row_scroll_css }} {{ block_css|default:"" }} {{ alignment_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    {% for child in value.content %}
-      <div class="{{ row_item_css }}">
+  {% for child in value.content %}
+    {% if child.block_type == "layout_item" or child.block_type == "layout_item_inline" %}
+      {% include_block child %}
+    {% else %}
+      <div>
         {% include_block child %}
       </div>
-    {% endfor %}
+    {% endif %}
+  {% endfor %}
   </div>
 {% endif %}

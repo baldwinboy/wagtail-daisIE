@@ -282,6 +282,35 @@ def build_grid_css(value):
     return GRID_COLUMNS.get(columns, "")
 
 
+def build_layout_item_css(value, *, grid: bool = False) -> str:
+    """Classes for one direct child of a layout container.
+
+    ``value`` is the ``LayoutItemBlock.design`` value. Empty fields contribute
+    nothing. Grid-only utilities are omitted outside a grid.
+    """
+    if not value:
+        return ""
+
+    classes = [
+        value.get("grow", ""),
+        value.get("shrink", ""),
+        value.get("basis", ""),
+        value.get("width", ""),
+        build_margin_css(value.get("margin")),
+        value.get("order", ""),
+        value.get("align_self", ""),
+    ]
+    if grid:
+        classes.extend(
+            [
+                value.get("grid_column_span", ""),
+                value.get("grid_row_span", ""),
+                value.get("justify_self", ""),
+            ]
+        )
+    return build_class(*classes)
+
+
 def build_passthrough_css(value):
     """Return a choice value that is already a utility class (or ``""``).
 

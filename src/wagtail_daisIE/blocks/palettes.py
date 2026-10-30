@@ -166,6 +166,26 @@ def _layout() -> list[PaletteEntry]:
     ]
 
 
+def _layout_item() -> PaletteEntry:
+    from .layout import LayoutItemBlock
+
+    return ("layout_item", LayoutItemBlock())
+
+
+def _inline_layout_item() -> PaletteEntry:
+    from .layout import InlineLayoutItemBlock
+
+    return ("layout_item_inline", InlineLayoutItemBlock())
+
+
+def _layout_container_content() -> list[PaletteEntry]:
+    return [*_layout(), _layout_item()]
+
+
+def _inline_layout_container_content() -> list[PaletteEntry]:
+    return [*_inline(), _inline_layout_item()]
+
+
 def _dropdown() -> list[PaletteEntry]:
     from .display import DividerBlock
     from .icons import IconChooserBlock
@@ -206,6 +226,12 @@ _BUILDERS: dict[str, Callable[[], list[PaletteEntry]]] = {
     "inline": _inline,
     "inline_layout": _inline_layout,
     "layout": _layout,
+    "row_content": _layout_container_content,
+    "column_content": _layout_container_content,
+    "grid_content": _layout_container_content,
+    "inline_row_content": _inline_layout_container_content,
+    "inline_column_content": _inline_layout_container_content,
+    "inline_grid_content": _inline_layout_container_content,
     "dropdown": _dropdown,
     "marquee": _marquee,
 }

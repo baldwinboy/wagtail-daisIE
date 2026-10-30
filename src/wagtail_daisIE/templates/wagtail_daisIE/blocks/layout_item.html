@@ -1,0 +1,2 @@
+{% load wagtailcore_tags wagtail_daisIE_tags %}
+{% if audience_allowed %}<div{% if layout_item_css %} class="{{ layout_item_css }}"{% endif %}>{% for child in value.content %}{% include_block child %}{% endfor %}</div>{% endif %}
