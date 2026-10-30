@@ -185,6 +185,12 @@ class DaisyUIMenu(
         verbose_name = _("DaisyUI Menu")
         verbose_name_plural = _("DaisyUI Menus")
 
+    def clean(self):
+        super().clean()
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.body, _("Menu items"))
+
     def __str__(self):
         return self.name
 

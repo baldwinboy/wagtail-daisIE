@@ -31,9 +31,10 @@ choices/*  ──►  daisie_safelist  ──►  tailwind/safelist.css
    committed `src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css`.
    `tailwind/responsive-input.css` compiles the theme scale plus
    `responsive-safelist.css` into the opt-in `daisie-responsive.css`.
-3. **Serve** — `{% daisyui_styles %}` emits a render-blocking
-   `<link rel="stylesheet" …>`; when `WAGTAIL_DAISIE_RESPONSIVE_CSS` is true it
-   appends the responsive stylesheet after the base one.
+3. **Serve** — `{% daisyui_styles %}` emits render-blocking
+   `<link rel="stylesheet" …>` tags for `daisie.css`, the small hand-written
+   `daisie-visibility.css` (block visibility defaults), and, when
+   `WAGTAIL_DAISIE_RESPONSIVE_CSS` is true, `daisie-responsive.css`.
 4. **Arbitrary colours** — `bg-[#0080ff]`, `decoration-[#…]` and their
    `hover:`/`active:` variants are unpredictable, so
    `wagtail_daisIE.middleware.ArbitraryCSSMiddleware` scans the rendered HTML and

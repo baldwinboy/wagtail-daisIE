@@ -20,6 +20,7 @@ them to pages, and build navigation menus from the same block components.
 - [Forms](docs/forms.md)
 - [Approval workflows](docs/approval.md)
 - [Data components](docs/data-components.md)
+- [Block visibility](docs/visibility.md)
 - [Block palettes](docs/block-palettes.md)
 - [htmx](docs/htmx.md)
 - [Notifications](docs/notifications.md)
@@ -306,9 +307,9 @@ Render project data and trigger actions with reusable components:
 - **Feeds** — a snippet (Design → Feeds) that lists a context model with
   admin-designed item cards, typed filters (choice/multi, boolean, date, date
   range, price range, search), AJAX filtering and optional infinite scroll.
-  **Item variants** let different instances use alternate designs chosen by a
-  condition (basic operators, or a named rule in
-  `WAGTAIL_DAISIE_FEED_CONDITIONS`).
+  Block **visibility** lets editors control content with a switch or a
+  model-context condition, including per feed item and calendar event. See
+  [docs/visibility.md](docs/visibility.md).
 - **Action** — a struct of a themed button and an optional confirmation alert
   that posts to a developer-defined action (`WAGTAIL_DAISIE_ACTIONS`), e.g.
   *Add to basket*. Inside a card it can make the whole card clickable.

@@ -3,6 +3,7 @@
     {% if menu_theme and menu_theme != daisyui_theme %}
         {% daisyui_theme_css menu_theme %}
     {% endif %}
+    <div class="daisie-menu" data-daisie-menu>
     {% with menu_default_css=menu_item_css menu_default_style=menu_item_style %}
         {% if menu.layout == "navbar" %}
             {% include "wagtail_daisIE/blocks/navbar.html" %}
@@ -20,4 +21,5 @@
             {% include "wagtail_daisIE/blocks/dock.html" %}
         {% endif %}
     {% endwith %}
+    </div>
 {% endif %}

@@ -8,20 +8,18 @@ from datetime import date
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.urls import NoReverseMatch, reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.snippets.blocks import SnippetChooserBlock
 
 from ..base_blocks import ThemedBlock
-from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
+from ..base_blocks.compact import DaisieStructBlock
 from ..blocks.content_blocks import PAGE_CONTENT_BLOCKS
 from ..blocks.stream import InlineLayoutStreamBlock
 from ..choices.utils import ChoiceList
 from ..dynamic.action_blocks import ActionBlock
-from ..dynamic.conditions import (
-    FEED_CONDITION_OPERATOR_CHOICES,
-    get_feed_condition_choices,
-)
 from ..dynamic.feeds import (
     GAP_CHOICES,
     LAYOUT_CHOICES,
@@ -137,70 +135,6 @@ class FeedLayoutOverrideBlock(DaisieStructBlock):
         )
 
 
-class FeedItemVariantBlock(DaisieStructBlock):
-    """An alternate feed item design, used when its condition matches an item.
-
-    The first variant whose condition matches wins; otherwise the feed's default
-    item design applies.
-    """
-
-    label = blocks.CharBlock(
-        max_length=255,
-        required=False,
-        blank=True,
-        label=_("Label"),
-        help_text=_("An optional name to identify this variant in the editor."),
-    )
-    expression = blocks.CharBlock(
-        max_length=255,
-        required=False,
-        blank=True,
-        label=_("When"),
-        help_text=_(
-            "A value from the item, e.g. {{ article.featured }}. Leave empty to "
-            "match every item."
-        ),
-    )
-    operator = blocks.ChoiceBlock(
-        choices=FEED_CONDITION_OPERATOR_CHOICES,
-        default="is_true",
-        label=_("Operator"),
-    )
-    rule = blocks.ChoiceBlock(
-        choices=get_feed_condition_choices,
-        required=False,
-        label=_("Named condition"),
-        help_text=_(
-            "Used by the named-condition operator. Registered in "
-            "WAGTAIL_DAISIE_FEED_CONDITIONS."
-        ),
-    )
-    compare_value = blocks.CharBlock(
-        max_length=255,
-        required=False,
-        blank=True,
-        label=_("Value"),
-        help_text=_("The value to compare against (not used by every operator)."),
-    )
-    item = DaisieStreamBlock(ITEM_BLOCKS, label=_("Design"))
-
-    class Meta:
-        icon = "copy"
-        label = _("Item variant")
-        collapsed = True
-        form_layout = blocks.BlockGroup(
-            children=[
-                "label",
-                "expression",
-                "operator",
-                "rule",
-                "compare_value",
-                "item",
-            ],
-            heading=_("Item variant"),
-        )
-
-
 class FeedBlock(ThemedBlock):
     """Render an admin-designed :class:`~wagtail_daisIE.feeds.models.Feed`."""
 
@@ -261,15 +195,14 @@ class FeedBlock(ThemedBlock):
         feed = value.get("feed")
         pk = getattr(feed, "pk", None)
         if pk is not None:
-            for stream in (feed.item, feed.item_variants):
-                for block_type, child in iter_nested_stream_blocks(stream):
-                    if block_type != "feed":
-                        continue
-                    nested = getattr(child.get("feed"), "pk", None)
-                    if nested == pk:
-                        raise ValidationError(
-                            _("A feed cannot include itself in its item design.")
-                        )
+            for block_type, child in iter_nested_stream_blocks(feed.item):
+                if block_type != "feed":
+                    continue
+                nested = getattr(child.get("feed"), "pk", None)
+                if nested == pk:
+                    raise ValidationError(
+                        _("A feed cannot include itself in its item design.")
+                    )
         return value
 
     class Meta:
@@ -352,8 +285,18 @@ class CalendarBlock(ThemedBlock):
                 iso = day.isoformat()
                 ctx = dict(base)
                 ctx[key] = obj
+                rendered = _render_stream(
+                    stream,
+                    ctx,
+                    event_block,
+                    scope="calendar-event",
+                )
                 grouped.setdefault(iso, []).append(
-                    _render_stream(stream, ctx, event_block)
+                    format_html(
+                        '<div class="daisie-calendar-event" '
+                        "data-daisie-calendar-event>{}</div>",
+                        mark_safe(rendered),  # noqa: S308 - block output
+                    )
                 )
 
             context["days"] = [
@@ -369,6 +312,9 @@ class CalendarBlock(ThemedBlock):
 
     def clean(self, value):
         value = super().clean(value)
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(value.get("event"), _("Calendar event design"))
         context_model = value.get("context_model")
         date_field = value.get("date_field")
         for block_type, child in iter_nested_stream_blocks(value.get("event")):
@@ -406,3 +352,7 @@ DATA_BLOCKS = [
     ("calendar", CalendarBlock()),
     ("action", ActionBlock()),
 ]
+
+
+# Register the historical FeedItemVariantBlock key for old migrations.
+from . import migration_blocks  # noqa: E402,F401

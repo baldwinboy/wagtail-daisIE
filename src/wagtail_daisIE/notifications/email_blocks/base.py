@@ -57,6 +57,10 @@ class EmailThemedMixin:
     block's own (web) ``get_context``.
     """
 
+    #: Web-only switch/context visibility does not work in email clients.
+    #: Field shadowing removes the inherited block field entirely.
+    visibility = None
+
     email_mjml_tag = "mj-text"
     #: MJML components this block's content may contain (for validation tests).
     email_allowed_children = frozenset()

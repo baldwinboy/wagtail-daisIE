@@ -178,7 +178,7 @@ class TestFilters:
 _feed_seq = itertools.count()
 
 
-def _feed(*, item=None, item_variants=None, **kwargs):
+def _feed(*, item=None, **kwargs):
     defaults = {
         "name": f"Users {next(_feed_seq)}",
         "context_model": "user",
@@ -201,8 +201,6 @@ def _feed(*, item=None, item_variants=None, **kwargs):
             }
         ]
     )
-    if item_variants is not None:
-        feed.item_variants = item_variants
     feed.save()
     return feed
 
@@ -267,6 +265,39 @@ class TestFeedRendering:
         )
         assert ordered["items_html"].index("zzz") < ordered["items_html"].index("aaa")
 
+    def test_context_visibility_is_evaluated_per_item(self):
+        USER_MODEL.objects.create(username="ada")
+        USER_MODEL.objects.create(username="bob")
+        feed = _feed(
+            item=[
+                {
+                    "type": "header",
+                    "value": {
+                        "text": "ADA ONLY",
+                        "design": {},
+                        "audience": {},
+                        "visibility": {
+                            "switch_key": "",
+                            "show_when": True,
+                            "condition": {
+                                "context_model": "user",
+                                "field_name": "username",
+                                "operator": "equals",
+                                "compare_value": "ada",
+                                "rule": "",
+                                "invert": False,
+                                "expression": "",
+                            },
+                        },
+                    },
+                }
+            ]
+        )
+        html = render_feed(feed, RequestFactory().get("/"))["items_html"]
+        assert html.count("ADA ONLY") == 1
+        # Bob's item is present, but his conditional header is not rendered.
+        assert html.count("data-daisie-feed-item") == 2
+
     def test_uses_configured_queryset(self, settings):
         settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
             "user": {
@@ -283,69 +314,6 @@ class TestFeedRendering:
         data = render_feed(_feed(), RequestFactory().get("/"))
         assert "staffonly" in data["items_html"]
         assert "regularonly" not in data["items_html"]
-
-    def test_item_variants_select_design_by_condition(self, settings):
-        USER_MODEL.objects.create(username="ada", is_staff=True)
-        USER_MODEL.objects.create(username="bob")
-
-        def variant(expression, operator, value="", rule="", text=""):
-            return {
-                "type": "variant",
-                "value": {
-                    "label": "",
-                    "expression": expression,
-                    "operator": operator,
-                    "compare_value": value,
-                    "rule": rule,
-                    "item": [
-                        {
-                            "type": "header",
-                            "value": {"text": text, "design": {}, "audience": {}},
-                        }
-                    ],
-                },
-            }
-
-        # The first matching variant wins; a later match is not used.
-        feed = _feed(
-            item_variants=[
-                variant("user.is_staff", "is_true", text="STAFF {{ user.username }}"),
-                variant("user.username", "in", "ada,bob", text="MEMBER"),
-            ]
-        )
-        html = render_feed(feed, RequestFactory().get("/"))["items_html"]
-        assert "STAFF ada" in html
-        assert "MEMBER" in html
-        assert "bob" not in html  # default design is not used when a variant matches
-
-        # A named condition delegates to a registered callable (audience style).
-        settings.WAGTAIL_DAISIE_FEED_CONDITIONS = {
-            "featured": {"label": "Featured", "rule": lambda obj, request: obj.is_staff}
-        }
-        bridged = _feed(
-            item_variants=[variant("", "custom", rule="featured", text="FEATURED")]
-        )
-        assert (
-            "FEATURED" in render_feed(bridged, RequestFactory().get("/"))["items_html"]
-        )
-
-        # An empty expression is a catch-all.
-        catch_all = _feed(item_variants=[variant("", "is_true", text="ALL")])
-        assert "ALL" in render_feed(catch_all, RequestFactory().get("/"))["items_html"]
-
-        # An expression that cannot be compared fails safe to the default design.
-        unsafe = _feed(item_variants=[variant("user.missing", "gt", "5", text="NEVER")])
-        html = render_feed(unsafe, RequestFactory().get("/"))["items_html"]
-        assert "NEVER" not in html
-        assert "ada" in html
-
-        # Date/datetime values are coerced so ordering comparisons work.
-        dated = _feed(
-            item_variants=[
-                variant("user.date_joined", "lt", "2999-01-01", text="RECENT")
-            ]
-        )
-        assert "RECENT" in render_feed(dated, RequestFactory().get("/"))["items_html"]
 
 
 class TestFeedEndpoint:

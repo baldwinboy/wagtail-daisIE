@@ -123,10 +123,349 @@
     }
   }
 
+  function control(target, selector) {
+    if (!target) {
+      return null;
+    }
+    return target.matches(selector) ? target : target.querySelector(selector);
+  }
+
+  function setTargetState(target, visible, disabled, disableWhenHidden) {
+    if (!target) {
+      return;
+    }
+    target.hidden = !visible;
+    var shouldDisable = disabled || (!visible && disableWhenHidden !== false);
+    var controls = target.matches('input, select, textarea, button')
+      ? [target]
+      : target.querySelectorAll('input, select, textarea, button');
+    controls.forEach(function (field) {
+      field.disabled = shouldDisable;
+    });
+  }
+
+  /**
+   * Context condition builder: narrow the property list to the chosen context
+   * model and adapt the value input to the property type.
+   */
+  class VisibilityConditionController extends Controller {
+    static targets = [
+      'contextModel',
+      'fieldName',
+      'operator',
+      'compareValue',
+      'rule',
+      'expression',
+    ];
+
+    connect() {
+      this.hasFields = true;
+      this.refreshFields(true);
+      this.refreshValue();
+      this.applyVisibility();
+    }
+
+    modelSelect() {
+      return control(
+        this.hasContextModelTarget ? this.contextModelTarget : null,
+        'select',
+      );
+    }
+
+    fieldSelect() {
+      return control(
+        this.hasFieldNameTarget ? this.fieldNameTarget : null,
+        'select',
+      );
+    }
+
+    operatorSelect() {
+      return control(
+        this.hasOperatorTarget ? this.operatorTarget : null,
+        'select',
+      );
+    }
+
+    valueInput() {
+      return control(
+        this.hasCompareValueTarget ? this.compareValueTarget : null,
+        'input, textarea',
+      );
+    }
+
+    expressionInput() {
+      return control(
+        this.hasExpressionTarget ? this.expressionTarget : null,
+        'input, textarea',
+      );
+    }
+
+    refresh(event) {
+      var target = event ? event.target : null;
+      if (
+        target &&
+        this.hasContextModelTarget &&
+        this.contextModelTarget.contains(target)
+      ) {
+        this.refreshFields(true);
+      }
+      if (
+        target &&
+        this.hasFieldNameTarget &&
+        this.fieldNameTarget.contains(target)
+      ) {
+        this.refreshValue();
+        this.applyBooleanDefault();
+      } else if (
+        target &&
+        ((this.hasOperatorTarget && this.operatorTarget.contains(target)) ||
+          (this.hasExpressionTarget &&
+            this.expressionTarget.contains(target)) ||
+          (this.hasRuleTarget && this.ruleTarget.contains(target)))
+      ) {
+        this.refreshValue();
+      }
+      this.applyVisibility();
+    }
+
+    models() {
+      return window.WAGTAIL_DAISIE_CONTEXT_MODELS || {};
+    }
+
+    currentFields() {
+      var model = this.modelSelect();
+      if (!model || !model.value) {
+        return [];
+      }
+      var state = this.models()[model.value];
+      return state && state.fields ? state.fields : [];
+    }
+
+    selectedField() {
+      var select = this.fieldSelect();
+      if (!select || !select.value) {
+        return null;
+      }
+      return (
+        this.currentFields().find((item) => item.name === select.value) || null
+      );
+    }
+
+    refreshFields(preserve) {
+      var select = this.fieldSelect();
+      if (!select || !window.WAGTAIL_DAISIE_CONTEXT_MODELS) {
+        return;
+      }
+      var model = this.modelSelect();
+      var fields = this.currentFields();
+      var current = preserve && select.value ? select.value : '';
+      select.innerHTML = '';
+      var blank = document.createElement('option');
+      blank.value = '';
+      blank.textContent = 'Choose a property…';
+      select.appendChild(blank);
+      fields.forEach(function (field) {
+        var option = document.createElement('option');
+        option.value = field.name;
+        option.textContent = field.label;
+        select.appendChild(option);
+      });
+      if (
+        fields.some(function (field) {
+          return field.name === current;
+        })
+      ) {
+        select.value = current;
+      }
+      this.hasFields = fields.length > 0;
+      select.disabled = !model || !model.value || !this.hasFields;
+    }
+
+    refreshValue() {
+      var input = this.valueInput();
+      var field = this.selectedField();
+      if (!input) {
+        return;
+      }
+      var type = field && field.type ? field.type : '';
+      var operator = this.operatorSelect();
+      var operatorValue = operator ? operator.value : '';
+      var inputType = 'text';
+      if (['in', 'not_in'].includes(operatorValue)) {
+        inputType = 'text';
+      } else if (
+        [
+          'IntegerField',
+          'BigIntegerField',
+          'SmallIntegerField',
+          'PositiveIntegerField',
+          'PositiveSmallIntegerField',
+          'FloatField',
+          'DecimalField',
+        ].includes(type)
+      ) {
+        inputType = 'number';
+      } else if (type === 'DateField') {
+        inputType = 'date';
+      } else if (type === 'DateTimeField') {
+        inputType = 'datetime-local';
+      }
+      input.type = inputType;
+
+      var list = this.element.querySelector(
+        'datalist[data-daisie-visibility-choices]',
+      );
+      if (field && field.choices && field.choices.length) {
+        if (!list) {
+          list = document.createElement('datalist');
+          list.dataset.daisieVisibilityChoices = '';
+          this.element.appendChild(list);
+        }
+        list.id = input.id + '-choices';
+        list.innerHTML = '';
+        field.choices.forEach(function (choice) {
+          var option = document.createElement('option');
+          option.value = choice.value;
+          option.label = choice.label;
+          list.appendChild(option);
+        });
+        input.setAttribute('list', list.id);
+      } else {
+        input.removeAttribute('list');
+        if (list) {
+          list.remove();
+        }
+      }
+    }
+
+    applyBooleanDefault() {
+      var field = this.selectedField();
+      var operator = this.operatorSelect();
+      if (
+        field &&
+        operator &&
+        ['BooleanField', 'NullBooleanField'].includes(field.type) &&
+        !['is_true', 'is_false', 'custom'].includes(operator.value)
+      ) {
+        operator.value = 'is_true';
+      }
+    }
+
+    applyVisibility() {
+      var model = this.modelSelect();
+      var field = this.fieldSelect();
+      var operator = this.operatorSelect();
+      var expression = this.expressionInput();
+      var operatorValue = operator ? operator.value : '';
+      var isCustom = operatorValue === 'custom';
+      var needsValue = !['', 'is_true', 'is_false', 'custom'].includes(
+        operatorValue,
+      );
+      var pickerActive =
+        (model && model.value.trim() !== '') ||
+        (field && field.value.trim() !== '');
+      var expressionActive =
+        !pickerActive && expression && expression.value.trim() !== '';
+      var disablePicker = isCustom || expressionActive;
+
+      setTargetState(
+        this.hasContextModelTarget ? this.contextModelTarget : null,
+        !disablePicker,
+        false,
+      );
+      setTargetState(
+        this.hasFieldNameTarget ? this.fieldNameTarget : null,
+        !disablePicker,
+        !(model && model.value) || !this.hasFields,
+      );
+      // The operator is needed for an advanced expression; hide it without
+      // disabling it so the saved comparison still submits.
+      setTargetState(
+        this.hasOperatorTarget ? this.operatorTarget : null,
+        !expressionActive,
+        false,
+        false,
+      );
+      setTargetState(
+        this.hasCompareValueTarget ? this.compareValueTarget : null,
+        !isCustom && needsValue && !expressionActive,
+        false,
+      );
+      setTargetState(
+        this.hasRuleTarget ? this.ruleTarget : null,
+        isCustom && !expressionActive,
+        false,
+      );
+      setTargetState(
+        this.hasExpressionTarget ? this.expressionTarget : null,
+        !pickerActive && !isCustom,
+        false,
+      );
+    }
+  }
+
+  /**
+   * Populate a target's control-key suggestions from switch blocks in the same
+   * admin form. Validation remains server-side.
+   */
+  class SwitchKeyController extends Controller {
+    static targets = ['switchKey'];
+
+    connect() {
+      this.refresh();
+    }
+
+    refresh(event) {
+      var input = control(
+        this.hasSwitchKeyTarget ? this.switchKeyTarget : null,
+        'input',
+      );
+      if (!input) {
+        return;
+      }
+      if (
+        event &&
+        event.target !== input &&
+        !event.target.matches('input[name$="-logic_key"]')
+      ) {
+        return;
+      }
+      var list = this.element.querySelector(
+        'datalist[data-daisie-switch-keys]',
+      );
+      if (!list) {
+        list = document.createElement('datalist');
+        list.dataset.daisieSwitchKeys = '';
+        this.element.appendChild(list);
+      }
+      list.id = input.id + '-keys';
+      list.innerHTML = '';
+      var form = this.element.closest('form') || document;
+      form
+        .querySelectorAll('input[name$="-logic_key"]')
+        .forEach(function (logicInput) {
+          var key = logicInput.value.trim();
+          if (!key) {
+            return;
+          }
+          var option = document.createElement('option');
+          option.value = key;
+          option.label = key;
+          list.appendChild(option);
+        });
+      input.setAttribute('list', list.id);
+    }
+  }
+
   window.wagtail.app.register('daisie-image-block', ImageBlockController);
   window.wagtail.app.register('daisie-audience', AudienceController);
   window.wagtail.app.register(
     'daisie-background-layer',
     BackgroundLayerController,
   );
+  window.wagtail.app.register(
+    'daisie-visibility-condition',
+    VisibilityConditionController,
+  );
+  window.wagtail.app.register('daisie-switch-key', SwitchKeyController);
 })();

@@ -1,5 +1,6 @@
 """Layout/decorative component blocks (stack, aura, mask, dropdown, swap)."""
 
+from django.core.validators import validate_slug
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.images.blocks import ImageBlock as WagtailImageBlock
@@ -155,6 +156,26 @@ class SwapBlock(ThemedBlock):
     on_text = InlineMarkupBlock(max_length=64, label=_("On"))
     off_text = InlineMarkupBlock(max_length=64, label=_("Off"))
     effect = blocks.ChoiceBlock(choices=SWAP_EFFECT_CHOICES, default="", required=False)
+    logic_label = blocks.CharBlock(
+        max_length=255,
+        required=False,
+        blank=True,
+        label=_("Logic label"),
+        help_text=_("A friendly name shown when choosing this key elsewhere."),
+    )
+    logic_key = blocks.CharBlock(
+        max_length=64,
+        required=False,
+        blank=True,
+        validators=[validate_slug],
+        label=_("Logic key"),
+        help_text=_("Unique key used by blocks that this switch controls."),
+    )
+    default_state = blocks.BooleanBlock(
+        default=False,
+        required=False,
+        label=_("On by default"),
+    )
 
     class Meta:
         icon = "resubmit"
@@ -163,7 +184,13 @@ class SwapBlock(ThemedBlock):
         template = "wagtail_daisIE/blocks/layout/swap.html"
         form_layout = blocks.BlockGroup(
             children=["on_text", "off_text", "effect"],
-            settings=["design", "audience"],
+            settings=[
+                "logic_label",
+                "logic_key",
+                "default_state",
+                "design",
+                "audience",
+            ],
         )
 
 

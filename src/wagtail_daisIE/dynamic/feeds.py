@@ -20,7 +20,6 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 from ..choices.utils import ChoiceList
-from .conditions import evaluate_condition
 from .context import context_model_keys
 from .registry import get_context_model
 
@@ -88,11 +87,13 @@ def base_context(parent_context):
     return base
 
 
-def render_stream(stream, ctx, stream_block=None):
+def render_stream(stream, ctx, stream_block=None, scope=None):
     """Render each child block of ``stream`` with the item context ``ctx``."""
     parts = []
     if not stream:
         return ""
+    if scope:
+        ctx = {**ctx, "daisie_visibility_scope": scope}
     for child in stream:
         if hasattr(child, "block"):
             parts.append(str(child.block.render(child.value, ctx)))
@@ -528,51 +529,6 @@ def resolve_layout(feed, override=None, request=None):
 # --- Rendering --------------------------------------------------------------
 
 
-def _item_streams(feed):
-    """Resolve a feed's item designs once: the default plus its variants.
-
-    Returns ``((default_stream, default_block), [(variant_value, block), …])``.
-    Both bound (``StreamValue``) and raw list values are supported, as
-    ``StreamField`` instances are not always wrapped at render time.
-    """
-    default = (feed.item, feed._meta.get_field("item").stream_block)
-    variants = feed.item_variants or []
-    if not variants:
-        return default, []
-
-    variants_block = feed._meta.get_field("item_variants").stream_block
-    resolved = []
-    for child in variants:
-        if hasattr(child, "value"):
-            value, block = child.value, child.block
-        elif isinstance(child, dict) and "type" in child:
-            value = child.get("value")
-            block = variants_block.child_blocks.get(child["type"])
-        elif isinstance(child, (tuple, list)) and len(child) == 2:
-            value, block = child[1], variants_block.child_blocks.get(child[0])
-        else:
-            continue
-        if block is None or not isinstance(value, dict):
-            continue
-        stream_block = block.child_blocks.get("item")
-        if stream_block is not None:
-            resolved.append((value, stream_block))
-    return default, resolved
-
-
-def choose_item_stream(plan, obj, context):
-    """Return the ``(stream, stream_block)`` design used for a single item.
-
-    The first item variant whose condition matches ``obj`` wins; otherwise the
-    feed's default design is used.
-    """
-    default, variants = plan
-    for value, stream_block in variants:
-        if evaluate_condition(value, obj, context):
-            return value.get("item"), stream_block
-    return default
-
-
 def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
     """Render a slice of ``feed`` and return the template context data."""
     from ..base_blocks.css import build_design_css
@@ -646,13 +602,13 @@ def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
         return result
 
     base = _items_context(request, page)
-    plan = _item_streams(feed)
+    stream = feed.item
+    stream_block = feed._meta.get_field("item").stream_block
     items = []
     for obj in objects:
         ctx = dict(base)
         ctx[config.key] = obj
-        stream, stream_block = choose_item_stream(plan, obj, ctx)
-        items.append(render_stream(stream, ctx, stream_block))
+        items.append(render_stream(stream, ctx, stream_block, scope="feed-item"))
     item_css = result.get("item_css", "daisie-feed__item")
     result["items_html"] = "".join(
         f'<div class="{item_css}" data-daisie-feed-item>{html}</div>' for html in items

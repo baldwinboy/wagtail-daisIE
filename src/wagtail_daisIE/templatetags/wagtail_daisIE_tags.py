@@ -22,12 +22,36 @@ def daisyui_styles():
         {% load wagtail_daisIE_tags %}
         {% daisyui_styles %}
     """
-    links = [static("wagtail_daisIE/css/daisie.css")]
+    links = [
+        static("wagtail_daisIE/css/daisie.css"),
+        static("wagtail_daisIE/css/daisie-visibility.css"),
+    ]
     if getattr(settings, "WAGTAIL_DAISIE_RESPONSIVE_CSS", False):
         links.append(static("wagtail_daisIE/css/daisie-responsive.css"))
     return format_html_join(
         "\n", '<link rel="stylesheet" href="{}">', ((link,) for link in links)
     )
+
+
+@register.simple_tag(takes_context=True)
+def daisie_switch_css(context, key, scope=""):
+    """Emit CSS for one switch controller, deduplicated per request."""
+    from ..base_blocks.visibility import build_switch_css
+
+    css = build_switch_css(key, scope)
+    if not css:
+        return ""
+    request = context.get("request") if context is not None else None
+    if request is not None:
+        seen = getattr(request, "daisie_switch_css_seen", None)
+        if seen is None:
+            seen = set()
+            request.daisie_switch_css_seen = seen
+        marker = (scope or "page", str(key).strip())
+        if marker in seen:
+            return ""
+        seen.add(marker)
+    return format_html("<style>{}</style>", mark_safe(css))  # noqa: S308
 
 
 @register.inclusion_tag("wagtail_daisIE/tags/favicon.html", takes_context=True)
@@ -173,6 +197,7 @@ def daisyui_menu(context, menu_name, css_class=""):
         "menu_design_css": menu.get_menu_design_css(),
         "menu_design_style": menu.get_menu_design_style(),
         **values,
+        "daisie_visibility_scope": "menu",
     }
 
 

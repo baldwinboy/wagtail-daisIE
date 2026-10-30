@@ -171,7 +171,22 @@ class ContextModel:
             model_fields = model_fields[:limit]
         for model_field in model_fields:
             label = getattr(model_field, "verbose_name", None) or model_field.name
-            docs.append({"name": model_field.name, "label": str(label)})
+            choices = []
+            # Avoid executing callable choice providers while rendering admin
+            # metadata; concrete lists/tuples are safe and enough for the UI.
+            if isinstance(getattr(model_field, "choices", None), (list, tuple)):
+                choices = [
+                    {"value": str(value), "label": str(choice_label)}
+                    for value, choice_label in model_field.choices
+                ]
+            docs.append(
+                {
+                    "name": model_field.name,
+                    "label": str(label),
+                    "type": model_field.get_internal_type(),
+                    "choices": choices,
+                }
+            )
         return docs
 
     def form_fields(self):

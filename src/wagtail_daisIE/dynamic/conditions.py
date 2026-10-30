@@ -1,13 +1,12 @@
-"""Conditions that select a feed item design per model instance.
+"""Conditions evaluated against a rendered context.
 
-A feed renders one item design for every object by default. A variant makes that
-design conditional: simple comparisons use a dotted expression resolved with the
-same safe, attribute-only lookups as dynamic links; anything more complex is
-delegated to a named rule registered in ``WAGTAIL_DAISIE_FEED_CONDITIONS`` --
-the same settings-driven bridge shape as ``WAGTAIL_DAISIE_AUDIENCE_RULES``.
+Simple comparisons use a dotted expression resolved with the same safe,
+attribute-only lookups as dynamic links; anything more complex is delegated to
+a named rule registered in ``WAGTAIL_DAISIE_FEED_CONDITIONS`` -- the same
+settings-driven bridge shape as ``WAGTAIL_DAISIE_AUDIENCE_RULES``.
 
 Rules are dotted paths to callables (or callables themselves) that receive the
-model instance and the current request and return truthy on a match. Missing
+resolved object and the current request and return truthy on a match. Missing
 rules and raised errors are treated as "no match" so a broken condition never
 takes down a page.
 """
@@ -48,7 +47,7 @@ FEED_CONDITION_OPERATOR_CHOICES = ChoiceList(
         ("gte", _("is greater than or equal to")),
         ("lt", _("is less than")),
         ("lte", _("is less than or equal to")),
-        (CUSTOM_OPERATOR, _("Named condition")),
+        (CUSTOM_OPERATOR, _("matches a custom rule")),
     ],
     "FEED_CONDITION_OPERATOR_CHOICES",
 )
@@ -112,16 +111,17 @@ def _call_rule(rule, obj, request):
         return rule(obj)
 
 
-def evaluate_custom_condition(key, obj, request):
+def evaluate_custom_condition(key, obj, request, *, invert=False):
     """Evaluate a named, settings-registered condition for ``obj``."""
     rule = _resolve_rule(get_feed_condition_rule(key))
     if rule is None:
         return False
     try:
-        return bool(_call_rule(rule, obj, request))
+        allowed = bool(_call_rule(rule, obj, request))
     except Exception:
         logger.exception("Feed condition %r raised while evaluating", key)
         return False
+    return not allowed if invert else allowed
 
 
 def _coerce(value, sample):
@@ -192,11 +192,24 @@ def _compare(resolved, operator, value):
     return False
 
 
-def evaluate_condition(value, obj, context):
-    """Return whether a feed item variant's condition matches ``obj``.
+_OPERATOR_KEYS = frozenset(key for key, _label in FEED_CONDITION_OPERATOR_CHOICES)
+
+
+def evaluate_condition(
+    value,
+    obj,
+    context,
+    *,
+    missing_is_false=False,
+    invert=False,
+):
+    """Return whether a condition matches ``obj``.
 
     An empty expression matches every item (a catch-all). Any failure to resolve
-    or compare is treated as "no match".
+    or compare is treated as "no match". ``missing_is_false`` makes an
+    unresolved expression fail closed. ``invert`` is applied only after a
+    successful comparison, so invalid or missing values never become visible
+    through inversion.
     """
     value = value or {}
     operator = (value.get("operator") or "").strip()
@@ -204,14 +217,25 @@ def evaluate_condition(value, obj, context):
 
     if operator == CUSTOM_OPERATOR:
         key = (value.get("rule") or "").strip()
-        return evaluate_custom_condition(key, obj, request) if key else False
+        return (
+            evaluate_custom_condition(key, obj, request, invert=invert)
+            if key
+            else False
+        )
+
+    if operator not in _OPERATOR_KEYS:
+        logger.warning("Ignoring unknown condition operator %r", operator)
+        return False
 
     expression = (value.get("expression") or "").strip()
     if not expression:
         return True
     try:
         resolved = resolve_object(expression, context)
-        return _compare(resolved, operator, value.get("compare_value"))
+        if missing_is_false and resolved is None:
+            return False
+        allowed = _compare(resolved, operator, value.get("compare_value"))
     except Exception:
-        logger.debug("Ignoring invalid feed condition %r", expression, exc_info=True)
+        logger.warning("Ignoring invalid condition %r", expression, exc_info=True)
         return False
+    return not allowed if invert else allowed

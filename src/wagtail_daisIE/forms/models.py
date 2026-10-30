@@ -208,6 +208,10 @@ class DaisieFormPage(StyledPageMixin, AbstractForm):
 
     def clean(self):
         super().clean()
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.success_body, _("Success body"))
+        validate_visibility_stream(self.error_body, _("Error body"))
         duplicates = duplicate_field_names(self.body)
         if duplicates:
             raise ValidationError(

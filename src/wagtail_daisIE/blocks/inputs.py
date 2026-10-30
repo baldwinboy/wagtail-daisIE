@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 
+from django.core.validators import validate_slug
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
@@ -280,6 +281,21 @@ class ToggleBlock(ThemedBlock):
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
+    logic_label = blocks.CharBlock(
+        max_length=255,
+        required=False,
+        blank=True,
+        label=_("Logic label"),
+        help_text=_("A friendly name shown when choosing this key elsewhere."),
+    )
+    logic_key = blocks.CharBlock(
+        max_length=64,
+        required=False,
+        blank=True,
+        validators=[validate_slug],
+        label=_("Logic key"),
+        help_text=_("Unique key used by blocks that this switch controls."),
+    )
     checked = blocks.BooleanBlock(
         default=False, required=False, label=_("On by default")
     )
@@ -295,8 +311,8 @@ class ToggleBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/toggle.html"
         form_layout = blocks.BlockGroup(
-            children=["label", "name", "checked", "helper_text", "color", "size"],
-            settings=["design", "audience"],
+            children=["label", "name", "helper_text", "color", "size"],
+            settings=["logic_label", "logic_key", "checked", "design", "audience"],
         )
 
 

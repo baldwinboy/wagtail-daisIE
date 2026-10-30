@@ -49,5 +49,11 @@ class ReusableBlock(ClusterableModel):
         verbose_name_plural = _("Reusable blocks")
         ordering = ["name"]
 
+    def clean(self):
+        super().clean()
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.content, _("Reusable block content"))
+
     def __str__(self):
         return self.name

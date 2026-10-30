@@ -25,7 +25,7 @@ from ..dynamic.feeds import (
 from ..dynamic.panels import FeedContextModelHelpPanel
 from ..dynamic.registry import get_context_model_choices, get_filter_choices
 from ..icons.blocks import IconChooserBlock
-from .blocks_data import ITEM_BLOCKS, FeedItemVariantBlock
+from .blocks_data import ITEM_BLOCKS
 
 
 FILTER_MENU_STYLE_CHOICES = ChoiceList(
@@ -262,17 +262,6 @@ class Feed(ClusterableModel):
         verbose_name=_("Item design"),
         collapsed=True,
     )
-    item_variants = StreamField(
-        [("variant", FeedItemVariantBlock())],
-        blank=True,
-        use_json_field=True,
-        verbose_name=_("Item variants"),
-        help_text=_(
-            "Alternate item designs. The first variant whose condition matches "
-            "an item is used; otherwise the default item design applies."
-        ),
-        collapsed=True,
-    )
     submit_appearance = StreamField(
         [("appearance", ButtonAppearanceBlock())],
         blank=True,
@@ -367,7 +356,6 @@ class Feed(ClusterableModel):
             classname="collapsed",
         ),
         FieldPanel("item"),
-        FieldPanel("item_variants"),
     ]
 
     class Meta:
@@ -377,6 +365,12 @@ class Feed(ClusterableModel):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.item, _("Feed item design"))
 
     def get_submit_css(self):
         value = self.submit_appearance[0].value if self.submit_appearance else None

@@ -24,6 +24,7 @@ from wagtail import blocks
 
 from ..base_blocks import InlineMarkupBlock, collapsed_group
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
+from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
 from ..blocks.inputs import AUTOCOMPLETE_BLOCKS, FIELD_BLOCKS
 from ..blocks.link import ButtonBlock
 from ..choicelist import ChoiceList
@@ -159,7 +160,7 @@ class ActionButtonBlock(ButtonBlock):
         )
 
 
-class ActionBlock(DaisieStructBlock):
+class ActionBlock(VisibilityMixin, DaisieStructBlock):
     """A themed action button plus its optional confirmation alert."""
 
     action = blocks.ChoiceBlock(choices=get_action_choices)
@@ -173,6 +174,7 @@ class ActionBlock(DaisieStructBlock):
         required=False,
         help_text=_("Optional alert shown after the action runs."),
     )
+    visibility = VisibilityBlock()
 
     class Meta:
         icon = "plus"
@@ -182,7 +184,7 @@ class ActionBlock(DaisieStructBlock):
         template = "wagtail_daisIE/blocks/data/action_button.html"
         form_layout = blocks.BlockGroup(
             children=["action", "target_expression", "button", "confirmation"],
-            settings=[],
+            settings=["visibility"],
         )
 
     def get_context(self, value, parent_context=None):
@@ -206,7 +208,7 @@ class ActionBlock(DaisieStructBlock):
         return context
 
 
-class ActionFormBlock(DaisieStructBlock):
+class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
     """A data-collecting form that POSTs its fields to a configured action.
 
     The fields are ordinary DaisyUI input blocks; the block renders one
@@ -234,6 +236,7 @@ class ActionFormBlock(DaisieStructBlock):
         label=_("After submit"),
         help_text=_("How the browser responds when the action succeeds."),
     )
+    visibility = VisibilityBlock()
 
     class Meta:
         icon = "form"
@@ -250,7 +253,7 @@ class ActionFormBlock(DaisieStructBlock):
                 "behaviour",
                 "confirmation",
             ],
-            settings=[],
+            settings=["visibility"],
         )
 
     def get_context(self, value, parent_context=None):

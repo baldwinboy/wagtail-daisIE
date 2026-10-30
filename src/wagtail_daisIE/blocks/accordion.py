@@ -2,12 +2,13 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from ..base_blocks.compact import DaisieStructBlock
+from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
 from .inline import HeaderBlock
 from .section import SectionBlock
 from .stream import AccordionItemContentStreamBlock
 
 
-class AccordionItemBlock(DaisieStructBlock):
+class AccordionItemBlock(VisibilityMixin, DaisieStructBlock):
     heading = HeaderBlock()
     content = AccordionItemContentStreamBlock()
     collapsed = blocks.BooleanBlock(
@@ -15,6 +16,7 @@ class AccordionItemBlock(DaisieStructBlock):
         required=False,
         label=_("Start collapsed"),
     )
+    visibility = VisibilityBlock()
 
     class Meta:
         icon = "plus"
@@ -23,6 +25,7 @@ class AccordionItemBlock(DaisieStructBlock):
         template = "wagtail_daisIE/blocks/accordion_item.html"
         form_layout = blocks.BlockGroup(
             children=["heading", "content", "collapsed"],
+            settings=["visibility"],
         )
 
 

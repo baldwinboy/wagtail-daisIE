@@ -58,6 +58,13 @@ from .link import AbstractLinkBlock, LinkDestinationBlock
 from .markup import InlineMarkupBlock
 from .size import BlockSizeBlock, InlineSizeBlock
 from .typography import TypographyBlock
+from .visibility import (
+    ContextConditionBlock,
+    VisibilityBlock,
+    VisibilityMixin,
+    build_switch_css,
+    validate_visibility_stream,
+)
 
 
 __all__ = [
@@ -73,6 +80,7 @@ __all__ = [
     "ChoiceOptionsDesignBlock",
     "ColorChoiceBlock",
     "CompactBlockMetaclass",
+    "ContextConditionBlock",
     "CompactBlockMixin",
     "collapsed_group",
     "ContentAlignmentBlock",
@@ -87,6 +95,10 @@ __all__ = [
     "TrayDesignBlock",
     "UPLOAD_DISPLAY_CHOICES",
     "UploadWidgetDesignBlock",
+    "VisibilityBlock",
+    "VisibilityMixin",
+    "build_switch_css",
+    "validate_visibility_stream",
     "InlineDesignBlock",
     "InlineMarkupBlock",
     "InlineSizeBlock",

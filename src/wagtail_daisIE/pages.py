@@ -203,6 +203,12 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
                 return f"background: {css}"
         return ""
 
+    def clean(self):
+        super().clean()
+        from .base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.body, _("Page body"))
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
         theme = self.get_daisyui_theme()

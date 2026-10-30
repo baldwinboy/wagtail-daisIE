@@ -1,8 +1,13 @@
-{% load notifications %}
+{% load notifications wagtail_daisIE_tags %}
 {% if audience_allowed %}
   <label class="swap {{ value.effect }} {{ block_css|default:"" }}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    <input type="checkbox" />
+    <input
+      type="checkbox"
+      {% if value.logic_key %}data-daisie-switch-key="{{ value.logic_key }}"{% if daisie_visibility_scope and daisie_visibility_scope != "page" %} data-daisie-switch-scope="{{ daisie_visibility_scope }}"{% endif %}{% endif %}
+      {% if value.default_state %}checked{% endif %}
+    />
     <div class="swap-on">{% daisie_markup value.on_text %}</div>
     <div class="swap-off">{% daisie_markup value.off_text %}</div>
   </label>
+  {% if value.logic_key %}{% daisie_switch_css value.logic_key daisie_visibility_scope %}{% endif %}
 {% endif %}

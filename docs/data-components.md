@@ -168,38 +168,15 @@ If a visible count is needed, do not edit `feed_body.html` to embed one. Instead
 * Override `wagtail_daisIE/blocks/data/feed_body.html` in your project.
 * Or add a dedicated `FeedCountBlock` / template tag in a later change.
 
-### Item variants
+### Item visibility
 
-By default every item uses one **Item design**. **Item variants** add alternate
-designs chosen per instance: the first variant whose condition matches an item
-is used, otherwise the default **Item design** applies.
+Every feed item uses the feed's single **Item design**. Use block **Visibility**
+settings to hide or show individual blocks per item, with a switch or a
+model-context condition. Context conditions are evaluated against the current
+feed item, so `user.username is exactly ada` applies per rendered item. See
+[visibility.md](visibility.md).
 
-Each variant has a **When** expression (a value from the item, e.g.
-`{{ article.featured }}`), an **Operator** and a **Value**. An empty expression
-matches every item (a catch-all). Basic operators cover the common cases
-(`is true`, `equals`, `is one of`, `contains`, `greater than`, …), and any that
-cannot be evaluated fail safe to the default design.
-
-For complex logic, set the operator to **Named condition** and pick a rule
-registered in `WAGTAIL_DAISIE_FEED_CONDITIONS` — the same settings-driven bridge
-shape as `WAGTAIL_DAISIE_AUDIENCE_RULES`:
-
-```python
-WAGTAIL_DAISIE_FEED_CONDITIONS = {
-    "featured": {
-        "label": "Featured",
-        "rule": "myapp.conditions.is_featured",  # or a callable
-    },
-}
-
-
-def is_featured(obj, request):
-    return obj.featured or obj.publish_at <= timezone.now()
-```
-
-A rule receives the model instance and the current request (a one-argument
-`rule(obj)` is also accepted) and returns truthy on a match. Missing rules and
-errors are treated as "no match".
+Item variants and alternate item designs are no longer available.
 
 ### Layout
 

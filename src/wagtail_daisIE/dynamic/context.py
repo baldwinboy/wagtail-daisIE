@@ -24,7 +24,12 @@ def copy_context_values(parent_context, context):
     """
     if not parent_context:
         return context
-    for key in ("request", "csrf_token", *context_model_keys()):
+    for key in (
+        "request",
+        "csrf_token",
+        "daisie_visibility_scope",
+        *context_model_keys(),
+    ):
         if key not in context and key in parent_context:
             context[key] = parent_context[key]
     if not context.get("account"):

@@ -176,6 +176,7 @@ class TestStyles:
     def test_base_stylesheet_only_by_default(self):
         html = _render("{% daisyui_styles %}", {})
         assert "daisie.css" in html
+        assert "daisie-visibility.css" in html
         assert "daisie-responsive.css" not in html
 
     @override_settings(WAGTAIL_DAISIE_RESPONSIVE_CSS=True)

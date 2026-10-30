@@ -5,6 +5,7 @@ from wagtail_daisIE.base_blocks.audience import AudienceBlock, evaluate_audience
 from wagtail_daisIE.base_blocks.compact import DaisieStructBlock
 from wagtail_daisIE.base_blocks.css import build_layout_item_css
 from wagtail_daisIE.base_blocks.layout_design import LayoutItemDesignBlock
+from wagtail_daisIE.base_blocks.visibility import VisibilityBlock, VisibilityMixin
 from wagtail_daisIE.choices import (
     FLEX_WRAP_CHOICES,
 )
@@ -30,10 +31,11 @@ def _layout_form_layout(children, extra_settings):
     )
 
 
-class LayoutItemBlock(DaisieStructBlock):
+class LayoutItemBlock(VisibilityMixin, DaisieStructBlock):
     content = LayoutStreamBlock()
     design = LayoutItemDesignBlock()
     audience = AudienceBlock()
+    visibility = VisibilityBlock()
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -56,7 +58,7 @@ class LayoutItemBlock(DaisieStructBlock):
         template = "wagtail_daisIE/blocks/layout_item.html"
         form_layout = blocks.BlockGroup(
             children=["content"],
-            settings=["design", "audience"],
+            settings=["design", "audience", "visibility"],
             heading=_("Layout item"),
             help_text=_(
                 "Empty fields inherit the container's default layout. "

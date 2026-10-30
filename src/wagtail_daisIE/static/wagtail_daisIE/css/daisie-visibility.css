@@ -1,0 +1,12 @@
+/* Block visibility: content stays visible without :has() support. */
+.daisie-visibility-target,
+.daisie-calendar-event,
+.daisie-menu {
+  display: contents;
+}
+
+@supports selector(:has(*)) {
+  .daisie-visibility-target {
+    display: none;
+  }
+}

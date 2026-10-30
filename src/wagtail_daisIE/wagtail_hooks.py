@@ -292,6 +292,18 @@ def register_audience_rules_js():
 
 
 @hooks.register("insert_global_admin_js")
+def register_context_models_js():
+    from .dynamic.registry import get_context_models_state
+
+    state = json.dumps(get_context_models_state())
+    script = f"window.WAGTAIL_DAISIE_CONTEXT_MODELS = {state.replace('</', '<\\/')};"
+    return format_html(
+        "<script type='text/javascript'>{}</script>",
+        mark_safe(script),  # noqa: S308
+    )
+
+
+@hooks.register("insert_global_admin_js")
 def register_block_controllers_js():
     return format_html(
         '<script src="{}"></script>',

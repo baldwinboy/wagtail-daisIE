@@ -54,17 +54,33 @@ def guard_render(*token: Any, context: dict | None = None) -> Iterator[bool]:
         _RENDER_CHAIN.reset(reset)
 
 
-def iter_nested_stream_blocks(value: Any) -> Iterator[tuple[str, Any]]:
+def iter_nested_stream_blocks(
+    value: Any,
+    *,
+    include_structs: bool = False,
+    skip: Any = None,
+) -> Iterator[tuple[str | None, Any]]:
     """Yield ``(block_type, value)`` for every stream child in ``value``.
 
     Walks ``StreamValue``, ``StructValue``, dicts and lists so validation can
     detect a data block referenced from inside its own design, even through a
     container. Raw values are handled as well as bound ones.
+
+    When ``include_structs`` is true, every struct/dict value is yielded too
+    (with ``block_type`` set to ``None``) so callers can inspect nested struct
+    fields. ``skip`` is an optional callable ``skip(key, child, parent)`` that
+    prevents descending into a specific mapping value.
     """
-    yield from _walk(value, set())
+    yield from _walk(value, set(), include_structs=include_structs, skip=skip)
 
 
-def _walk(value: Any, seen: set[int]) -> Iterator[tuple[str, Any]]:
+def _walk(
+    value: Any,
+    seen: set[int],
+    *,
+    include_structs: bool = False,
+    skip: Any = None,
+) -> Iterator[tuple[str | None, Any]]:
     if isinstance(value, (StreamValue, StructValue, dict, list, tuple)):
         marker = id(value)
         if marker in seen:
@@ -74,18 +90,46 @@ def _walk(value: Any, seen: set[int]) -> Iterator[tuple[str, Any]]:
     if isinstance(value, StreamValue):
         for child in value:
             yield child.block_type, child.value
-            yield from _walk(child.value, seen)
+            yield from _walk(
+                child.value,
+                seen,
+                include_structs=include_structs,
+                skip=skip,
+            )
     elif isinstance(value, StructValue):
-        for child in value.values():
-            yield from _walk(child, seen)
+        if include_structs:
+            yield None, value
+        for key, child in value.items():
+            if skip is not None and skip(key, child, value):
+                continue
+            yield from _walk(
+                child,
+                seen,
+                include_structs=include_structs,
+                skip=skip,
+            )
     elif isinstance(value, dict):
-        for child in value.values():
-            yield from _walk(child, seen)
+        if include_structs:
+            yield None, value
+        for key, child in value.items():
+            if skip is not None and skip(key, child, value):
+                continue
+            yield from _walk(
+                child,
+                seen,
+                include_structs=include_structs,
+                skip=skip,
+            )
     elif isinstance(value, (list, tuple)):
         for child in value:
             if isinstance(child, dict) and "type" in child and "value" in child:
                 yield child["type"], child["value"]
-            yield from _walk(child, seen)
+            yield from _walk(
+                child,
+                seen,
+                include_structs=include_structs,
+                skip=skip,
+            )
 
 
 __all__ = ["guard_render", "iter_nested_stream_blocks"]

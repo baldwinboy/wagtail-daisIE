@@ -125,6 +125,12 @@ class AllauthPageOverride(PreviewableMixin, ClusterableModel):
         verbose_name_plural = _("Allauth page overrides")
         ordering = ["view"]
 
+    def clean(self):
+        super().clean()
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.body, _("Allauth page body"))
+
     def __str__(self):
         return self.get_view_display() or self.view
 

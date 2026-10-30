@@ -16,6 +16,7 @@ from .size import BlockSizeBlock, InlineSizeBlock, MediaSizeBlock
 from .table import TableAppearanceBlock
 from .typography import TypographyBlock
 from .utils import build_class
+from .visibility import VisibilityBlock, VisibilityMixin
 
 
 _BOX_CHILDREN = [
@@ -274,10 +275,11 @@ class MenuItemDesignBlock(TypographyDesignBlock):
         )
 
 
-class ThemedBlock(DaisieStructBlock):
+class ThemedBlock(VisibilityMixin, DaisieStructBlock):
     audience = AudienceBlock()
     design = DesignBlock()
     responsive = responsive_overrides()
+    visibility = VisibilityBlock()
 
     default_css_key = "container"
 
@@ -319,20 +321,32 @@ class ThemedBlock(DaisieStructBlock):
         abstract = True
         form_layout = blocks.BlockGroup(
             children=[],
-            settings=["design", "responsive", "audience"],
+            settings=["design", "responsive", "audience", "visibility"],
         )
 
     def get_form_layout(self):
-        """Keep ``responsive`` in the settings area on every themed block.
+        """Keep ``responsive`` and ``visibility`` in the settings area.
 
         Themed subclasses often declare their own ``Meta.form_layout``; without
-        this, the inherited responsive block would be appended to the main
-        content area instead of the collapsed settings panel.
+        this, the inherited fields would be appended to the main content area
+        instead of the collapsed settings panel. Email blocks shadow
+        ``visibility``, so it is only added when the child block exists.
         """
         layout = super().get_form_layout()
-        children = [child for child in layout.children if child != "responsive"]
-        settings = [child for child in layout.settings if child != "responsive"]
+        managed = {"responsive", "visibility"}
+        children = [
+            child
+            for child in layout.children
+            if not (isinstance(child, str) and child in managed)
+        ]
+        settings = [
+            child
+            for child in layout.settings
+            if not (isinstance(child, str) and child in managed)
+        ]
         settings.append("responsive")
+        if "visibility" in self.child_blocks:
+            settings.append("visibility")
         return blocks.BlockGroup(
             children=children,
             settings=settings,

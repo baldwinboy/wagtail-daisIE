@@ -87,3 +87,9 @@ class ErrorPage(models.Model):
             if self.title
             else str(self.status_code)
         )
+
+    def clean(self):
+        super().clean()
+        from ..base_blocks.visibility import validate_visibility_stream
+
+        validate_visibility_stream(self.body, _("Error page body"))
