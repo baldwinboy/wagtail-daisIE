@@ -1,5 +1,7 @@
 demo
 **/tailwind
 **/migrations
+**/daisie-responsive.css
+**/daisie-visibility.css
 **/daisie.css
 htmlcov
