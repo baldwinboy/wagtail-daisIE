@@ -9,6 +9,17 @@
 @import './safelist.css';
 @import './theme.css';
 
+/*
+ * Documentation quotes Tailwind class syntax (e.g. `bg-[url(...)]`).
+ * Never scan it, or the compiled sheet gains a broken url() reference
+ * that aborts WhiteNoise's manifest collectstatic.
+ */
+@source not "../../../*.md";
+@source not "../../../**/*.md";
+
+/* Belt-and-braces: never emit the exact junk utility. */
+@source not inline("bg-[url(...)]");
+
 @plugin "daisyui";
 
 @layer components {

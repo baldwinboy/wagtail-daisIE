@@ -1,5 +1,6 @@
 demo
 **/migrations
+**/daisie-responsive.css
 **/daisie.css
 htmlcov
 .release-please-manifest.json
