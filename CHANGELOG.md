@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.1](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.7.0...v3.7.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* stop Tailwind scanning documentation for classes ([9f3b5ad](https://github.com/baldwinboy/wagtail-daisIE/commit/9f3b5ad821e4d900b2bcc85cd10c5ac3922c9f78))
+
 ## [3.7.0](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.6.2...v3.7.0) (2026-10-30)
 
 
