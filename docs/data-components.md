@@ -130,6 +130,9 @@ Feed fields:
 * **Order by**, **Items per page**, **Empty message**.
 * **Infinite scroll** — load more on scroll; otherwise a **Load more** button.
 * **Filters** — select and order the filters declared on the model (below).
+* The public slice is bounded by `WAGTAIL_DAISIE_FEED_MAX_LIMIT` (default
+  `1000`) and `WAGTAIL_DAISIE_FEED_MAX_OFFSET` (default `1000000`). Raise these
+  settings for feeds that legitimately need larger windows.
 * **Item design** — the blocks used for each item. This is the **same set as a
   page body** (sections, grids, cards, accordions, images, feedback, inputs,
   newsletter…) plus **Action** blocks, so items can use any Daisie block.
@@ -195,6 +198,8 @@ Admins can let visitors switch layout with **Let visitors switch layout** and
 radio inputs inside the filter form: changing one re-requests the feed with
 `?layout=<value>` and the server renders the chosen layout. Without JavaScript
 the radios are part of the `GET` form, so the layout is applied on submit.
+When **Let visitors switch layout** is off, `?layout=` is ignored: the setting
+is authoritative.
 
 ### Filtering
 
@@ -282,6 +287,8 @@ depend on the filter type:
   **Container design** (the fieldset/wrapper) and **Menu item design** (extra
   styling when the feed uses a filter menu).
 * **Collapsed** renders a filter inside a collapsible control.
+* The Reset control on a single-choice or boolean filter clears only that
+  filter group; other filters, search and layout are preserved.
 * **Feed filter menu** can place the filters and the layout toggle inside a
   dropdown or modal, with its own trigger appearance, panel design and
   container design. **Include the layout toggle** controls whether the layout
@@ -302,6 +309,12 @@ Filtering, layout and pagination request the feed body fragment from
 next slice with `?limit=<n>` (a cumulative window, so no duplicate items). With
 **Infinite scroll** enabled the same request fires when the button scrolls into
 view; otherwise a **Load more** button is shown.
+
+The page URL is updated with the active filter and layout state so a copied or
+refreshed URL restores the same feed. Pages containing more than one feed do not
+synchronise the URL, to avoid one feed overwriting another. The per-placement
+layout override and page context are carried internally on feed requests, not
+in the visible URL.
 
 Every control is a real `GET` form field or link, so the feed still works
 without JavaScript — the page reloads and the server renders the same state

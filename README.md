@@ -464,6 +464,10 @@ WAGTAIL_DAISIE_ACTIONS = {
 WAGTAIL_DAISIE_HTMX = True
 WAGTAIL_DAISIE_HTMX_VERSION = 2
 
+# Public feed slice bounds (defaults shown).
+WAGTAIL_DAISIE_FEED_MAX_LIMIT = 1000
+WAGTAIL_DAISIE_FEED_MAX_OFFSET = 1_000_000
+
 # Opt-in responsive utilities stylesheet (breakpoint overrides; default off).
 WAGTAIL_DAISIE_RESPONSIVE_CSS = True
 

@@ -19,6 +19,15 @@ class _Manager:
 
 
 class TestRenderPlaceholders:
+    def test_invalid_filter_renders_literally(self):
+        source = "{{ payload.name|not_a_filter }}"
+        assert render_placeholders(source, {"payload": {"name": "Ada"}}) == (
+            "{{ payload.name|not_a_filter }}"
+        )
+        assert render_expression("payload.name|not_a_filter", {"payload": {}}) == (
+            "payload.name|not_a_filter"
+        )
+
     def test_substitution_and_date_filter(self):
         assert (
             render_placeholders(

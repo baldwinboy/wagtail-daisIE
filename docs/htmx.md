@@ -67,6 +67,10 @@ filtering and pagination do not reload the page.
 * **Load more** requests the next slice with `?limit=<n>` and swaps the body;
   with **Infinite scroll** the same request fires when the button becomes
   visible.
+* The page URL is kept in sync with the active filter and layout controls so it
+  can be copied or refreshed. Multiple-feed pages skip URL syncing. The
+  per-placement layout override and page context travel as internal request
+  values, not in the visible URL.
 
 Without htmx the filter form is a normal `GET` submission and **Load more** is a
 real link: the page reloads and the server renders the same state.

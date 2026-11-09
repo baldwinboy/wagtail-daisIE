@@ -123,3 +123,23 @@ class TestIconSources:
         )
         assert preview.status_code == 200
         assert "<svg" in preview.json()["preview"]
+
+    def test_provider_search_failure_is_empty(self, admin_client):
+        class BrokenProvider:
+            def search(self, *args, **kwargs):
+                raise RuntimeError("provider unavailable")
+
+            def browse(self, *args, **kwargs):
+                raise RuntimeError("provider unavailable")
+
+        with patch(
+            "wagtail_daisIE.icons.views.get_provider",
+            return_value=BrokenProvider(),
+        ):
+            response = admin_client.get(
+                reverse("wagtail_daisIE:icon_search"),
+                {"prefix": "broken", "q": "home"},
+            )
+
+        assert response.status_code == 200
+        assert response.json()["icons"] == []

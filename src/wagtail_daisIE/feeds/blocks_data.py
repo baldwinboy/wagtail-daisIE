@@ -25,6 +25,7 @@ from ..dynamic.feeds import (
     LAYOUT_CHOICES,
     ROW_MODE_CHOICES,
     TOGGLE_CHOICES,
+    encode_layout_override,
     render_feed,
 )
 from ..dynamic.feeds import (
@@ -169,6 +170,7 @@ class FeedBlock(ThemedBlock):
         limit = request.GET.get("limit") if request else None
 
         override = (value or {}).get("layout") or {}
+        layout_token = encode_layout_override(override)
         with guard_render("feed", feed.pk, context=context) as allowed:
             if not allowed:
                 return context
@@ -180,6 +182,7 @@ class FeedBlock(ThemedBlock):
                     limit=limit,
                     page=page,
                     override=override,
+                    layout_token=layout_token,
                 )
             )
         try:

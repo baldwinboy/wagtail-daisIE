@@ -7,6 +7,7 @@ import pytest
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, QueryDict
+from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.utils import timezone
 
@@ -17,6 +18,8 @@ from wagtail_daisIE.dynamic.actions import (
 )
 from wagtail_daisIE.dynamic.feeds import (
     apply_filters,
+    decode_layout_override,
+    encode_layout_override,
     render_feed,
 )
 from wagtail_daisIE.dynamic.registry import get_context_model, reset_context_models
@@ -316,6 +319,151 @@ class TestFeedRendering:
         assert "regularonly" not in data["items_html"]
 
 
+class TestFeedLayoutAndState:
+    def test_layout_toggle_requires_permission(self):
+        feed = _feed(layout="grid", allow_layout_toggle=False)
+        data = render_feed(feed, RequestFactory().get("/", {"layout": "list"}))
+        assert data["layout"] == "grid"
+        assert data["allow_layout_toggle"] is False
+
+        enabled = _feed(layout="grid", allow_layout_toggle=True)
+        data = render_feed(enabled, RequestFactory().get("/", {"layout": "list"}))
+        assert data["layout"] == "list"
+
+    def test_layout_toggle_active_css_is_exposed(self):
+        feed = _feed()
+        feed.layout_toggle_appearance = [
+            (
+                "appearance",
+                {
+                    "normal": {"color": "btn-primary"},
+                    "hover": {},
+                    "active": {"color": "btn-secondary"},
+                },
+            )
+        ]
+        feed.save()
+        data = render_feed(feed, RequestFactory().get("/"))
+        assert "btn-secondary" in data["layout_toggle_selected_css"]
+        assert "active:btn-secondary" in data["layout_toggle_css"]
+
+    def test_next_url_preserves_filters_and_adds_token(self):
+        feed = _feed()
+        data = render_feed(
+            feed,
+            RequestFactory().get(
+                "/", {"filter_active": "1", "layout": "list", "limit": "3"}
+            ),
+            page=SimpleNamespace(pk=7),
+            layout_token=encode_layout_override({"layout": "row"}),
+        )
+        next_url = data["next_url"]
+        assert "filter_active=1" in next_url
+        assert "layout=list" in next_url
+        assert "limit=" in next_url
+        assert "page=7" in next_url
+        assert "layout_token=" in next_url
+        assert "offset=" not in next_url
+
+    def test_layout_token_round_trip_and_invalid(self):
+        token = encode_layout_override({"layout": "list", "columns": 2})
+        assert decode_layout_override(token) == {
+            "layout": "list",
+            "columns": 2,
+        }
+        assert decode_layout_override("not-a-token") == {}
+
+    def test_filter_reset_url_preserves_other_state(self, settings):
+        _filter_config(settings)
+        feed = _feed(context_model="staff")
+        feed.filters = [("filter", {"key": "staff:active"})]
+        feed.save()
+        data = render_feed(
+            feed,
+            RequestFactory().get("/", {"filter_active": "1", "layout": "list"}),
+        )
+        entry = data["filters"][0]
+        assert "filter_active" not in entry["reset_url"]
+        assert "layout=list" in entry["reset_url"]
+
+
+class TestFeedTemplates:
+    def test_filter_controls_carry_selected_state_attributes(self):
+        html = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_filter.html",
+            {
+                "filter": {
+                    "type": "choice",
+                    "collapsed": False,
+                    "container_css": "",
+                    "label": "Tags",
+                    "label_css": "",
+                    "autocomplete": False,
+                    "multi": False,
+                    "key": "tags",
+                    "options": [{"value": "a", "label": "A"}],
+                    "values": ["a"],
+                    "value": "a",
+                    "button_css": "btn",
+                    "selected_css": "",
+                    "input_css": "",
+                    "reset_url": "/feed?filter_other=1",
+                }
+            },
+        )
+        assert "data-daisie-selectable" in html
+        assert 'data-daisie-selected-class=" btn-active"' in html
+        assert 'href="/feed?filter_other=1"' in html
+
+    def test_layout_and_load_more_attributes(self):
+        form_html = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_filter_form.html",
+            {
+                "block": SimpleNamespace(id="feed-1"),
+                "feed_url": "/feed/items/",
+                "filters": [],
+                "filter_menu": {"enabled": False},
+                "filter_panel_css": "",
+                "filter_layout_css": "",
+                "allow_layout_toggle": True,
+                "toggle_options": [{"value": "grid", "label": "Grid"}],
+                "layout": "grid",
+                "layout_toggle_css": "btn btn-sm",
+                "layout_toggle_selected_css": "btn-primary",
+                "layout_token": "token",
+                "feed_page_pk": "12",
+                "submit_css": "btn",
+            },
+        )
+        assert "data-daisie-selectable" in form_html
+        assert "btn-primary" in form_html
+        assert "feed_controls.js" in form_html
+        assert "layout_token" in form_html
+
+        body_html = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_body.html",
+            {
+                "block_id": "feed-1",
+                "has_more": True,
+                "next_url": "?limit=9&filter_active=1",
+                "next_limit": 9,
+                "feed_url": "/feed/items/",
+                "layout_token": "token",
+                "feed_page_pk": "12",
+                "infinite": True,
+                "submit_css": "btn",
+                "layout": "grid",
+                "layout_container_css": "grid",
+                "items_html": "",
+                "total": 10,
+                "empty_message": "",
+            },
+        )
+        assert 'href="?limit=9&amp;filter_active=1"' in body_html
+        assert "revealed" in body_html
+        assert "layout_token" in body_html
+
+
 class TestFeedEndpoint:
     def test_returns_items_fragment(self):
         from wagtail_daisIE.dynamic.views import feed_items
@@ -336,6 +484,48 @@ class TestFeedEndpoint:
         assert "ada" in html
         assert "daisie-feed__item" in html
         assert 'id="daisie-feed-body-x"' in html
+
+    def test_invalid_and_huge_query_values_do_not_raise(self):
+        from wagtail_daisIE.dynamic.views import feed_items
+
+        USER_MODEL.objects.create(username="ada")
+        feed = _feed()
+        for params in (
+            {"page": "abc", "block": "x"},
+            {"page": str(2**63), "block": "x"},
+            {"limit": str(2**63), "block": "x"},
+            {"offset": str(2**63), "block": "x"},
+        ):
+            response = feed_items(RequestFactory().get("/", params), feed.pk)
+            assert response.status_code == 200
+
+    def test_layout_token_applies_block_override(self):
+        from wagtail_daisIE.dynamic.views import feed_items
+
+        USER_MODEL.objects.create(username="ada")
+        feed = _feed(layout="grid")
+        token = encode_layout_override({"layout": "row"})
+        html = feed_items(
+            RequestFactory().get("/", {"layout_token": token, "block": "x"}),
+            feed.pk,
+        ).content.decode()
+        assert "daisie-feed--row" in html
+
+    def test_infinite_scroll_attribute_only_when_enabled(self):
+        from wagtail_daisIE.dynamic.views import feed_items
+
+        for index in range(3):
+            USER_MODEL.objects.create(username=f"user{index}")
+        finite = _feed(page_size=1, infinite=False)
+        infinite = _feed(page_size=1, infinite=True)
+        finite_html = feed_items(
+            RequestFactory().get("/", {"block": "x"}), finite.pk
+        ).content.decode()
+        infinite_html = feed_items(
+            RequestFactory().get("/", {"block": "x"}), infinite.pk
+        ).content.decode()
+        assert "revealed" not in finite_html
+        assert "revealed" in infinite_html
 
 
 class TestDateTransform:

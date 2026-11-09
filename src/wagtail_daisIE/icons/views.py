@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.utils.html import escape
@@ -5,6 +7,9 @@ from django.views.decorators.http import require_GET
 
 from .registry import get_provider, render_icon, search_icons
 from .value import split_icon
+
+
+logger = logging.getLogger(__name__)
 
 
 def _preview(value):
@@ -51,10 +56,16 @@ def icon_search(request):
         provider = get_provider(prefix)
         if provider is None:
             icons = []
-        elif query:
-            icons = provider.search(query, limit=limit, start=start)
         else:
-            icons = provider.browse(limit=limit)
+            try:
+                icons = (
+                    provider.search(query, limit=limit, start=start)
+                    if query
+                    else provider.browse(limit=limit)
+                )
+            except Exception:
+                logger.warning("Icon provider %r search failed", prefix, exc_info=True)
+                icons = []
     else:
         icons = search_icons(query, prefixes=prefixes, limit=limit, start=start)
 

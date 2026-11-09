@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load static i18n %}
 <form
   method="get"
   class="{% if filter_panel_css %}{{ filter_panel_css }}{% else %}mb-6 space-y-4{% endif %}"
@@ -7,6 +7,7 @@
   hx-target="#daisie-feed-body-{{ block.id }}"
   hx-swap="outerHTML"
   hx-trigger="change, input changed delay:400ms from:find input[type='search']"
+  hx-vals='{"layout_token": "{{ layout_token|escapejs }}", "page": "{{ feed_page_pk|escapejs }}"}'
 >
   <input type="hidden" name="block" value="{{ block.id }}" />
   <input type="hidden" name="offset" value="0" />
@@ -19,12 +20,16 @@
     {% if not filter_menu.enabled or filter_menu.include_layout_toggle %}
       <div class="join {{ layout_toggle_css|default:'btn btn-sm' }}" role="radiogroup" aria-label="{% translate 'Layout' %}">
         {% for option in toggle_options %}
-          <label class="{{ layout_toggle_css|default:'btn btn-sm' }} join-item{% if option.value == layout %} btn-active{% endif %}">
+          <label
+            class="{{ layout_toggle_css|default:'btn btn-sm' }} join-item{% if option.value == layout %} {{ layout_toggle_selected_css }} btn-active{% endif %}"
+            data-daisie-selected-class="{{ layout_toggle_selected_css }} btn-active"
+          >
             <input
               type="radio"
               name="layout"
               value="{{ option.value }}"
               class="sr-only"
+              data-daisie-selectable
               {% if option.value == layout %}checked{% endif %}
             />
             {{ option.label }}
@@ -37,3 +42,4 @@
     <button type="submit" class="{{ submit_css }}">{% translate "Apply" %}</button>
   </noscript>
 </form>
+<script src="{% static 'wagtail_daisIE/js/feed_controls.js' %}"></script>

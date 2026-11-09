@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import re
 
-from django.template import Context, Template
+from django.template import Context, Template, TemplateSyntaxError
 from django.utils.html import escape
 
 
@@ -68,7 +68,11 @@ def _compile(source):
     if template is None:
         # The filter appended to every expression is registered by the
         # notifications template library.
-        template = Template("{% load notifications %}" + source)
+        try:
+            template = Template("{% load notifications %}" + source)
+        except TemplateSyntaxError:
+            logger.warning("Invalid placeholder expression; rendering literally")
+            return None
         if len(_TEMPLATE_CACHE) >= _TEMPLATE_CACHE_LIMIT:
             _TEMPLATE_CACHE.clear()
         _TEMPLATE_CACHE[source] = template
@@ -115,9 +119,10 @@ def render_placeholders(text, context, *, escape_literals=True, escape_values=Tr
                 expression += "|daisie_value"
             pieces.append("{{ " + expression + " }}")
 
-    rendered = _compile("".join(pieces)).render(
-        Context(context, autoescape=escape_values)
-    )
+    template = _compile("".join(pieces))
+    if template is None:
+        return escape(text) if escape_literals else text
+    rendered = template.render(Context(context, autoescape=escape_values))
     return _restore(rendered)
 
 
@@ -135,11 +140,13 @@ def render_expression(expression, context):
         expression = expression[2:-2].strip()
     if not expression:
         return ""
+    original = expression
     if "|daisie_value" not in expression:
         expression += "|daisie_value"
-    return _compile("{{ " + expression + " }}").render(
-        Context(context, autoescape=True)
-    )
+    template = _compile("{{ " + expression + " }}")
+    if template is None:
+        return escape(original)
+    return template.render(Context(context, autoescape=True))
 
 
 def extract_variables(text):

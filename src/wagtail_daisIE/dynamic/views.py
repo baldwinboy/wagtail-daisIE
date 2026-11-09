@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 from urllib.parse import urlencode
@@ -19,9 +20,16 @@ from ..icons import render_icon, validate_icon
 from ..icons.value import IconValueError
 from .action_blocks import ALERT_TAGS
 from .actions import run_action
-from .feeds import render_feed
+from .feeds import (
+    decode_layout_override,
+    encode_layout_override,
+    render_feed,
+)
 from .registry import get_context_models, resolve_model
 from .resolvers import model_options
+
+
+logger = logging.getLogger(__name__)
 
 
 #: Confirmation level keyword -> Django messages level constant.
@@ -239,11 +247,29 @@ def feed_items(request, pk):
     if raw_page:
         from wagtail.models import Page
 
-        page = Page.objects.filter(pk=raw_page).first()
-        if page is not None:
-            page = page.specific
+        try:
+            page_pk = int(raw_page)
+            if not (0 < page_pk < 2**31):
+                raise ValueError
+            page = Page.objects.filter(pk=page_pk).first()
+            if page is not None:
+                page = page.specific
+        except (TypeError, ValueError, OverflowError, Page.DoesNotExist):
+            logger.warning("Ignoring invalid feed page parameter %r", raw_page)
 
-    data = render_feed(feed, request, offset=offset, limit=limit, page=page)
+    layout_token = request.GET.get("layout_token", "")
+    override = decode_layout_override(layout_token)
+    layout_token = encode_layout_override(override) if override else ""
+
+    data = render_feed(
+        feed,
+        request,
+        offset=offset,
+        limit=limit,
+        page=page,
+        override=override,
+        layout_token=layout_token,
+    )
     data.update(
         {
             "block_id": request.GET.get("block", ""),

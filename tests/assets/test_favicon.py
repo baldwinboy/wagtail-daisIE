@@ -1,5 +1,7 @@
 import base64
 
+from unittest.mock import patch
+
 import pytest
 
 from django.core.exceptions import ValidationError
@@ -87,6 +89,19 @@ class TestViews:
         DaisyUIFavicon.objects.create(app_name="No image")
         with pytest.raises(Http404):
             favicon_views.manifest(RequestFactory().get("/manifest.json"))
+
+    def test_broken_rendition_degrades(self):
+        favicon = DaisyUIFavicon.objects.create(image=_image())
+
+        with patch.object(
+            type(favicon.image),
+            "get_rendition",
+            side_effect=OSError("broken image"),
+        ):
+            assert favicon.rendition_url("32x32") == ""
+            assert favicon.manifest()["icons"] == []
+            with pytest.raises(Http404):
+                favicon_views.favicon(RequestFactory().get("/favicon.ico"))
 
 
 class TestTag:

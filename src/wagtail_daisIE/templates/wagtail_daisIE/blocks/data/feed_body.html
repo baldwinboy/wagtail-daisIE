@@ -16,11 +16,13 @@
   {% if has_more %}
     <div class="mt-4 text-center">
       <a
-        href="?limit={{ next_limit }}"
+        href="{{ next_url }}"
         hx-get="{{ feed_url }}?limit={{ next_limit }}&block={{ block_id }}"
         hx-include="#daisie-feed-{{ block_id }}"
         hx-target="#daisie-feed-body-{{ block_id }}"
         hx-swap="outerHTML"
+        hx-vals='{"layout_token": "{{ layout_token|escapejs }}", "page": "{{ feed_page_pk|escapejs }}"}'
+        {% if infinite %}hx-trigger="click, revealed"{% endif %}
         class="{{ submit_css }}"
         data-daisie-feed-more
       >{% translate "Load more" %}</a>

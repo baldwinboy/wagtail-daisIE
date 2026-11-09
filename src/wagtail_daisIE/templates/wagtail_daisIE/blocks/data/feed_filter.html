@@ -20,12 +20,16 @@
         {% elif filter.multi %}
             <div class="flex flex-wrap gap-2">
                 {% for option in filter.options %}
-                    <label class="{{ filter.button_css }}{% if option.value in filter.values %} {{ filter.selected_css }} btn-active{% endif %}">
+                    <label
+                        class="{{ filter.button_css }}{% if option.value in filter.values %} {{ filter.selected_css }} btn-active{% endif %}"
+                        data-daisie-selected-class="{{ filter.selected_css }} btn-active"
+                    >
                         <input
                             type="checkbox"
                             name="filter_{{ filter.key }}"
                             value="{{ option.value }}"
                             class="sr-only"
+                            data-daisie-selectable
                             {% if option.value in filter.values %}checked{% endif %}
                         />
                         {{ option.label }}
@@ -34,13 +38,15 @@
             </div>
         {% else %}
             <div class="filter">
-                <a href="{{ request.path }}" class="{{ filter.button_css }} btn-square filter-reset" aria-label="{% trans 'Reset' %}">&times;</a>
+                <a href="{{ filter.reset_url }}" class="{{ filter.button_css }} btn-square filter-reset" aria-label="{% trans 'Reset' %}">&times;</a>
                 {% for option in filter.options %}
                     <input
                         type="radio"
                         name="filter_{{ filter.key }}"
                         value="{{ option.value }}"
                         class="{{ filter.button_css }}{% if filter.value == option.value %} {{ filter.selected_css }} btn-active{% endif %}"
+                        data-daisie-selectable
+                        data-daisie-selected-class="{{ filter.selected_css }} btn-active"
                         aria-label="{{ option.label }}"
                         {% if filter.value == option.value %}checked{% endif %}
                     />
@@ -52,13 +58,15 @@
     <fieldset class="fieldset">
         <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
         <div class="filter">
-            <a href="{{ request.path }}" class="{{ filter.button_css }} btn-square filter-reset" aria-label="{% trans 'Reset' %}">&times;</a>
+            <a href="{{ filter.reset_url }}" class="{{ filter.button_css }} btn-square filter-reset" aria-label="{% trans 'Reset' %}">&times;</a>
             {% for option in filter.options %}
                 <input
                     type="radio"
                     name="filter_{{ filter.key }}"
                     value="{{ option.value }}"
                     class="{{ filter.button_css }}{% if filter.value == option.value %} {{ filter.selected_css }} btn-active{% endif %}"
+                    data-daisie-selectable
+                    data-daisie-selected-class="{{ filter.selected_css }} btn-active"
                     aria-label="{{ option.label }}"
                     {% if filter.value == option.value %}checked{% endif %}
                 />

@@ -38,4 +38,7 @@ def browser_config(request):
 
 def favicon(request):
     """Redirect ``/favicon.ico`` to the 32x32 rendition."""
-    return HttpResponseRedirect(_current(request).rendition_url("32x32"))
+    url = _current(request).rendition_url("32x32")
+    if not url:
+        raise Http404
+    return HttpResponseRedirect(url)

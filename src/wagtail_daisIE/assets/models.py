@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, HelpPanel, MultiFieldPanel
@@ -10,6 +12,9 @@ from wagtail.images import get_image_model_string
 from ..icons.conf import get_iconify_config
 from ..models.fields import DaisyUIColorField
 from ..panels import DaisyUIColorPanel
+
+
+logger = logging.getLogger(__name__)
 
 
 def icon_provider_choices():
@@ -339,15 +344,29 @@ class DaisyUIFavicon(models.Model):
         """Return the rendition URL for ``size`` (``WxH``), or an empty string."""
         if not self.image:
             return ""
-        return self.image.get_rendition(f"fill-{size}").url
+        try:
+            return self.image.get_rendition(f"fill-{size}").url
+        except Exception:
+            logger.warning(
+                "Could not render favicon %r at %s", self.pk, size, exc_info=True
+            )
+            return ""
 
     def icons(self):
-        return [{"size": size, "url": self.rendition_url(size)} for size in ICON_SIZES]
+        icons = []
+        for size in ICON_SIZES:
+            url = self.rendition_url(size)
+            if url:
+                icons.append({"size": size, "url": url})
+        return icons
 
     def apple_icons(self):
-        return [
-            {"size": size, "url": self.rendition_url(size)} for size in APPLE_ICON_SIZES
-        ]
+        icons = []
+        for size in APPLE_ICON_SIZES:
+            url = self.rendition_url(size)
+            if url:
+                icons.append({"size": size, "url": url})
+        return icons
 
     def tile_image(self):
         return self.rendition_url("144x144")
@@ -356,17 +375,20 @@ class DaisyUIFavicon(models.Model):
 
     def manifest(self):
         """Return the web-app manifest as a JSON-serialisable dict."""
-        data = {
-            "icons": [
+        icons = []
+        for size, density in MANIFEST_ICONS:
+            url = self.rendition_url(size)
+            if not url:
+                continue
+            icons.append(
                 {
-                    "src": self.rendition_url(size),
+                    "src": url,
                     "sizes": size,
                     "type": "image/png",
                     "density": density,
                 }
-                for size, density in MANIFEST_ICONS
-            ],
-        }
+            )
+        data = {"icons": icons}
         if self.app_name:
             data["name"] = self.app_name
         if self.short_name:

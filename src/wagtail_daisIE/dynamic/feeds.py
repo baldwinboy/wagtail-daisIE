@@ -13,8 +13,11 @@ import logging
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
+from django.core import signing
 from django.db import models as django_models
 from django.db.models import Q
+from django.http import QueryDict
 from django.middleware.csrf import get_token
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
@@ -35,6 +38,86 @@ FILTER_TYPES = (
     "search",
     "sort",
 )
+
+DEFAULT_FEED_MAX_LIMIT = 1000
+DEFAULT_FEED_MAX_OFFSET = 1_000_000
+LAYOUT_OVERRIDE_NAMESPACE = "wagtail_daisIE.feed_layout"
+
+
+def _positive_setting(name, default):
+    raw = getattr(settings, name, default)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        logger.warning("Invalid %s setting %r; using %r", name, raw, default)
+        return default
+    if value < 1:
+        logger.warning("Invalid %s setting %r; using %r", name, raw, default)
+        return default
+    return value
+
+
+def feed_max_limit():
+    return _positive_setting("WAGTAIL_DAISIE_FEED_MAX_LIMIT", DEFAULT_FEED_MAX_LIMIT)
+
+
+def feed_max_offset():
+    return _positive_setting("WAGTAIL_DAISIE_FEED_MAX_OFFSET", DEFAULT_FEED_MAX_OFFSET)
+
+
+def bounded_int(value, *, default, minimum, maximum):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return max(minimum, min(parsed, maximum))
+
+
+def normalise_layout_override(override):
+    if not override:
+        return {}
+    try:
+        data = dict(override)
+    except (TypeError, ValueError):
+        return {}
+    return {key: value for key, value in data.items() if value not in (None, "")}
+
+
+def encode_layout_override(override):
+    data = normalise_layout_override(override)
+    if not data:
+        return ""
+    return signing.dumps(data, salt=LAYOUT_OVERRIDE_NAMESPACE, compress=True)
+
+
+def decode_layout_override(token):
+    if not token:
+        return {}
+    try:
+        data = signing.loads(token, salt=LAYOUT_OVERRIDE_NAMESPACE)
+    except (signing.BadSignature, TypeError, ValueError):
+        logger.warning("Ignoring invalid feed layout token")
+        return {}
+    return normalise_layout_override(data)
+
+
+def _next_url(request, next_limit, *, page=None, layout_token=""):
+    if request is not None:
+        params = request.GET.copy()
+    else:
+        params = QueryDict(mutable=True)
+
+    params["limit"] = str(next_limit)
+    params.pop("offset", None)
+    params.pop("layout_token", None)
+    params.pop("page", None)
+
+    if layout_token:
+        params["layout_token"] = layout_token
+    if page is not None and getattr(page, "pk", None):
+        params["page"] = str(page.pk)
+
+    return f"?{params.urlencode()}"
 
 
 # --- Shared queryset/context helpers ---------------------------------------
@@ -116,17 +199,17 @@ def resolve_choices(spec, request, page):
     source = spec.get("choices")
     if source is None:
         return []
-    if callable(source):
-        raw = _call(source, request, page)
-    elif isinstance(source, (list, tuple)):
-        raw = source
-    else:
-        try:
+    try:
+        if callable(source):
+            raw = _call(source, request, page)
+        elif isinstance(source, (list, tuple)):
+            raw = source
+        else:
             raw = _call(import_string(source), request, page)
-        except ImportError:
-            logger.warning("Could not resolve filter choices %r", source)
-            return []
-    return _normalize_choices(raw)
+        return _normalize_choices(raw)
+    except Exception:
+        logger.exception("Failed to resolve filter choices %r", source)
+        return []
 
 
 def _call(func, request, page):
@@ -300,6 +383,18 @@ def build_filter_menu(feed):
     }
 
 
+def _reset_url(request, params, filter_key):
+    if request is None or not getattr(request, "path", ""):
+        return ""
+
+    query = params.copy() if params is not None else QueryDict(mutable=True)
+    for suffix in ("", "_from", "_to", "_min", "_max"):
+        query.pop(f"filter_{filter_key}{suffix}", None)
+
+    encoded = query.urlencode()
+    return f"{request.path}?{encoded}" if encoded else request.path
+
+
 def build_filters(feed, config, params, request=None, page=None):
     """Return the UI definitions for the feed's selected filters."""
     from ..base_blocks.css import build_button_state_css, build_design_css
@@ -348,6 +443,7 @@ def build_filters(feed, config, params, request=None, page=None):
             "to": params.get(f"filter_{filter_key}_to", "") if params else "",
             "min": params.get(f"filter_{filter_key}_min", "") if params else "",
             "max": params.get(f"filter_{filter_key}_max", "") if params else "",
+            "reset_url": _reset_url(request, params, filter_key),
         }
         if filter_type == "boolean":
             entry["options"] = [
@@ -513,7 +609,7 @@ def resolve_layout(feed, override=None, request=None):
     options = [{"value": key, "label": LAYOUT_LABELS[key]} for key in option_keys]
 
     requested = (getattr(request, "GET", None) or {}).get("layout") if request else None
-    if requested in classes and requested in (option_keys or classes):
+    if allow_toggle and requested in option_keys:
         layout = requested
 
     return {
@@ -529,11 +625,20 @@ def resolve_layout(feed, override=None, request=None):
 # --- Rendering --------------------------------------------------------------
 
 
-def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
+def render_feed(
+    feed,
+    request,
+    offset=0,
+    limit=None,
+    page=None,
+    override=None,
+    layout_token="",
+):
     """Render a slice of ``feed`` and return the template context data."""
-    from ..base_blocks.css import build_design_css
+    from ..base_blocks.css import build_button_state_css, build_design_css
 
     config = get_context_model(feed.context_model)
+    layout_appearance = _first_stream_value(feed.layout_toggle_appearance)
     result = {
         "items_html": "",
         "has_more": False,
@@ -547,10 +652,16 @@ def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
             _first_stream_value(feed.filter_panel_design)
         ),
         "filter_layout_css": build_design_css(_first_stream_value(feed.filter_layout)),
-        "layout_toggle_css": build_design_css(
-            {"button_appearance": _first_stream_value(feed.layout_toggle_appearance)}
-        )
+        "layout_toggle_css": build_design_css({"button_appearance": layout_appearance})
         or "btn btn-sm",
+        "layout_toggle_selected_css": build_button_state_css(
+            (layout_appearance or {}).get("active")
+        ),
+        "layout_token": layout_token,
+        "feed_page_pk": (
+            str(page.pk) if page is not None and getattr(page, "pk", None) else ""
+        ),
+        "infinite": bool(getattr(feed, "infinite", False)),
     }
     result.update(resolve_layout(feed, override, request))
     get_submit_css = getattr(feed, "get_submit_css", None)
@@ -575,27 +686,36 @@ def render_feed(feed, request, offset=0, limit=None, page=None, override=None):
             queryset = queryset.order_by(order_by)
 
     result["total"] = queryset.count()
+    max_limit = feed_max_limit()
     try:
-        page_size = max(1, int(feed.page_size or 9))
+        page_size = int(feed.page_size or 9)
     except (TypeError, ValueError):
         page_size = 9
+    page_size = min(max(1, page_size), max_limit)
     result["page_size"] = page_size
+
     if limit is not None:
-        try:
-            end = max(0, int(limit))
-        except (TypeError, ValueError):
-            end = page_size
+        end = bounded_int(limit, default=page_size, minimum=0, maximum=max_limit)
         objects = list(queryset[:end])
         result["next_offset"] = end
+        result["has_more"] = end < result["total"] and end < max_limit
+        result["next_limit"] = min(end + page_size, max_limit)
     else:
-        try:
-            offset = max(0, int(offset))
-        except (TypeError, ValueError):
-            offset = 0
+        max_offset = feed_max_offset()
+        offset = bounded_int(offset, default=0, minimum=0, maximum=max_offset)
         objects = list(queryset[offset : offset + page_size])
         result["next_offset"] = offset + page_size
-    result["next_limit"] = result["next_offset"] + page_size
-    result["has_more"] = result["next_offset"] < result["total"]
+        result["has_more"] = (
+            result["next_offset"] < result["total"] and offset < max_offset
+        )
+        result["next_limit"] = min(result["next_offset"] + page_size, max_limit)
+
+    result["next_url"] = _next_url(
+        request,
+        result["next_limit"],
+        page=page,
+        layout_token=layout_token,
+    )
     result["filters"] = build_filters(feed, config, params, request, page)
 
     if not objects:
