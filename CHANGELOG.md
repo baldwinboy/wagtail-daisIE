@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.2](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.7.1...v3.7.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* amend feeds ([6141da7](https://github.com/baldwinboy/wagtail-daisIE/commit/6141da761a570d9ad52501072655984d759c4ba6))
+
 ## [3.7.1](https://github.com/baldwinboy/wagtail-daisIE/compare/v3.7.0...v3.7.1) (2026-11-04)
 
 
