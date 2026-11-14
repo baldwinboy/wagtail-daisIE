@@ -72,12 +72,6 @@ migrate:
     uv run ./demo/manage.py makemigrations
     uv run ./demo/manage.py migrate
 
-# Regenerate the Tailwind safelists and compile the committed stylesheets.
-build-css:
-    uv run ./demo/manage.py daisie_safelist
-    npm run build:css
-    npm run build:css:responsive
-
 # Collect static assets for development server
 collectstatic:
     yes yes | uv run ./demo/manage.py collectstatic

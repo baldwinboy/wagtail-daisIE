@@ -93,10 +93,12 @@ Theme selection follows this order:
 2. The first `DaisyUITheme` marked as the default.
 3. No theme, if neither a selected nor default theme is available.
 
-The standalone error template loads the bundled global stylesheet and the
-resolved theme's full CSS. It does not extend the project's base template, so
-it has no normal site header, footer, menus or page background. It also does not
-load icon-provider assets or inject page context-model bindings. See
+The standalone error template includes the JIT placeholder and the resolved
+theme's CSS. `TailwindCSSMiddleware` processes non-200 HTML responses, so error
+pages are styled like normal pages. The template does not extend the project's
+base template, so it has no normal site header, footer, menus or page
+background. It also does not load icon-provider assets or inject page
+context-model bindings. See
 [Context models and dynamic values](context-models.md) for the supported page
 and menu binding paths.
 

@@ -74,12 +74,15 @@ INSTALLED_APPS = [
     "django_htmx",  # htmx integration (feeds/action forms/newsletter)
     # ...
     "colorfield",
+    # ...
+    "django_tailwind_cli",  # For unsafe TailwindCSS compilation in middleware
 ]
 ```
 
 Extras: `notifications` (emails, audiences, campaigns), `allauth`
-(django-allauth pages/emails) and `blocks` (`draftail-text-utils`).
-`allauth_emails` pulls in both `notifications` and `allauth`.
+(django-allauth pages/emails) and `blocks` (`draftail-text-utils` and the local
+Tailwind compiler). `allauth_emails` pulls in both `notifications` and
+`allauth`.
 
 ### 2. Run migrations
 
@@ -95,40 +98,50 @@ you add blocks to a page model, regenerate migrations as usual
 [docs/migrations.md](docs/migrations.md) for the key/rename contract, the
 upgrade procedure and data guarantees.
 
-### 3. Serve the DaisyUI stylesheet
+### 3. Compile Tailwind CSS at request time
 
-The package ships a committed, precompiled Tailwind + daisyUI stylesheet; no
-Node.js or CLI is required in production.
+The stylesheet is compiled from the classes that are actually rendered into
+the page. Add the middleware and put the placeholder in your base template's
+`<head>`:
 
 ```python
 # settings.py
 MIDDLEWARE += [
     # Lets views detect htmx requests (feeds, action forms, newsletter).
     "django_htmx.middleware.HtmxMiddleware",
-    # Covers arbitrary colour utilities (bg-[#0080ff] and friends).
-    "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
+    # Compiles the page's classes into the JIT placeholder.
+    "wagtail_daisIE.middleware.TailwindCSSMiddleware",
 ]
+
+TAILWIND_CLI_USE_DAISY_UI = True  # required by the local compiler
 ```
+
+Install `django-tailwind-cli` (or the package's `blocks` extra) for local
+compilation, or set `TAILWIND_CSS_API` to use a remote compiler.
+
+```django
+{% load wagtail_daisIE_tags %}
+<head>
+    {% daisyui_all_themes_css daisyui_theme %}
+    {% daisyui_jit_placeholder %}
+</head>
+```
+
+The placeholder is filled with Tailwind, DaisyUI, the package's component CSS
+and every class found in the rendered `class` and
+`data-daisie-selected-class` attributes. Result CSS is cached by class set.
+`data-daisie-selected-class` covers classes that the feed controller applies at
+runtime.
+
+Compilation uses `django_tailwind_cli` locally (the "unsafe" path) or a remote
+compiler when `TAILWIND_CSS_API` is set (the "safe" path). The remote service
+receives `{"stylesheet": "..."}` and must return `{"stylesheet": "..."}`. See
+[docs/assets.md](docs/assets.md) for the complete pipeline, caching, fragments
+and failure behaviour.
 
 The htmx script itself is opt-out: `{% daisie_htmx %}` (default on) renders it,
 and `WAGTAIL_DAISIE_HTMX = False` disables the integration. See
 [docs/htmx.md](docs/htmx.md).
-
-Add the render-blocking link to your base template's `<head>`:
-
-```django
-{% load wagtail_daisIE_tags %}
-{% daisyui_styles %}
-```
-
-Regenerate `wagtail_daisIE/static/wagtail_daisIE/css/daisie.css` after changing
-any class choices:
-
-```bash
-just build-css   # regenerates the safelist, then runs the Tailwind CLI
-```
-
-See [docs/assets.md](docs/assets.md) for the full pipeline and production notes.
 
 ## Quick start
 
@@ -179,10 +192,11 @@ This mixin adds:
 <!DOCTYPE html>
 <html{% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
     <head>
-        {% daisyui_theme_full_css daisyui_theme %}
+        {% daisyui_all_themes_css daisyui_theme %}
         {% daisyui_theme_script %}
         {% daisie_htmx %}
         {% daisyui_icon_assets %}
+        {% daisyui_jit_placeholder %}
     </head>
     <body{% if daisyui_page_background_css %} style="background: {{ daisyui_page_background_css }}"{% endif %}>
         {% daisie_messages %}
@@ -191,11 +205,10 @@ This mixin adds:
 </html>
 ```
 
-The Tailwind/DaisyUI stylesheet is a committed static file; add
-`{% daisyui_styles %}` to `<head>` (render-blocking, no FOUC).
-`{% daisyui_theme_full_css theme %}` emits the
-theme's color, radius, size, effect, background, font, and font-CDN CSS, and
-`{% daisyui_theme_script %}` persists the visitor's theme choice.
+`{% daisyui_all_themes_css theme %}` emits the active theme plus every other
+configured theme, so theme toggles always have variables. The JIT placeholder
+is filled by `TailwindCSSMiddleware`; it is the only stylesheet hook needed.
+`{% daisyui_theme_script %}` persists the visitor's theme choice and
 `{% daisie_messages %}` renders action confirmations as DaisyUI alerts.
 
 ## Menus
@@ -409,6 +422,8 @@ def register_icon_providers(providers):
 | `{% daisyui_theme_font_cdns theme %}` | Inclusion | `<link>` tags for font CDNs |
 | `{% daisyui_theme_full_css theme %}` | Inclusion | Font CDNs + colors + background + fonts |
 | `{% daisyui_theme_full_inline_css theme %}` | Simple | Raw combined CSS string |
+| `{% daisyui_all_themes_css theme %}` | Inclusion | Inline CSS for every theme, including the active one |
+| `{% daisyui_jit_placeholder %}` | Simple | `<style id="daisyui-jit-styles">` filled by the middleware |
 | `{% daisyui_theme_script %}` | Simple | Script tag that persists the theme choice |
 | `{% daisie_htmx %}` | Simple | Script tag for htmx (when `WAGTAIL_DAISIE_HTMX` is on) |
 | `{% daisie_messages %}` | Inclusion | Renders Django messages as DaisyUI alerts |
@@ -420,9 +435,10 @@ def register_icon_providers(providers):
 
 ## Settings
 
-Styling needs only `{% daisyui_styles %}` plus the default
-`ArbitraryCSSMiddleware` (see [Installation](#3-serve-the-daisyui-stylesheet)).
-Everything else is optional:
+Styling needs `{% daisyui_jit_placeholder %}` plus
+`wagtail_daisIE.middleware.TailwindCSSMiddleware` (see
+[Installation](#3-compile-tailwind-css-at-request-time)). Everything else is
+optional:
 
 ```python
 # settings.py
@@ -468,8 +484,11 @@ WAGTAIL_DAISIE_HTMX_VERSION = 2
 WAGTAIL_DAISIE_FEED_MAX_LIMIT = 1000
 WAGTAIL_DAISIE_FEED_MAX_OFFSET = 1_000_000
 
-# Opt-in responsive utilities stylesheet (breakpoint overrides; default off).
-WAGTAIL_DAISIE_RESPONSIVE_CSS = True
+# Optional: remote CSS compiler. When unset, django_tailwind_cli is used.
+TAILWIND_CSS_API = ""
+
+# Compiler timeout in seconds (default 30).
+TAILWIND_CSS_TIMEOUT = 30
 
 # Optional: self-hosted Cally for the calendar block.
 WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally@0.9.2"

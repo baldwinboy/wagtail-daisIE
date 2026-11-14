@@ -38,6 +38,36 @@ def check_htmx_middleware(app_configs, **kwargs):
 
 
 @register()
+def check_tailwind_compiler(app_configs, **kwargs):
+    """Warn when the JIT middleware has no usable compiler."""
+    if "wagtail_daisIE.middleware.TailwindCSSMiddleware" not in getattr(
+        settings, "MIDDLEWARE", []
+    ):
+        return []
+    if getattr(settings, "TAILWIND_CSS_API", ""):
+        return []
+    if "django_tailwind_cli" not in getattr(settings, "INSTALLED_APPS", []):
+        return [
+            Warning(
+                "TailwindCSSMiddleware is enabled but neither TAILWIND_CSS_API "
+                "nor django_tailwind_cli is configured; runtime CSS will not "
+                "be generated.",
+                id="wagtail_daisIE.W003",
+            )
+        ]
+    if not getattr(settings, "TAILWIND_CLI_USE_DAISY_UI", False):
+        return [
+            Warning(
+                "django_tailwind_cli is configured without "
+                "TAILWIND_CLI_USE_DAISY_UI; the compiler cannot resolve the "
+                "daisyui plugin.",
+                id="wagtail_daisIE.W004",
+            )
+        ]
+    return []
+
+
+@register()
 def check_detail_page_configs(app_configs, **kwargs):
     """Validate ``WAGTAIL_DAISIE_DETAIL_PAGES`` without database access."""
     from .detail_pages.exceptions import DetailPageConfigurationError

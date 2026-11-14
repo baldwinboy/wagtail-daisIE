@@ -2,6 +2,9 @@ venv
 .venv
 .vscode
 .claude
+.continue
+.qwen
+.windsurf
 
 .DS_Store
 __pycache__/

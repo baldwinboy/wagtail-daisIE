@@ -45,6 +45,11 @@ the **Form** block.
    WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
    ```
 
+   The chosen base template must include
+   `{% daisyui_jit_placeholder %}` in `<head>` and the project must enable
+   `wagtail_daisIE.middleware.TailwindCSSMiddleware`; otherwise allauth pages
+   have no compiled CSS.
+
 2. Run `migrate`. A row is seeded for every discovered account view under
    **Design → Allauth pages**.
 3. Open a row, design the page, and tick **Active**. Rows are resolved per

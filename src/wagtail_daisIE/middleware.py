@@ -1,59 +1,120 @@
-"""Inject runtime CSS for arbitrary colour utilities.
+"""Compile Tailwind CSS for rendered HTML into the JIT placeholder.
 
-The committed stylesheet covers everything enumerable at build time. Arbitrary
-colours such as ``bg-[#0080ff]`` are unpredictable, so this middleware scans the
-rendered HTML for them and injects the handful of rules they need into the
-document head. Staying in the initial HTML keeps it render-blocking (no FOUC).
-
-Degrades gracefully: any failure logs a warning and leaves the response alone.
+The compiled stylesheet is cached by the set of class names on the page, so
+repeated renders avoid both parsing and compilation. If compilation fails the
+response is left untouched; a missing compiler must never break a page.
 """
 
 from __future__ import annotations
 
+import gzip
 import logging
+import threading
+import zlib
 
-from django.core.cache import cache
+import requests
+
+from django.http import HttpResponse
+
+from .tailwindcss import (
+    TailwindCompilationError,
+    compile_html,
+    inject_stylesheet,
+)
 
 
 logger = logging.getLogger(__name__)
 
-#: How long generated CSS is cached (seconds).
-CACHE_TIMEOUT = 60 * 60
+_SESSION = threading.local()
 
 
-class ArbitraryCSSMiddleware:
+def _get_session() -> requests.Session:
+    """Return a thread-local HTTP session for the safe compiler server."""
+    session = getattr(_SESSION, "session", None)
+    if session is None:
+        session = _SESSION.session = requests.Session()
+    return session
+
+
+class TailwindCSSMiddleware:
+    """Inject runtime-compiled Tailwind CSS into the document head."""
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         response = self.get_response(request)
-        content_type = response.get("Content-Type", "")
-        if "text/html" not in content_type or getattr(response, "streaming", False):
+        if not self._should_process(response):
             return response
-        if not hasattr(response, "content"):
-            return response
-        try:
-            from .arbitrary import build_color_css, cache_key, extract_color_tokens
 
-            charset = response.charset or "utf-8"
-            html = response.content.decode(charset)
-            tokens = extract_color_tokens(html)
-            if not tokens:
-                return response
-            key = cache_key(tokens)
-            css = cache.get(key)
-            if css is None:
-                css = build_color_css(tokens)
-                cache.set(key, css, CACHE_TIMEOUT)
-            if not css:
-                return response
-            tag = f'<style id="daisie-arbitrary-css">{css}</style>'
-            if "</head>" in html:
-                html = html.replace("</head>", f"{tag}\n</head>", 1)
-            else:
-                html = f"{tag}\n{html}"
-            response.content = html.encode(charset)
-            response["Content-Length"] = len(response.content)
-        except Exception:  # pragma: no cover - never break a response
-            logger.warning("Arbitrary colour CSS injection failed", exc_info=True)
+        html_text = self._decode(response)
+        if html_text is None:
+            return response
+
+        fragment = bool(getattr(request, "htmx", False))
+        try:
+            stylesheet = compile_html(
+                html_text,
+                _get_session(),
+                fragment=fragment,
+            )
+        except TailwindCompilationError:
+            logger.warning("JIT CSS compilation failed", exc_info=True)
+            return response
+        if not stylesheet:
+            return response
+
+        updated = inject_stylesheet(html_text, stylesheet, fragment=fragment)
+        if updated is None:
+            return response
+
+        self._encode(response, updated)
         return response
+
+    @staticmethod
+    def _should_process(response) -> bool:
+        if not isinstance(response, HttpResponse):
+            return False
+        if response.streaming:
+            return False
+        if getattr(response, "charset", None) is None:
+            return False
+        content_type = response.get("Content-Type", "").lower()
+        return "text/html" in content_type
+
+    @staticmethod
+    def _decode(response) -> str | None:
+        body = response.content
+        encoding = response.get("Content-Encoding", "").lower()
+
+        if encoding == "gzip":
+            try:
+                body = gzip.decompress(body)
+            except OSError:
+                return None
+        elif encoding == "deflate":
+            try:
+                body = zlib.decompress(body)
+            except zlib.error:
+                return None
+        elif encoding:  # br, zstd, etc.
+            return None
+
+        try:
+            return body.decode(response.charset or "utf-8", errors="replace")
+        except (LookupError, UnicodeDecodeError):
+            return body.decode("utf-8", errors="replace")
+
+    @staticmethod
+    def _encode(response, html_text: str) -> None:
+        encoded = html_text.encode(response.charset or "utf-8")
+
+        encoding = response.get("Content-Encoding", "").lower()
+        if encoding == "gzip":
+            encoded = gzip.compress(encoded)
+        elif encoding == "deflate":
+            encoded = zlib.compress(encoded)
+
+        response.content = encoded
+        if "Content-Length" in response:
+            response["Content-Length"] = str(len(encoded))

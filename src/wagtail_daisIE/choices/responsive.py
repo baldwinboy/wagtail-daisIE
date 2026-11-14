@@ -1,8 +1,8 @@
 """Responsive utility vocabulary and the admin editor schema.
 
 The admin stores a sparse list of ``{breakpoint, value}`` overrides. This module
-is the single source of truth for the breakpoints, the four-widget editor
-(design area -> property -> side -> value) and the responsive safelist.
+is the single source of truth for the breakpoints and the four-widget editor
+(design area -> property -> side -> value).
 """
 
 from __future__ import annotations

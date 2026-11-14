@@ -7,19 +7,12 @@
     "lint": "npm run lint:format && npm run lint:css",
     "lint:format": "prettier --check \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\"",
     "lint:css": "stylelint --allow-empty-input \"**/?(.)*.{css,scss}\"",
-    "format": "prettier --write \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\"",
-    "build:css": "tailwindcss -i src/wagtail_daisIE/tailwind/input.css -o src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css --minify",
-    "build:css:responsive": "tailwindcss --cwd src/wagtail_daisIE/tailwind -i responsive-input.css -o ../static/wagtail_daisIE/css/daisie-responsive.css --minify"
+    "format": "prettier --write \"**/?(.)*.{css,scss,js,ts,tsx,json,yaml,yml}\""
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.3.3",
-    "@tailwindcss/postcss": "^4.3.3",
     "@wagtail/stylelint-config-wagtail": "^2.0.1",
-    "daisyui": "^5.7.47",
-    "postcss": "^8.5.29",
     "prettier": "^3.9.9",
-    "stylelint": "^17.16.0",
-    "tailwindcss": "^4.3.3"
+    "stylelint": "^17.16.0"
   },
   "overrides": {
     "stylelint": "^17.16.0"

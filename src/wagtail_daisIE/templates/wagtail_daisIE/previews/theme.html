@@ -4,8 +4,8 @@
 <html {% if daisyui_theme %} data-theme="{{ daisyui_theme.name }}"{% endif %}>
     <head>
         <title>{{ object.name }}</title>
-        {% daisyui_styles %}
         {% daisyui_theme_full_css theme %}
+        {% daisyui_jit_placeholder %}
         {% daisyui_favicon %}
     </head>
     <body>

@@ -122,6 +122,18 @@ def my_view(request):
 `django_htmx.http` helpers used by the package: `HttpResponseClientRedirect`,
 `HttpResponseClientRefresh`.
 
+## Styles for swapped fragments
+
+`TailwindCSSMiddleware` compiles CSS for every HTML response. A full page fills
+`{% daisyui_jit_placeholder %}`; an htmx fragment has no `<head>`, so the
+middleware prepends `<style data-daisie-jit>` to the fragment before it is
+swapped in. The fragment build omits Tailwind preflight to keep the response
+small.
+
+Classes that JavaScript applies at runtime must appear in a scanned attribute.
+The feed controller reads them from `data-daisie-selected-class`, which the
+compiler scans alongside `class`.
+
 ## CSP notes
 
 The standard `hx-get`/`hx-post`/`hx-target`/`hx-swap` attributes used by the

@@ -30,7 +30,7 @@ returns a space-separated string, e.g. `build_typography_css` returns
 
 `TypographyDesignBlock.max_lines` adds `line-clamp-<n>` through
 `build_line_clamp_css`. Values are 1–6; an empty value leaves text
-untruncated. The class is safelisted as `line-clamp-{1..6}` and clamps text with
+untruncated. The class is compiled at render time and clamps text with
 CSS rather than slicing HTML, so rich-text markup stays intact.
 
 Font families store the theme role (or custom name) and render as
@@ -127,19 +127,18 @@ without duplicating templates. The generated `manifest.json`,
 `favicon/urls.py`, so they can be referenced by absolute URL from the manifest
 and from `browserconfig.xml`.
 
-## CSS production (committed Tailwind + DaisyUI)
+## CSS production (runtime Tailwind + DaisyUI)
 
-The base stylesheet is prebuilt and committed
-(`static/wagtail_daisIE/css/daisie.css`) and linked with `{% daisyui_styles %}`.
-It contains Tailwind, daisyUI and every class enumerated in `choices/*` (via the
-generated `tailwind/safelist.css`). The opt-in responsive stylesheet
-(`daisie-responsive.css`) adds breakpoint variants. Arbitrary colour utilities
-are generated at request time by `ArbitraryCSSMiddleware`. See
+Templates include `{% daisyui_jit_placeholder %}` and
+`TailwindCSSMiddleware` compiles the classes present in the rendered page. The
+compiler scans `class` and `data-daisie-selected-class` attributes, so
+runtime-built class strings (button hover/active variants, feed layouts,
+responsive overrides and menu item defaults) are covered automatically. See
 [assets.md](assets.md).
 
-Because the safelist is generated from `choices/*`, runtime-built class strings
-(for example the button hover/active variants and the feed layout containers in
-`dynamic/feeds.py`) are covered automatically.
+There is no responsive stylesheet to enable: breakpoint utilities are compiled
+when an editor renders them. Arbitrary colour utilities such as
+`bg-[#0080ff]` are compiled by the same pipeline.
 
 ### Responsive design
 
@@ -149,9 +148,8 @@ reusing the design panel's slider plus native selects for text alignment and
 layout properties. Side is shown only for padding, margin and gap (Wagtail's
 `w-rules`); the matching control is switched with `w-zone`.
 Entries render as prefixed classes (`md:p-8 lg:text-2xl`) and are stored only
-when an editor adds one. The breakpoint variants live in the opt-in
-`daisie-responsive.css`, enabled with `WAGTAIL_DAISIE_RESPONSIVE_CSS = True`.
-See [assets.md](assets.md).
+when an editor adds one. Those classes are compiled by the runtime pipeline
+when the page renders. See [assets.md](assets.md).
 
 ### Backgrounds
 
@@ -213,9 +211,10 @@ available in pages, form pages and allauth bodies.
 `--radius-*`, `--size-*`, `--font-*` custom properties as inline CSS, plus a
 `.font-<role>` rule and the theme-scoped body/heading/subheading/code defaults
 for each font family. A page renders with its theme by overriding those
-variables; the shared structural CSS comes from the committed `daisie.css`.
+variables; the shared structural CSS comes from the runtime-compiled
+stylesheet.
 
-Base templates also render `{% daisyui_all_themes_css %}`, which emits those
+Base templates also render `{% daisyui_all_themes_css daisyui_theme %}`, which emits those
 variables for **every** configured theme. Without it, a `data-theme` (or the
 theme toggle) naming another theme has no variables and daisyUI's built-in
 `@media (prefers-color-scheme: dark) { :root:not([data-theme]) }` fallback can

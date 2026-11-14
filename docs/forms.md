@@ -301,10 +301,10 @@ the page to choose a handler per field or page instead of by type. Field-type
 keys are stored on `DaisieFormField.field_type`, so keep them within 16
 characters (the package logs a warning otherwise).
 
-The `css` classes come from the compiled stylesheet: `file-input`, `input` and
-`w-full` are already included, but any project-specific utility you add to a
-type’s `css` must be present in your own Tailwind build (the package safelist
-only scans the package’s own class choices and templates).
+The `css` classes are compiled from the rendered field: `file-input`, `input`
+and `w-full` are included automatically. A project-specific utility added to a
+type’s `css` is compiled too, provided it appears in the rendered `class`
+attribute (it does for form fields).
 
 The form template already posts as `multipart/form-data`, so no template
 changes are needed.

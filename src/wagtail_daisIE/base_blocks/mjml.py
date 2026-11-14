@@ -65,7 +65,7 @@ for _n in (
     _SPACING_STEPS[_suffix] = f"{_n * 0.25:g}rem"
 
 # Tailwind v4 font sizes. ``2xl``..``9xl`` are the framework defaults;
-# ``10xl``..``42xl`` are declared in the package's ``tailwind/input.css`` ``@theme``.
+# ``10xl``..``42xl`` are declared in ``static/wagtail_daisIE/css/tailwind/typography.css``.
 _FONT_SIZES = {
     "xs": "0.75rem",
     "sm": "0.875rem",

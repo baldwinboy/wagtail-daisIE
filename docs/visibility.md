@@ -105,7 +105,9 @@ Controllers emit per-key CSS:
 - menus use `[data-daisie-menu]:has(...)`.
 
 The CSS is only active under `@supports selector(:has(*))`. Without `:has()`
-support, targets stay visible.
+support, targets stay visible. The structural rules live in
+`static/wagtail_daisIE/css/tailwind/visibility.css`, which the runtime compiler
+bundles into every page.
 
 ## Validation
 

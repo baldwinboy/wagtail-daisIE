@@ -224,7 +224,8 @@ The package's `allauth/layouts/base.html` then extends your base and maps
 allauth's `head_title`/`content` blocks into it, so allauth pages get your real
 header, footer, menus, breadcrumbs and favicon for free. Your base template must
 expose the blocks `title`, `content`, `body_class`, `extra_head` and
-`extra_body`.
+`extra_body`, and must include `{% daisyui_jit_placeholder %}` in `<head>` with
+`TailwindCSSMiddleware` enabled; otherwise allauth pages have no compiled CSS.
 
 The default chrome base renders menus named by `WAGTAIL_DAISIE_HEADER_MENU`
 (default `"Main navigation"`) and `WAGTAIL_DAISIE_FOOTER_MENU` (default

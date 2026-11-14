@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "colorfield",
     "allauth",
     "allauth.account",
+    "django_tailwind_cli"
 ]
 
 MIDDLEWARE = [
@@ -78,7 +79,7 @@ MIDDLEWARE = [
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
-    "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
+    "wagtail_daisIE.middleware.TailwindCSSMiddleware",
 ]
 
 ROOT_URLCONF = "demo.urls"
@@ -393,9 +394,6 @@ WAGTAIL_DAISIE_ALLAUTH_BASE_TEMPLATE = "base.html"
 WAGTAIL_DAISIE_HTMX = True
 WAGTAIL_DAISIE_HTMX_VERSION = 2
 
-# Opt-in responsive utility stylesheet for breakpoint overrides.
-WAGTAIL_DAISIE_RESPONSIVE_CSS = True
-
 # Draftail rich-text customisation for the demo: the colour palette comes
 # straight from the default DaisyUI theme, and font families/URLs are bridged
 # from daisIE's DB-backed helpers in ``demo.draftail_palette``.
@@ -408,9 +406,7 @@ DRAFTAIL_TEXT_UTILS = {
     "FEATURES": {"DYNAMIC_LINK": True},
 }
 
-# Tailwind + DaisyUI is a committed, precompiled stylesheet served through
-# staticfiles (see `wagtail_daisIE.static.wagtail_daisIE.css.daisie.css`).
-# Regenerate it with `just build-css` after changing classes.
+TAILWIND_CLI_USE_DAISY_UI = True
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",

@@ -2,35 +2,13 @@ from django import template
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.templatetags.static import static
-from django.utils.html import format_html, format_html_join
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+
+from wagtail_daisIE.tailwindcss import placeholder_html
 
 
 register = template.Library()
-
-
-@register.simple_tag
-def daisyui_styles():
-    """Render the stylesheet link(s) for the committed DaisyUI CSS.
-
-    The responsive stylesheet is opt-in through
-    ``WAGTAIL_DAISIE_RESPONSIVE_CSS`` and must be loaded after the base
-    stylesheet so its media-query utilities win.
-
-    Usage::
-
-        {% load wagtail_daisIE_tags %}
-        {% daisyui_styles %}
-    """
-    links = [
-        static("wagtail_daisIE/css/daisie.css"),
-        static("wagtail_daisIE/css/daisie-visibility.css"),
-    ]
-    if getattr(settings, "WAGTAIL_DAISIE_RESPONSIVE_CSS", False):
-        links.append(static("wagtail_daisIE/css/daisie-responsive.css"))
-    return format_html_join(
-        "\n", '<link rel="stylesheet" href="{}">', ((link,) for link in links)
-    )
 
 
 @register.simple_tag(takes_context=True)
@@ -295,13 +273,17 @@ def daisyui_theme_full_css(theme):
 
 
 @register.inclusion_tag("wagtail_daisIE/tags/all_themes_css.html")
-def daisyui_all_themes_css():
+def daisyui_all_themes_css(theme=None):
     """Render the CSS variables for every configured theme.
 
     With only the active theme's variables in the document, any ``data-theme``
     (or the theme toggle) that names another theme has no variables and daisyUI's
     built-in ``prefers-color-scheme: dark`` fallback can leak in. Emitting them
     all keeps every page and the toggle consistent.
+
+    ``theme`` is included even when the database query fails (for example on an
+    error page with the database down), so callers do not need a second
+    single-theme inclusion.
     """
     from ..models import DaisyUITheme
 
@@ -309,6 +291,11 @@ def daisyui_all_themes_css():
         themes = list(DaisyUITheme.objects.all())
     except Exception:  # pragma: no cover - e.g. error pages with the DB down
         themes = []
+
+    if theme:
+        theme_pk = getattr(theme, "pk", None)
+        if theme_pk is None or not any(item.pk == theme_pk for item in themes):
+            themes.append(theme)
     return {"themes": themes}
 
 
@@ -481,3 +468,13 @@ def daisyui_main_attrs(context, theme=None):
     if style:
         parts.append(format_html(' style="{}"', style))
     return mark_safe("".join(parts))  # noqa: S308
+
+
+@register.simple_tag
+def daisyui_jit_placeholder():
+    """Return the placeholder filled by ``TailwindCSSMiddleware``.
+
+    Put it in ``<head>`` and ensure the middleware is enabled; without the
+    middleware the placeholder stays empty.
+    """
+    return placeholder_html()

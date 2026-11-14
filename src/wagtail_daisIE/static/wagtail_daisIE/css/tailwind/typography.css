@@ -1,9 +1,5 @@
 /*
- * Shared theme extension for the Tailwind builds.
- *
- * Imported by both `input.css` (the committed base stylesheet) and
- * `responsive-input.css` (the opt-in responsive stylesheet), so the custom
- * typography scale is identical in each output.
+ * Typography extension for larger texts
  */
 @theme static {
   --text-10xl: 8.25rem;

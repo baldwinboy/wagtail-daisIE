@@ -1,7 +1,6 @@
 import pytest
 
 from django.template import Context, Template
-from django.test import override_settings
 
 from wagtail_daisIE.menus.models import DaisyUIMenu
 from wagtail_daisIE.models import (
@@ -103,7 +102,9 @@ class TestThemeCss:
         )
         assert "fonts.googleapis.com" in cdn
 
-    def test_full_css_combines_colors_and_fonts(self, theme, theme_with_fonts):
+    def test_full_css_combines_colors_and_fonts(
+        self, theme, theme_with_fonts, monkeypatch
+    ):
         html = _render(
             "{% daisyui_theme_full_css theme %}", {"theme": theme_with_fonts}
         )
@@ -121,6 +122,15 @@ class TestThemeCss:
         all_themes = _render("{% daisyui_all_themes_css %}", {})
         assert f'[data-theme="{theme.name}"]' in all_themes
         assert f'[data-theme="{theme_with_fonts.name}"]' in all_themes
+
+        # The active theme is still emitted when the database query fails
+        # (for example an error page rendered while the database is down).
+        def fail():
+            raise RuntimeError("database unavailable")
+
+        monkeypatch.setattr(DaisyUITheme.objects, "all", fail)
+        all_themes = _render("{% daisyui_all_themes_css theme %}", {"theme": theme})
+        assert f'[data-theme="{theme.name}"]' in all_themes
 
 
 class TestMenuTag:
@@ -172,15 +182,7 @@ class TestMenuTag:
         assert template.render(Context({"name": "Known", "extra": ""})).strip() != ""
 
 
-class TestStyles:
-    def test_base_stylesheet_only_by_default(self):
-        html = _render("{% daisyui_styles %}", {})
-        assert "daisie.css" in html
-        assert "daisie-visibility.css" in html
-        assert "daisie-responsive.css" not in html
-
-    @override_settings(WAGTAIL_DAISIE_RESPONSIVE_CSS=True)
-    def test_responsive_stylesheet_is_opt_in(self):
-        html = _render("{% daisyui_styles %}", {})
-        assert "daisie.css" in html
-        assert "daisie-responsive.css" in html
+class TestJITPlaceholder:
+    def test_placeholder_markup(self):
+        html = _render("{% daisyui_jit_placeholder %}", {})
+        assert html.strip() == '<style id="daisyui-jit-styles"></style>'

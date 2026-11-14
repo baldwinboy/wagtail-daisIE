@@ -23,14 +23,13 @@
             <base target="_blank" />
         {% endif %}
 
-        {% daisyui_styles %}
-        {% daisyui_theme_full_css daisyui_theme %}
-        {% daisyui_all_themes_css %}
+        {% daisyui_all_themes_css daisyui_theme %}
         {% daisyui_theme_script %}
         {% daisie_htmx %}
         {% daisyui_icon_assets %}
         {% daisyui_favicon %}
         {% draftail_text_assets %}
+        {% daisyui_jit_placeholder %}
         {% block extra_head %}{% endblock %}
     </head>
 

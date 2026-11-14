@@ -35,7 +35,6 @@ just format-client     # Format the client code with Prettier.
 just format-server     # Format the server code with uv.
 just help              # List all the justfile recipes.
 just install           # Install the dependencies.
-just compile-global-css # Compile the global CSS.
 just lint              # Run all linters.
 just lint-client       # Lint the client code with Prettier.
 just lint-server       # Lint the server code with uv.

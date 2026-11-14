@@ -5,9 +5,8 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{{ page.seo_title|default:page.title }}</title>
-        {% daisyui_styles %}
-        {% daisyui_theme_full_css daisyui_theme %}
-        {% daisyui_all_themes_css %}
+        {% daisyui_all_themes_css daisyui_theme %}
+        {% daisyui_jit_placeholder %}
         {% daisyui_favicon %}
         {% daisie_htmx %}
         {{ form.media }}

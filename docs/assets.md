@@ -1,97 +1,116 @@
-# CSS pipeline (committed Tailwind + daisyUI)
+# CSS pipeline (runtime Tailwind + daisyUI)
 
-`wagtail-daisIE` ships a **prebuilt, committed stylesheet**. There is no runtime
-compiler, no CLI, and no Node.js in production.
+`wagtail-daisIE` compiles Tailwind CSS from the classes that are actually
+rendered on each page. There is no committed stylesheet, no safelist and no CSS
+build step.
 
-```
-choices/*  ──►  daisie_safelist  ──►  tailwind/safelist.css
-                    │                     │
-                    │                     └─ tailwind/input.css ──► daisie.css
-                    │
-                    └──────────────►  tailwind/responsive-safelist.css
-                                          │
-                    tailwind/responsive-input.css ──► daisie-responsive.css
-                                                          │
-                              {% daisyui_styles %} ───────┘  (opt-in <link>)
+```text
+rendered HTML ──► candidate parser ──► @source inline() patterns
+      │                                      │
+      └─ class + data-daisie-selected-class  └─ Tailwind + daisyUI compiler
+                                              │
+                              <style id="daisyui-jit-styles"> in the page
 ```
 
 ## How it works
 
-1. **Safelist** — the design system builds class strings at runtime
-   (`block_css`), so Tailwind cannot discover them by scanning templates.
-   `manage.py daisie_safelist` walks `choices/*` (including the dict groups),
-   the feed layout literals and the integer-driven ranges (border width,
-   table border spacing, grid columns), then writes `@source inline(...)`
-   directives to `tailwind/safelist.css`. It also writes
-   `tailwind/responsive-safelist.css` with the breakpoint-prefixed variants for
-   the utilities exposed by responsive overrides.
-2. **Build** — `tailwind/input.css` (`@import "tailwindcss"` + `@plugin
-   "daisyui"` + the shared `theme.css` typography scale + `@import
-   "./safelist.css"`) is compiled by the npm `tailwindcss` CLI into the
-   committed `src/wagtail_daisIE/static/wagtail_daisIE/css/daisie.css`.
-   `tailwind/responsive-input.css` compiles the theme scale plus
-   `responsive-safelist.css` into the opt-in `daisie-responsive.css`.
-3. **Serve** — `{% daisyui_styles %}` emits render-blocking
-   `<link rel="stylesheet" …>` tags for `daisie.css`, the small hand-written
-   `daisie-visibility.css` (block visibility defaults), and, when
-   `WAGTAIL_DAISIE_RESPONSIVE_CSS` is true, `daisie-responsive.css`.
-4. **Arbitrary colours** — `bg-[#0080ff]`, `decoration-[#…]` and their
-   `hover:`/`active:` variants are unpredictable, so
-   `wagtail_daisIE.middleware.ArbitraryCSSMiddleware` scans the rendered HTML and
-   injects the handful of rules they need, cached by token-set hash.
-
-`{% daisyui_theme_full_css theme %}` emits the theme's `--color-*`, `--radius-*`,
-`--size-*`, `--font-*` custom properties (and `.font-<role>` rules) inline.
-
-## Regenerating
-
-```bash
-just build-css   # daisie_safelist, npm run build:css, npm run build:css:responsive
-```
-
-Commit the updated `tailwind/safelist.css`,
-`tailwind/responsive-safelist.css`, `static/wagtail_daisIE/css/daisie.css` and
-`static/wagtail_daisIE/css/daisie-responsive.css` after changing any class
-choices.
+1. **Render** — templates include `{% daisyui_jit_placeholder %}` in `<head>`.
+   The tag emits an empty `<style id="daisyui-jit-styles">`.
+2. **Extract** — `TailwindCSSMiddleware` parses the response and reads every
+   `class` attribute and every `data-daisie-selected-class` attribute. The
+   latter covers classes that `feed_controls.js` applies at runtime. The
+   candidate grammar matches Tailwind's Oxide extractor: variants, arbitrary
+   values/properties/variables, modifiers, important markers and balanced
+   brackets.
+3. **Compact** — candidates are grouped into `@source inline()` patterns
+   without lossy cross-products. A group is emitted as separate patterns when a
+   brace alternative would contain a comma, brace or backslash.
+4. **Compile** — the compiler appends the package's frontend CSS sources
+   (`typography.css`, `file-picker.css`, `marquee.css`, `menu.css`,
+   `richtext.css`, `visibility.css`) to a Tailwind input stylesheet. It uses:
+   - `django_tailwind_cli` by default (the **unsafe** path: a local binary), or
+   - `TAILWIND_CSS_API` when set (the **safe** path: a remote compiler).
+5. **Cache** — the compiled CSS is cached by the sorted class set and mode
+   (`full` or `fragment`) in the Django cache for one week.
+6. **Inject** — the placeholder is filled. HTML outside the placeholder is not
+   reserialized or otherwise changed.
 
 ## Configuration
 
 ```python
 # settings.py
-MIDDLEWARE += [
-    "wagtail_daisIE.middleware.ArbitraryCSSMiddleware",
+INSTALLED_APPS = [
+    # ...
+    "django_tailwind_cli",
 ]
 
-# Include the opt-in responsive utilities stylesheet.
-WAGTAIL_DAISIE_RESPONSIVE_CSS = True
+MIDDLEWARE += [
+    "django_htmx.middleware.HtmxMiddleware",
+    "wagtail_daisIE.middleware.TailwindCSSMiddleware",
+]
+
+TAILWIND_CLI_USE_DAISY_UI = True
+
+# Optional remote compiler (safe path). When set, django_tailwind_cli is not
+# imported or required.
+TAILWIND_CSS_API = "https://css.example.com/compile"
+TAILWIND_CSS_TIMEOUT = 30
 ```
 
 ```django
 {% load wagtail_daisIE_tags %}
-{% daisyui_styles %}
-{% daisyui_theme_full_css daisyui_theme %}
+<head>
+    {% daisyui_all_themes_css daisyui_theme %}
+    {% daisyui_jit_placeholder %}
+</head>
 ```
 
-## Notes
+`django_tailwind_cli` must be installed and `TAILWIND_CLI_USE_DAISY_UI` must be
+`True` for local compilation; system checks W003/W004 warn when either is
+missing. The remote service receives:
 
-- **Storage** — `daisie.css` and `daisie-responsive.css` are normal static
-  files (collected by `collectstatic`); arbitrary-colour CSS is cached in the
-  default cache (`daisie:arbitrary:css:<sha256>`).
-- **Responsive overrides** — design blocks can store a sparse list of
-  `{breakpoint, utility}` rows. The responsive stylesheet is opt-in because it
-  adds every breakpoint variant of the available utilities; without the setting
-  the classes render but have no styles.
-- **Failure mode** — if `ArbitraryCSSMiddleware` fails it logs a warning and
-  leaves the response untouched; pages never 500.
-- **Backgrounds** — design backgrounds are `BackgroundStreamBlock` values
-  rendered as an inline `block_style`, not classes.
+```json
+{"stylesheet": "@import 'tailwindcss' source(none); ..."}
+```
+
+and must return:
+
+```json
+{"stylesheet": "/* compiled CSS */"}
+```
+
+## Outputs and failure modes
+
+- **Full pages** — CSS is written into the existing placeholder. Pages with no
+  placeholder are left untouched (admin pages, for example).
+- **Error pages** — non-200 HTML responses are processed, so 404/500 templates
+  are styled.
+- **htmx fragments** — a fragment without a placeholder gets a prepended
+  `<style data-daisie-jit>` built without Tailwind preflight. The style is
+  swapped in with the fragment.
+- **Missing compiler / compile error / cache outage** — the middleware logs and
+  leaves the response untouched. A page never fails because CSS failed.
+- **Unknown content encodings** — responses using `br`/`zstd` are skipped;
+  gzip/deflate are decoded and re-encoded.
+
+## Scanned attributes
+
+Only classes in these attributes are compiled:
+
+- `class`
+- `data-daisie-selected-class`
+
+Classes applied by JavaScript must be present in one of them. The package's
+own JavaScript already satisfies this: feed toggles use the data attribute and
+autocomplete/file-picker classes also appear in the rendered templates or in
+the bundled custom CSS.
 
 ## Verifying
 
-1. Render a page and confirm `<link rel="stylesheet" href="…/daisie.css">` is in
-   `<head>`.
-2. Use a custom colour (e.g. `bg-[#0080ff]`) and confirm the rule is injected.
-3. Change a choice in `choices/*`, run `just build-css`, and confirm the class
-   is present in the rebuilt `daisie.css`.
-4. Set `WAGTAIL_DAISIE_RESPONSIVE_CSS = True`, add a responsive override, and
-   confirm the second link and the prefixed class (e.g. `md:p-8`) are present.
+1. Render a page and confirm the placeholder contains CSS.
+2. Render a 404/500 page and confirm it is styled too.
+3. Trigger a feed swap and confirm the fragment contains
+   `<style data-daisie-jit>`.
+4. Add a class only through `data-daisie-selected-class` and confirm it appears
+   in the generated `@source inline` input.
+5. Run `just lint && just test`.
