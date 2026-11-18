@@ -408,13 +408,6 @@ DRAFTAIL_TEXT_UTILS = {
 
 TAILWIND_CLI_USE_DAISY_UI = True
 
-TAILWIND_CSS_API = {
-    "url": "wss://127.0.0.1:6060",
-    "transport": "websocket",  # or "websocket"
-    "token": "",  # Python-only; never sent to the browser
-    "timeout": 30,
-}
-
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
