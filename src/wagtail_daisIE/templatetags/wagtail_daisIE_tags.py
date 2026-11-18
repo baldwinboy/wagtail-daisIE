@@ -472,9 +472,11 @@ def daisyui_main_attrs(context, theme=None):
 
 @register.simple_tag
 def daisyui_jit_placeholder():
-    """Return the placeholder filled by ``TailwindCSSMiddleware``.
+    """Return the base stylesheet, JIT placeholder, config and client script.
 
-    Put it in ``<head>`` and ensure the middleware is enabled; without the
-    middleware the placeholder stays empty.
+    Put it in ``<head>``, enable ``TailwindCSSMiddleware`` and include
+    ``wagtail_daisIE.tailwindcss.urls``. The middleware fills the JSON config;
+    ``tailwind_jit.js`` fetches or compiles the stylesheet and fills the
+    placeholder.
     """
     return placeholder_html()

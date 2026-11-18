@@ -48,9 +48,13 @@ format-client:
 # Run all formatters.
 format: format-server format-client
 
-# Run tests with pytest.
+# Run Python and JavaScript tests.
 test:
     uv run pytest
+    node --test tests/js/*.test.mjs
+
+test-js:
+    node --test tests/js/*.test.mjs
 
 test-lowest-deps:
     #!/usr/bin/env bash
@@ -71,6 +75,10 @@ coverage:
 migrate:
     uv run ./demo/manage.py makemigrations
     uv run ./demo/manage.py migrate
+
+# Build the committed minimal Tailwind base stylesheet.
+build-css:
+    uv run ./demo/manage.py daisie_build_css
 
 # Collect static assets for development server
 collectstatic:

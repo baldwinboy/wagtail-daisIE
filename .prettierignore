@@ -1,4 +1,5 @@
 demo
+src/wagtail_daisIE/tailwind/input.css
 **/migrations
 **/daisie-responsive.css
 **/daisie.css

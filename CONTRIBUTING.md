@@ -35,6 +35,7 @@ just format-client     # Format the client code with Prettier.
 just format-server     # Format the server code with uv.
 just help              # List all the justfile recipes.
 just install           # Install the dependencies.
+just build-css         # Build the committed minimal base stylesheet.
 just lint              # Run all linters.
 just lint-client       # Lint the client code with Prettier.
 just lint-server       # Lint the server code with uv.
@@ -42,7 +43,8 @@ just load_initial_data # Load the initial data into the database.
 just migrate           # Make migrations and migrate the database.
 just runserver         # Run the development server at the given host and port.
 just shell             # Open a shell to the demo application.
-just test              # Run tests with pytest.
+just test              # Run Python and JavaScript tests.
+just test-js           # Run JavaScript tests.
 ```
 
 ## Writing tests

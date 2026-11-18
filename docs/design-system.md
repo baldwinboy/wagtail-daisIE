@@ -129,12 +129,13 @@ and from `browserconfig.xml`.
 
 ## CSS production (runtime Tailwind + DaisyUI)
 
-Templates include `{% daisyui_jit_placeholder %}` and
-`TailwindCSSMiddleware` compiles the classes present in the rendered page. The
-compiler scans `class` and `data-daisie-selected-class` attributes, so
-runtime-built class strings (button hover/active variants, feed layouts,
-responsive overrides and menu item defaults) are covered automatically. See
-[assets.md](assets.md).
+Templates include `{% daisyui_jit_placeholder %}`. It links the committed
+minimal `daisie-base.css`, then `TailwindCSSMiddleware` prepares the page's
+classes and `tailwind_jit.js` fills the JIT stylesheet. The compiler scans
+`class` and `data-daisie-selected-class` attributes, so runtime-built class
+strings (button hover/active variants, feed layouts, responsive overrides and
+menu item defaults) are covered automatically. Rebuild the base stylesheet
+with `just build-css`. See [assets.md](assets.md).
 
 There is no responsive stylesheet to enable: breakpoint utilities are compiled
 when an editor renders them. Arbitrary colour utilities such as

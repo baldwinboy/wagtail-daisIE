@@ -1,22 +1,13 @@
-"""Runtime Tailwind + DaisyUI compiler for rendered HTML.
+"""Build and compile the Tailwind input for a set of rendered class names.
 
-The middleware hands this module a rendered document. It extracts the class
-tokens that are actually present, compacts them into ``@source inline``
-patterns, builds a Tailwind input stylesheet from the package's CSS sources,
-compiles it through either the configured safe server or the local
-``django-tailwind-cli`` binary, and caches the result by class set.
-
-Only candidates that appear in a rendered ``class`` attribute (or in a
-``data-daisie-selected-class`` attribute used by the feed controller) are
-compiled. Runtime-only classes must therefore be present in one of those
-attributes.
+The compiler is transport-neutral: it produces the input stylesheet, validates
+it, and compiles it through the configured HTTP API or the local
+``django-tailwind-cli`` binary. It never touches a Django response.
 """
 
 from __future__ import annotations
 
-import hashlib
 import logging
-import re
 import subprocess
 import tempfile
 
@@ -27,21 +18,15 @@ from pathlib import Path
 
 import lxml.etree as etree
 import lxml.html as lxml_html
-import requests
 
 from django.conf import settings
-from django.core.cache import cache
-from django.utils.html import format_html
-from django.utils.safestring import SafeString
 
 from ._extractor import ParsedCandidate, parse_candidate
+from .api import TailwindAPIError, compile_via_http, get_tailwind_api
+from .validators import CssValidationError, validate_css
 
 
 logger = logging.getLogger(__name__)
-
-JIT_PLACEHOLDER_ID = "daisyui-jit-styles"
-CACHE_EXPIRY = 86_400 * 7  # 1 week
-CACHE_VERSION = "v1"
 
 CSS_SOURCE_DIR = (
     files("wagtail_daisIE") / "static" / "wagtail_daisIE" / "css" / "tailwind"
@@ -65,12 +50,6 @@ _SKIP_PREFIXES = ("daisie", "daisyui")
 
 #: Classes that should never be sent to Tailwind.
 _SKIP_SUFFIXES = ("block-branding",)
-
-_PLACEHOLDER_RE = re.compile(
-    rf'(<style\b[^>]*\bid\s*=\s*(["\']){re.escape(JIT_PLACEHOLDER_ID)}\2[^>]*>)'
-    r"(.*?)(</style\s*>)",
-    re.IGNORECASE | re.DOTALL,
-)
 
 _BRACE_UNSAFE = frozenset(",{}\\")
 
@@ -156,103 +135,12 @@ class TailwindCompilationError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Placeholder
+# HTML -> input
 # ---------------------------------------------------------------------------
 
 
-def placeholder_html() -> SafeString:
-    """Return the JIT stylesheet placeholder element."""
-    return format_html('<style id="{}"></style>', JIT_PLACEHOLDER_ID)
-
-
-def inject_stylesheet(
-    html_text: str,
-    stylesheet: str,
-    *,
-    fragment: bool = False,
-) -> str | None:
-    """Fill every JIT placeholder, or prepend fragment CSS.
-
-    Returns ``None`` when a full document has no placeholder.
-    """
-    found = False
-
-    def replace(match: re.Match[str]) -> str:
-        nonlocal found
-        found = True
-        return f"{match.group(1)}{stylesheet}{match.group(4)}"
-
-    updated = _PLACEHOLDER_RE.sub(replace, html_text)
-    if found:
-        return updated
-    if fragment:
-        return f"<style data-daisie-jit>{stylesheet}</style>\n{html_text}"
-    return None
-
-
-# ---------------------------------------------------------------------------
-# HTML -> candidates
-# ---------------------------------------------------------------------------
-
-
-def compile_html(
-    html_text: str,
-    session: requests.Session,
-    *,
-    fragment: bool = False,
-) -> str | None:
-    """Compile the CSS needed by a rendered document or fragment."""
-    if not fragment and JIT_PLACEHOLDER_ID not in html_text:
-        return None
-    if "class" not in html_text.lower():
-        return None
-
-    classnames = _extract_class_names(html_text, fragment=fragment)
-    if not classnames:
-        return None
-    return compile_classnames(classnames, session, fragment=fragment)
-
-
-def compile_classnames(
-    classnames: Iterable[str],
-    session: requests.Session,
-    *,
-    fragment: bool = False,
-) -> str | None:
-    """Compile CSS for a set of raw class names."""
-    names = sorted({name for name in classnames if _is_runtime_class(name)})
-    if not names:
-        return None
-
-    mode = "fragment" if fragment else "full"
-    cache_key = _cache_key(mode, names)
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    candidates = [
-        candidate for name in names if (candidate := parse_candidate(name)) is not None
-    ]
-    if not candidates:
-        return None
-
-    try:
-        stylesheet = _build_stylesheet(
-            _daisyui_components(candidates),
-            _compact_classnames(candidates),
-            fragment=fragment,
-        )
-    except OSError as exc:
-        raise TailwindCompilationError("Could not read the CSS sources") from exc
-
-    compiled = _compile_stylesheet(stylesheet, session)
-    if not compiled:
-        return None
-    _cache_set(cache_key, compiled)
-    return compiled
-
-
-def _extract_class_names(html_text: str, *, fragment: bool) -> set[str]:
+def extract_class_names(html_text: str, *, fragment: bool) -> set[str]:
+    """Return class names found in the rendered document or fragment."""
     try:
         if fragment:
             try:
@@ -275,6 +163,62 @@ def _extract_class_names(html_text: str, *, fragment: bool) -> set[str]:
                 continue
             names.update(value.split())
     return names
+
+
+def build_input_stylesheet(
+    classnames: Iterable[str],
+    *,
+    fragment: bool = False,
+) -> str:
+    """Build the Tailwind input stylesheet for a set of raw class names."""
+    names = sorted({name for name in classnames if _is_runtime_class(name)})
+    if not names:
+        return ""
+
+    candidates = [
+        candidate for name in names if (candidate := parse_candidate(name)) is not None
+    ]
+    if not candidates:
+        return ""
+
+    components = _daisyui_components(candidates)
+    try:
+        return _build_stylesheet(
+            components,
+            _compact_classnames(candidates),
+            fragment=fragment,
+        )
+    except OSError as exc:
+        raise TailwindCompilationError("Could not read the CSS sources") from exc
+
+
+def compile_classnames(
+    classnames: Iterable[str],
+    *,
+    fragment: bool = False,
+) -> str:
+    """Build and compile CSS for raw class names (convenience/test helper)."""
+    stylesheet = build_input_stylesheet(classnames, fragment=fragment)
+    if not stylesheet:
+        return ""
+    return compile_input_stylesheet(stylesheet)
+
+
+def compile_input_stylesheet(stylesheet: str) -> str:
+    """Compile and validate a Tailwind input stylesheet."""
+    try:
+        validate_css(stylesheet)
+    except CssValidationError as exc:
+        raise TailwindCompilationError("Tailwind input stylesheet is invalid.") from exc
+
+    compiled = _compile_stylesheet(stylesheet)
+    try:
+        validate_css(compiled)
+    except CssValidationError as exc:
+        raise TailwindCompilationError(
+            "Tailwind compiler returned invalid CSS."
+        ) from exc
+    return compiled
 
 
 def _is_runtime_class(name: str) -> bool:
@@ -434,6 +378,8 @@ def _render_candidate(
 
 def _daisyui_components(candidates: Sequence[ParsedCandidate]) -> set[str]:
     components: set[str] = set()
+    components.add("radius")
+    components.add("typography")
     for candidate in candidates:
         if candidate.utility.startswith("["):
             continue
@@ -455,14 +401,16 @@ def _build_stylesheet(
     *,
     fragment: bool,
 ) -> str:
-    lines: list[str] = []
-    if fragment:
-        lines.append("@layer theme, base, components, utilities;\n")
-        lines.append("@import 'tailwindcss/theme.css' layer(theme);\n")
-        lines.append("@import 'tailwindcss/utilities.css' layer(utilities);\n")
-    else:
-        lines.append("@import 'tailwindcss' source(none);\n")
-    lines.append('@plugin "@tailwindcss/typography";\n')
+    # The committed base stylesheet already contains preflight, so JIT builds
+    # intentionally import only theme and utilities. `source(none)` belongs on
+    # the utilities import per Tailwind v4's individual-import contract.
+    _ = fragment
+    lines = [
+        "@layer theme, base, components, utilities;\n",
+        "@import 'tailwindcss/theme.css' layer(theme);\n",
+        "@import 'tailwindcss/utilities.css' layer(utilities) source(none);\n",
+        '@plugin "@tailwindcss/typography";\n',
+    ]
     lines.extend(_format_source_inline(pattern) for pattern in patterns)
     lines.append(_read_css("typography.css") + "\n")
     lines.append('@plugin "daisyui" {')
@@ -500,15 +448,17 @@ def _read_css(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _compile_stylesheet(stylesheet: str, session: requests.Session) -> str:
-    api = getattr(settings, "TAILWIND_CSS_API", "")
-    timeout = float(getattr(settings, "TAILWIND_CSS_TIMEOUT", 30))
-    if api:
-        return _safe_compile_stylesheet(stylesheet, session, api, timeout)
-    return _unsafe_compile_stylesheet(stylesheet, timeout)
+def _compile_stylesheet(stylesheet: str) -> str:
+    api = get_tailwind_api()
+    if api is not None:
+        try:
+            return compile_via_http(stylesheet, api)
+        except TailwindAPIError as exc:
+            raise TailwindCompilationError(str(exc)) from exc
+    return _unsafe_compile_stylesheet(stylesheet)
 
 
-def _unsafe_compile_stylesheet(stylesheet: str, timeout: float) -> str:
+def _unsafe_compile_stylesheet(stylesheet: str) -> str:
     try:
         from django_tailwind_cli.config import (
             ConfigurationError,
@@ -521,6 +471,7 @@ def _unsafe_compile_stylesheet(stylesheet: str, timeout: float) -> str:
             "install it or set TAILWIND_CSS_API."
         ) from exc
 
+    timeout = float(getattr(settings, "TAILWIND_CSS_TIMEOUT", 30))
     try:
         minify = bool(getattr(settings, "TAILWIND_CLI_AUTOMATIC_MINIFY", True))
         config = get_config()
@@ -546,62 +497,10 @@ def _unsafe_compile_stylesheet(stylesheet: str, timeout: float) -> str:
         raise TailwindCompilationError("Unsafe Tailwind compilation failed") from exc
 
 
-def _safe_compile_stylesheet(
-    stylesheet: str,
-    session: requests.Session,
-    api: str,
-    timeout: float,
-) -> str:
-    try:
-        response = session.post(
-            api,
-            json={"stylesheet": stylesheet},
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        data = response.json()
-    except (requests.RequestException, ValueError) as exc:
-        raise TailwindCompilationError("Safe Tailwind compilation failed") from exc
-
-    compiled = data.get("stylesheet") if isinstance(data, dict) else None
-    if not isinstance(compiled, str):
-        raise TailwindCompilationError(
-            "Safe Tailwind compilation returned no stylesheet"
-        )
-    return compiled
-
-
-# ---------------------------------------------------------------------------
-# Cache
-# ---------------------------------------------------------------------------
-
-
-def _cache_key(mode: str, names: Sequence[str]) -> str:
-    digest = hashlib.sha256("\0".join(names).encode("utf-8")).hexdigest()
-    return f"wagtail_daisIE:tailwind:{CACHE_VERSION}:{mode}:{digest}"
-
-
-def _cache_get(key: str) -> str | None:
-    try:
-        return cache.get(key)
-    except Exception:  # pragma: no cover - cache backend boundary
-        logger.warning("Tailwind CSS cache read failed", exc_info=True)
-        return None
-
-
-def _cache_set(key: str, value: str) -> None:
-    try:
-        cache.set(key, value, timeout=CACHE_EXPIRY)
-    except Exception:  # pragma: no cover - cache backend boundary
-        logger.warning("Tailwind CSS cache write failed", exc_info=True)
-
-
 __all__ = [
-    "CACHE_EXPIRY",
-    "JIT_PLACEHOLDER_ID",
     "TailwindCompilationError",
+    "build_input_stylesheet",
     "compile_classnames",
-    "compile_html",
-    "inject_stylesheet",
-    "placeholder_html",
+    "compile_input_stylesheet",
+    "extract_class_names",
 ]

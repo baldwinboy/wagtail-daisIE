@@ -185,4 +185,9 @@ class TestMenuTag:
 class TestJITPlaceholder:
     def test_placeholder_markup(self):
         html = _render("{% daisyui_jit_placeholder %}", {})
-        assert html.strip() == '<style id="daisyui-jit-styles"></style>'
+        assert "wagtail_daisIE/css/daisie-base.css" in html
+        assert '<style id="daisyui-jit-styles"></style>' in html
+        assert 'id="daisyui-jit-config"' in html
+        assert "application/json" in html
+        assert "wagtail_daisIE/js/tailwind_jit.js" in html
+        assert 'type="module"' in html

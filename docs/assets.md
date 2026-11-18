@@ -1,60 +1,43 @@
 # CSS pipeline (runtime Tailwind + daisyUI)
 
-`wagtail-daisIE` compiles Tailwind CSS from the classes that are actually
-rendered on each page. There is no committed stylesheet, no safelist and no CSS
-build step.
+`wagtail-daisIE` compiles Tailwind CSS from the classes rendered on each page.
+Python stores the compilation input in the shared cache and writes a per-page
+JSON config. The browser fetches or compiles the stylesheet and injects it into
+the placeholder. Python never writes compiled CSS into the HTML.
 
 ```text
-rendered HTML ──► candidate parser ──► @source inline() patterns
-      │                                      │
-      └─ class + data-daisie-selected-class  └─ Tailwind + daisyUI compiler
-                                              │
-                              <style id="daisyui-jit-styles"> in the page
+Django response
+  └─ TailwindCSSMiddleware
+       ├─ extract class + data-daisie-selected-class tokens
+       ├─ build the Tailwind input
+       ├─ store input in cache under a content token
+       ├─ blocking / executor / Celery / browser plan
+       └─ inject JSON config only
+
+Browser
+  ├─ loads committed daisie-base.css
+  ├─ tailwind_jit.js reads the config
+  ├─ fetch/poll artifact, HTTP POST, or WebSocket
+  ├─ validates and injects into #daisyui-jit-styles
+  └─ emits document events
 ```
 
-## How it works
-
-1. **Render** — templates include `{% daisyui_jit_placeholder %}` in `<head>`.
-   The tag emits an empty `<style id="daisyui-jit-styles">`.
-2. **Extract** — `TailwindCSSMiddleware` parses the response and reads every
-   `class` attribute and every `data-daisie-selected-class` attribute. The
-   latter covers classes that `feed_controls.js` applies at runtime. The
-   candidate grammar matches Tailwind's Oxide extractor: variants, arbitrary
-   values/properties/variables, modifiers, important markers and balanced
-   brackets.
-3. **Compact** — candidates are grouped into `@source inline()` patterns
-   without lossy cross-products. A group is emitted as separate patterns when a
-   brace alternative would contain a comma, brace or backslash.
-4. **Compile** — the compiler appends the package's frontend CSS sources
-   (`typography.css`, `file-picker.css`, `marquee.css`, `menu.css`,
-   `richtext.css`, `visibility.css`) to a Tailwind input stylesheet. It uses:
-   - `django_tailwind_cli` by default (the **unsafe** path: a local binary), or
-   - `TAILWIND_CSS_API` when set (the **safe** path: a remote compiler).
-5. **Cache** — the compiled CSS is cached by the sorted class set and mode
-   (`full` or `fragment`) in the Django cache for one week.
-6. **Inject** — the placeholder is filled. HTML outside the placeholder is not
-   reserialized or otherwise changed.
-
-## Configuration
+## Installation
 
 ```python
 # settings.py
-INSTALLED_APPS = [
-    # ...
-    "django_tailwind_cli",
-]
+INSTALLED_APPS += ["django_tailwind_cli"]
+TAILWIND_CLI_USE_DAISY_UI = True
 
 MIDDLEWARE += [
     "django_htmx.middleware.HtmxMiddleware",
     "wagtail_daisIE.middleware.TailwindCSSMiddleware",
 ]
+```
 
-TAILWIND_CLI_USE_DAISY_UI = True
-
-# Optional remote compiler (safe path). When set, django_tailwind_cli is not
-# imported or required.
-TAILWIND_CSS_API = "https://css.example.com/compile"
-TAILWIND_CSS_TIMEOUT = 30
+```python
+# urls.py
+(path("daisie/tailwind/", include("wagtail_daisIE.tailwindcss.urls")),)
 ```
 
 ```django
@@ -65,52 +48,154 @@ TAILWIND_CSS_TIMEOUT = 30
 </head>
 ```
 
-`django_tailwind_cli` must be installed and `TAILWIND_CLI_USE_DAISY_UI` must be
-`True` for local compilation; system checks W003/W004 warn when either is
-missing. The remote service receives:
+The tag emits:
 
-```json
-{"stylesheet": "@import 'tailwindcss' source(none); ..."}
+1. `<link rel="stylesheet" href=".../daisie-base.css">`
+2. `<style id="daisyui-jit-styles"></style>`
+3. an empty JSON config element
+4. `tailwind_jit.js` as a module
+
+## Base stylesheet
+
+The minimal input lives in `src/wagtail_daisIE/tailwind/input.css`:
+
+```css
+@import "tailwindcss" source(none);
+@plugin "@tailwindcss/typography";
+@plugin "daisyui" { include: button, input, menu, megamenu, navbar, footer }
 ```
 
-and must return:
+Build it with:
 
-```json
-{"stylesheet": "/* compiled CSS */"}
+```bash
+just build-css
 ```
 
-## Outputs and failure modes
+The output is the committed
+`src/wagtail_daisIE/static/wagtail_daisIE/css/daisie-base.css`. It includes
+preflight and the six core components, reducing the flash before JIT CSS
+arrives.
 
-- **Full pages** — CSS is written into the existing placeholder. Pages with no
-  placeholder are left untouched (admin pages, for example).
-- **Error pages** — non-200 HTML responses are processed, so 404/500 templates
-  are styled.
-- **htmx fragments** — a fragment without a placeholder gets a prepended
-  `<style data-daisie-jit>` built without Tailwind preflight. The style is
-  swapped in with the fragment.
-- **Missing compiler / compile error / cache outage** — the middleware logs and
-  leaves the response untouched. A page never fails because CSS failed.
-- **Unknown content encodings** — responses using `br`/`zstd` are skipped;
-  gzip/deflate are decoded and re-encoded.
+The JIT stylesheet deliberately imports only theme and utilities:
 
-## Scanned attributes
+```css
+@layer theme, base, components, utilities;
 
-Only classes in these attributes are compiled:
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+```
 
-- `class`
-- `data-daisie-selected-class`
+The three directives are required: theme supplies build-time theme values,
+utilities emits utilities, and the layer order keeps components below
+utilities. Preflight is omitted because the base stylesheet already contains
+it.
 
-Classes applied by JavaScript must be present in one of them. The package's
-own JavaScript already satisfies this: feed toggles use the data attribute and
-autocomplete/file-picker classes also appear in the rendered templates or in
-the bundled custom CSS.
+## Compilation modes
 
-## Verifying
+| Server | Celery | API | Mode | Execution |
+|---|---|---|---|---|
+| WSGI | no | none | `fetch` | Python blocks, compiles, stores |
+| WSGI | no | HTTP | `http` | Browser fetches input, POSTs |
+| WSGI | no | WS | `ws` | Browser streams over WebSocket |
+| WSGI | yes | none | `poll` | Celery compiles and stores |
+| WSGI | yes | HTTP/WS | same as no Celery | Browser |
+| ASGI | no | none | `poll` | bounded executor compiles |
+| ASGI | no | HTTP | `poll` | executor calls HTTP API |
+| ASGI | no | WS | `ws` | Browser WebSocket |
+| ASGI | yes | none | `poll` | Celery |
+| ASGI | yes | HTTP/WS | same as ASGI no Celery | Python HTTP / Browser WS |
+| any | any | cache hit | `fetch` | immutable artifact |
 
-1. Render a page and confirm the placeholder contains CSS.
-2. Render a 404/500 page and confirm it is styled too.
-3. Trigger a feed swap and confirm the fragment contains
-   `<style data-daisie-jit>`.
-4. Add a class only through `data-daisie-selected-class` and confirm it appears
-   in the generated `@source inline` input.
-5. Run `just lint && just test`.
+API configuration:
+
+```python
+TAILWIND_CSS_API = {
+    "url": "https://css.example/compile",
+    "transport": "http",  # or "websocket"
+    "token": "",  # Python-only
+    "timeout": 30,
+}
+```
+
+A legacy URL string is accepted and its transport is inferred. The token is
+never rendered into HTML: token-protected HTTP APIs use Python paths; a
+token-protected WebSocket API requires a project proxy (W007).
+
+HTTP contract:
+
+```http
+POST /compile?nonce=<64 lowercase hex characters>
+{"stylesheet": "..."}
+```
+
+Response: `{"stylesheet": "..."}`.
+
+WebSocket contract:
+
+```text
+wss://api.example.com/compile?nonce=<64 lowercase hex characters>
+
+{"type": "compile", "stylesheet": "..."}
+{"type": "chunk", "css": "..."}
+{"type": "done"}
+{"type": "error", "message": "..."}
+```
+
+Nonces are always generated in Python (`secrets.token_hex(32)`). Python appends
+the nonce to the final HTTP/WS URL before calling the API. Browser API configs
+receive the finished URL; JavaScript never generates, appends or forwards a
+nonce. Existing query parameters are preserved exactly and any previous
+`nonce` parameter is replaced. Each config produces one request/connection, so
+no nonce is reused by the client. The API server must validate single use and
+reject replays. Query parameters can appear in access logs and proxies; redact
+the `nonce` parameter if required. It is not a secret, but must not be logged at
+INFO or placed in event details.
+
+## Browser behavior
+
+`tailwind_jit.js`:
+
+- scans config scripts at load and watches for htmx fragment configs with a
+  `MutationObserver`;
+- emits `daisie:tailwind-pending`, `daisie:tailwind-ready` and
+  `daisie:tailwind-error` on `document`;
+- fetches immutable artifacts, polls with 250 ms → 2 s backoff and a 60 s
+  timeout, or streams WebSocket chunks;
+- validates CSS before sending and after receiving;
+- buffers WebSocket chunks and flushes only complete CSS statements;
+- injects into `#daisyui-jit-styles`;
+- never reads or sends an API token.
+
+Consumers can listen for `daisie:tailwind-pending` to display plain content
+styled by `daisie-base.css` while compilation runs.
+
+## Artifact URLs
+
+- `/daisie/tailwind/input/<token>.css` — compilation input for browser HTTP/WS.
+- `/daisie/tailwind/artifact/<token>.css` — compiled CSS.
+- Tokens are SHA-256 content hashes.
+- Responses use `text/css`, `Cache-Control: public, max-age=31536000,
+  immutable` and `X-Content-Type-Options: nosniff`.
+- Pending artifacts 404; failed artifacts return a generic 500.
+
+Use a shared cache (Redis/DB) for Celery, multiple ASGI workers, or multiple
+web workers. `LocMemCache` is only safe for a single process; W009 warns.
+
+## Failure behavior
+
+- Compilation errors are logged and stored as a generic error artifact.
+- The browser emits `daisie:tailwind-error`.
+- The base stylesheet remains loaded.
+- A missing URLconf/compiler/base stylesheet produces system-check warnings
+  W003–W009.
+- Unknown response encodings are skipped; gzip/deflate are supported.
+
+## Verification
+
+1. `just build-css`.
+2. Render a page: base CSS is linked and the JSON config is present.
+3. Confirm compiled CSS is **not** in the HTML.
+4. Check the mode matches the matrix; cache hits use `fetch`.
+5. Trigger an htmx fragment and confirm the observer processes its config.
+6. Listen for the three `daisie:tailwind-*` events.
+7. `just lint && just test`.

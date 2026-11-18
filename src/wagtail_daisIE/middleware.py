@@ -1,43 +1,27 @@
-"""Compile Tailwind CSS for rendered HTML into the JIT placeholder.
+"""Compile Tailwind CSS for rendered HTML through a JS artifact handshake.
 
-The compiled stylesheet is cached by the set of class names on the page, so
-repeated renders avoid both parsing and compilation. If compilation fails the
-response is left untouched; a missing compiler must never break a page.
+Python extracts the page's classes, stores the compilation input in the shared
+cache and injects a per-page JSON config. The browser fetches or compiles the
+stylesheet and fills the placeholder. Python never writes CSS into the HTML.
 """
 
 from __future__ import annotations
 
 import gzip
 import logging
-import threading
 import zlib
-
-import requests
 
 from django.http import HttpResponse
 
-from .tailwindcss import (
-    TailwindCompilationError,
-    compile_html,
-    inject_stylesheet,
-)
+from .tailwindcss import orchestration
+from .tailwindcss.compiler import TailwindCompilationError
 
 
 logger = logging.getLogger(__name__)
 
-_SESSION = threading.local()
-
-
-def _get_session() -> requests.Session:
-    """Return a thread-local HTTP session for the safe compiler server."""
-    session = getattr(_SESSION, "session", None)
-    if session is None:
-        session = _SESSION.session = requests.Session()
-    return session
-
 
 class TailwindCSSMiddleware:
-    """Inject runtime-compiled Tailwind CSS into the document head."""
+    """Resolve a compilation plan and inject the client configuration."""
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -51,20 +35,15 @@ class TailwindCSSMiddleware:
         if html_text is None:
             return response
 
-        fragment = bool(getattr(request, "htmx", False))
         try:
-            stylesheet = compile_html(
+            updated = orchestration.prepare_html(
+                request,
                 html_text,
-                _get_session(),
-                fragment=fragment,
+                fragment=bool(getattr(request, "htmx", False)),
             )
         except TailwindCompilationError:
-            logger.warning("JIT CSS compilation failed", exc_info=True)
+            logger.warning("JIT CSS configuration failed", exc_info=True)
             return response
-        if not stylesheet:
-            return response
-
-        updated = inject_stylesheet(html_text, stylesheet, fragment=fragment)
         if updated is None:
             return response
 

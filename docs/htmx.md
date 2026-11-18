@@ -124,11 +124,15 @@ def my_view(request):
 
 ## Styles for swapped fragments
 
-`TailwindCSSMiddleware` compiles CSS for every HTML response. A full page fills
-`{% daisyui_jit_placeholder %}`; an htmx fragment has no `<head>`, so the
-middleware prepends `<style data-daisie-jit>` to the fragment before it is
-swapped in. The fragment build omits Tailwind preflight to keep the response
-small.
+`TailwindCSSMiddleware` prepares compilation for every HTML response. A full
+page fills the JSON config inside `{% daisyui_jit_placeholder %}`; an htmx
+fragment has no `<head>`, so the middleware prepends a unique config script to
+the fragment. `tailwind_jit.js` watches for inserted config scripts with a
+`MutationObserver`, fetches or compiles that fragment's CSS and appends it to
+the page's `#daisyui-jit-styles`.
+
+The fragment uses the same theme/utilities build without preflight. The base
+stylesheet is already loaded by the parent page.
 
 Classes that JavaScript applies at runtime must appear in a scanned attribute.
 The feed controller reads them from `data-daisie-selected-class`, which the

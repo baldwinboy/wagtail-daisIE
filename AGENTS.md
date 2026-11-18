@@ -69,9 +69,11 @@ just runserver
 just migrate              # makemigrations + migrate
 just load_initial_data
 just collectstatic
+just build-css            # downloads/runs the Tailwind CLI and writes base CSS
 just lint                 # full linters
 just format               # writes files
-just test                 # full pytest suite
+just test                 # pytest + node --test
+just test-js              # JavaScript tests only
 just coverage
 just test-lowest-deps
 just test-highest-deps
@@ -273,19 +275,28 @@ When adding a block, subclass the appropriate `Themed*Block` from
 
 ### Theming, menus, and layout
 
-- **CSS is compiled at request time** by `TailwindCSSMiddleware` into
-  `{% daisyui_jit_placeholder %}`. `tailwindcss/_extractor.py` ports Tailwind's
-  Oxide candidate grammar; `tailwindcss/compiler.py` scans rendered `class` and
-  `data-daisie-selected-class` attributes, compacts them into
-  `@source inline()` patterns, bundles
-  `static/wagtail_daisIE/css/tailwind/*.css`, and compiles through
-  `django_tailwind_cli` or `TAILWIND_CSS_API`. Results are cached by class set.
-  Non-200 HTML responses are processed and htmx fragments receive
-  `<style data-daisie-jit>`. There is no committed stylesheet, safelist or build
-  step. Classes applied only by JavaScript must be present in a scanned
-  attribute; the feed controller uses `data-daisie-selected-class`.
-  Design backgrounds are `BackgroundStreamBlock` values rendered as an inline
-  `block_style` (not classes); `TextBackgroundBlock` is email-only.
+- **CSS is compiled at request time** by `TailwindCSSMiddleware` into the
+  `{% daisyui_jit_placeholder %}` handshake. The tag emits the committed
+  minimal `daisie-base.css` link, an empty style, a JSON config and
+  `tailwind_jit.js`. `tailwindcss/_extractor.py` ports Tailwind's Oxide candidate
+  grammar; `tailwindcss/compiler.py` builds the input (theme + utilities,
+  `source(none)`, no preflight because the base stylesheet has it) and compiles
+  through `django_tailwind_cli` or `TAILWIND_CSS_API`. Every compiler API URL
+  carries a Python-generated `nonce` query parameter; Python builds the final
+  URL, JS uses it unchanged, existing query parameters are preserved, and
+  any previous nonce is replaced. Nonces are generated in Python only, never
+  in JS, and are single-use API-side.
+  `tailwindcss/orchestration.py` resolves WSGI/ASGI, Celery, HTTP/WS API and
+  cache-hit modes; `artifacts.py` stores content-addressed input/output/error
+  entries in the shared cache; `views.py` serves them. Python never injects CSS
+  into the response, only the JSON config. Non-200 HTML responses are processed;
+  htmx fragments get a config script observed by the client module.
+  `just build-css` rebuilds the base stylesheet. Classes applied only by
+  JavaScript must be present in a scanned attribute; the feed controller uses
+  `data-daisie-selected-class`. Use a shared cache for artifact URLs and
+  background/Celery modes. Design backgrounds are `BackgroundStreamBlock`
+  values rendered as an inline `block_style` (not classes);
+  `TextBackgroundBlock` is email-only.
 - **Menu container and item styles are independent**: `DaisyUIMenu.menu_design`
   styles the container (`menu_design_css`/`menu_design_style`); `item_design`
   styles items (`menu_default_css`/`menu_default_style`). Menus are wrapped in

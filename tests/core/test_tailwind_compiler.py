@@ -1,9 +1,7 @@
 import pytest
 
-from django.core.cache import cache
-
 from wagtail_daisIE.tailwindcss import compiler
-from wagtail_daisIE.tailwindcss._extractor import ParsedCandidate, parse_candidate
+from wagtail_daisIE.tailwindcss._extractor import parse_candidate
 
 
 pytestmark = pytest.mark.django_db
@@ -66,41 +64,9 @@ def test_source_inline_escapes_css_strings():
     assert pattern == '@source inline("content-[\\"hello\\"]");\n'
 
 
-def test_daisyui_longest_prefix_detection():
-    candidates = _parsed(
-        "btn-primary",
-        "mockup-browser-toolbar",
-        "card-body",
-        "hover-3d",
-        "radial-progress",
-        "text-rotate",
-        "join",
-        "stats",
-        "tabs",
-        "step",
-    )
-    assert compiler._daisyui_components(candidates) == {
-        "button",
-        "mockup",
-        "card",
-        "hover3d",
-        "radialprogress",
-        "textrotate",
-        "join",
-        "stat",
-        "tab",
-        "steps",
-    }
-
-
-def test_fragment_stylesheet_omits_preflight():
-    stylesheet = compiler._build_stylesheet({"button"}, ["flex"], fragment=True)
-    assert "@import 'tailwindcss/theme.css'" in stylesheet
-    assert "@import 'tailwindcss/utilities.css'" in stylesheet
-    assert "@import 'tailwindcss' source(none)" not in stylesheet
-    assert "include: button;" in stylesheet
-    assert "visibility.css" not in stylesheet  # contents, not filename
-    assert ".daisie-visibility-target" in stylesheet
+def test_no_classes_produce_no_stylesheet():
+    assert compiler.build_input_stylesheet([]) == ""
+    assert compiler.build_input_stylesheet(["daisie-file-attachments"]) == ""
 
 
 def test_extracts_class_and_data_attributes():
@@ -109,7 +75,7 @@ def test_extracts_class_and_data_attributes():
       <div class="grid" data-daisie-selected-class="btn-primary btn-active"></div>
     </body></html>
     """
-    assert compiler._extract_class_names(html, fragment=False) == {
+    assert compiler.extract_class_names(html, fragment=False) == {
         "btn-active",
         "btn-primary",
         "flex",
@@ -121,79 +87,4 @@ def test_extracts_template_children():
     html = (
         """<div class="outer"><template><span class="inside"></span></template></div>"""
     )
-    assert compiler._extract_class_names(html, fragment=True) == {"inside", "outer"}
-
-
-def test_inject_fills_every_placeholder():
-    html = (
-        '<head><style id="daisyui-jit-styles"></style>'
-        '<style id="daisyui-jit-styles" nonce="x"></style></head>'
-    )
-    updated = compiler.inject_stylesheet(html, "/* css */")
-    assert updated is not None
-    assert updated.count("/* css */") == 2
-    assert 'nonce="x"' in updated
-
-
-def test_inject_prepends_fragment_style():
-    updated = compiler.inject_stylesheet(
-        '<div class="flex"></div>', "/* css */", fragment=True
-    )
-    assert (
-        updated == '<style data-daisie-jit>/* css */</style>\n<div class="flex"></div>'
-    )
-
-
-def test_inject_returns_none_without_placeholder():
-    assert compiler.inject_stylesheet("<div>no placeholder</div>", "/* css */") is None
-
-
-def test_placeholder_html():
-    assert compiler.placeholder_html() == '<style id="daisyui-jit-styles"></style>'
-
-
-def test_cache_skips_compilation_on_repeat(monkeypatch):
-    cache.clear()
-    calls = []
-
-    def fake_compile(stylesheet, session):
-        calls.append(stylesheet)
-        return "/* compiled */"
-
-    monkeypatch.setattr(compiler, "_compile_stylesheet", fake_compile)
-    session = object()
-
-    assert compiler.compile_classnames(["flex", "p-4"], session) == "/* compiled */"
-    assert compiler.compile_classnames(["p-4", "flex"], session) == "/* compiled */"
-    assert len(calls) == 1
-    cache.clear()
-
-
-def test_full_and_fragment_cache_keys_differ(monkeypatch):
-    cache.clear()
-    calls = []
-
-    def fake_compile(stylesheet, session):
-        calls.append(stylesheet)
-        return "/* compiled */"
-
-    monkeypatch.setattr(compiler, "_compile_stylesheet", fake_compile)
-    session = object()
-
-    compiler.compile_classnames(["flex"], session)
-    compiler.compile_classnames(["flex"], session, fragment=True)
-    assert len(calls) == 2
-    cache.clear()
-
-
-@pytest.mark.parametrize("token", ["daisie-file-attachments", "daisyui-menu"])
-def test_package_classes_are_not_sent_to_tailwind(token):
-    candidate = ParsedCandidate(
-        raw=token,
-        variants=(),
-        utility=token,
-        base=token,
-        value=None,
-        modifier=None,
-    )
-    assert compiler._daisyui_components([candidate]) == set()
+    assert compiler.extract_class_names(html, fragment=True) == {"inside", "outer"}

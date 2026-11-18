@@ -78,18 +78,22 @@ blocks in `feeds/blocks_data.py`.
 
 ### `tailwindcss/` / `middleware.py`
 
-`tailwindcss/_extractor.py` ports Tailwind's Oxide candidate grammar. It
-validates each rendered class token and returns its variant chain, utility,
-base/value split and modifier. `tailwindcss/compiler.py` scans the rendered
-document, detects DaisyUI components, compacts candidates into
-`@source inline()` patterns, assembles the stylesheet from
-`static/wagtail_daisIE/css/tailwind/*.css`, compiles it through
-`django_tailwind_cli` or `TAILWIND_CSS_API`, and caches the result by class set.
+`tailwindcss/_extractor.py` ports Tailwind's Oxide candidate grammar.
+`tailwindcss/compiler.py` builds and compiles the input stylesheet.
+`tailwindcss/artifacts.py` stores content-addressed input/output/error entries
+in the shared cache; `views.py` and `urls.py` serve them.
+`tailwindcss/validators.py` rejects unsafe or malformed CSS.
+`tailwindcss/api.py` parses the HTTP/WS API setting and owns Python HTTP calls.
+`tailwindcss/executor.py` runs bounded ASGI background work.
+`tailwindcss/tasks.py` provides the optional Celery task.
+`tailwindcss/orchestration.py` resolves the WSGI/ASGI/Celery/API/cache mode and
+builds the per-page JSON config. `tailwindcss/placeholder.py` owns the tag
+markup and config injection.
 
 `middleware.py` (`TailwindCSSMiddleware`) is transport-only: it decodes the
-response, asks the compiler for CSS and fills the
-`{% daisyui_jit_placeholder %}` placeholder. Non-200 error pages are processed,
-and htmx fragments receive a prepended `<style data-daisie-jit>`.
+response, asks orchestration for a plan and injects the JSON config. CSS is
+never inserted into the response. Non-200 error pages are processed; htmx
+fragments get a prepended config script that `tailwind_jit.js` observes.
 See [assets.md](assets.md).
 
 ### `detail_pages/`

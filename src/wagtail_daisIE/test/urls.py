@@ -14,6 +14,10 @@ urlpatterns = [
         include("wagtail_daisIE.notifications.urls"),
     ),
     path(
+        "daisie/tailwind/",
+        include("wagtail_daisIE.tailwindcss.urls"),
+    ),
+    path(
         "daisie/",
         include("wagtail_daisIE.dynamic.urls"),
     ),

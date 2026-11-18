@@ -100,24 +100,24 @@ upgrade procedure and data guarantees.
 
 ### 3. Compile Tailwind CSS at request time
 
-The stylesheet is compiled from the classes that are actually rendered into
-the page. Add the middleware and put the placeholder in your base template's
-`<head>`:
+The stylesheet is compiled from the classes rendered into each page. Add the
+middleware, the artifact URLs and the single stylesheet tag:
 
 ```python
 # settings.py
 MIDDLEWARE += [
-    # Lets views detect htmx requests (feeds, action forms, newsletter).
     "django_htmx.middleware.HtmxMiddleware",
-    # Compiles the page's classes into the JIT placeholder.
     "wagtail_daisIE.middleware.TailwindCSSMiddleware",
 ]
 
-TAILWIND_CLI_USE_DAISY_UI = True  # required by the local compiler
-```
+INSTALLED_APPS += ["django_tailwind_cli"]
+TAILWIND_CLI_USE_DAISY_UI = True
 
-Install `django-tailwind-cli` (or the package's `blocks` extra) for local
-compilation, or set `TAILWIND_CSS_API` to use a remote compiler.
+# urls.py
+urlpatterns += [
+    path("daisie/tailwind/", include("wagtail_daisIE.tailwindcss.urls")),
+]
+```
 
 ```django
 {% load wagtail_daisIE_tags %}
@@ -127,20 +127,52 @@ compilation, or set `TAILWIND_CSS_API` to use a remote compiler.
 </head>
 ```
 
-The placeholder is filled with Tailwind, DaisyUI, the package's component CSS
-and every class found in the rendered `class` and
-`data-daisie-selected-class` attributes. Result CSS is cached by class set.
-`data-daisie-selected-class` covers classes that the feed controller applies at
-runtime.
+`{% daisyui_jit_placeholder %}` emits the committed
+`daisie-base.css` link, the JIT placeholder, a per-page JSON config and the
+`tailwind_jit.js` module. The middleware stores the page input in the shared
+cache and fills the config; the browser fetches or compiles the stylesheet and
+injects it into `#daisyui-jit-styles`. CSS is never written into the HTML by
+Python.
 
-Compilation uses `django_tailwind_cli` locally (the "unsafe" path) or a remote
-compiler when `TAILWIND_CSS_API` is set (the "safe" path). The remote service
-receives `{"stylesheet": "..."}` and must return `{"stylesheet": "..."}`. See
-[docs/assets.md](docs/assets.md) for the complete pipeline, caching, fragments
-and failure behaviour.
+The base stylesheet is built with the minimal input in
+`src/wagtail_daisIE/tailwind/input.css`:
 
-The htmx script itself is opt-out: `{% daisie_htmx %}` (default on) renders it,
-and `WAGTAIL_DAISIE_HTMX = False` disables the integration. See
+```bash
+just build-css
+```
+
+Compilation modes:
+
+- local `django_tailwind_cli` (blocking on WSGI, background executor on ASGI);
+- Celery when installed and a broker is configured;
+- HTTP or WebSocket compiler via `TAILWIND_CSS_API`;
+- browser-side HTTP/WS when the API has no token.
+
+```python
+TAILWIND_CSS_API = {
+    "url": "https://css.example/compile",
+    "transport": "http",  # or "websocket"
+    "token": "",  # Python-only; never rendered into HTML
+    "timeout": 30,
+}
+```
+
+Every compiler API URL carries a Python-generated `nonce` query parameter.
+Python appends it before the final request; browser API configs receive the
+finished URL and never generate or append a nonce. A fresh nonce is generated
+for every Python request and every browser API config. Existing query
+parameters are preserved and any previous `nonce` is replaced. The API must
+validate single use.
+
+The browser dispatches `daisie:tailwind-pending`,
+`daisie:tailwind-ready` and `daisie:tailwind-error` on `document`. Artifact
+URLs are content-addressed and immutable. Use a shared cache (Redis/DB) in
+multi-process deployments. Remote APIs need the appropriate CORS and
+`connect-src` policy. See [docs/assets.md](docs/assets.md) for the full mode
+matrix, Celery/ASGI behavior, validation and failure handling.
+
+The htmx script is opt-out: `{% daisie_htmx %}` (default on) renders it, and
+`WAGTAIL_DAISIE_HTMX = False` disables the integration. See
 [docs/htmx.md](docs/htmx.md).
 
 ## Quick start
@@ -207,7 +239,8 @@ This mixin adds:
 
 `{% daisyui_all_themes_css theme %}` emits the active theme plus every other
 configured theme, so theme toggles always have variables. The JIT placeholder
-is filled by `TailwindCSSMiddleware`; it is the only stylesheet hook needed.
+is filled by `tailwind_jit.js`; `TailwindCSSMiddleware` only injects the
+per-page config. This is the only stylesheet hook needed.
 `{% daisyui_theme_script %}` persists the visitor's theme choice and
 `{% daisie_messages %}` renders action confirmations as DaisyUI alerts.
 
@@ -423,7 +456,7 @@ def register_icon_providers(providers):
 | `{% daisyui_theme_full_css theme %}` | Inclusion | Font CDNs + colors + background + fonts |
 | `{% daisyui_theme_full_inline_css theme %}` | Simple | Raw combined CSS string |
 | `{% daisyui_all_themes_css theme %}` | Inclusion | Inline CSS for every theme, including the active one |
-| `{% daisyui_jit_placeholder %}` | Simple | `<style id="daisyui-jit-styles">` filled by the middleware |
+| `{% daisyui_jit_placeholder %}` | Simple | Base CSS link, JIT placeholder, JSON config and client script |
 | `{% daisyui_theme_script %}` | Simple | Script tag that persists the theme choice |
 | `{% daisie_htmx %}` | Simple | Script tag for htmx (when `WAGTAIL_DAISIE_HTMX` is on) |
 | `{% daisie_messages %}` | Inclusion | Renders Django messages as DaisyUI alerts |
@@ -485,10 +518,26 @@ WAGTAIL_DAISIE_FEED_MAX_LIMIT = 1000
 WAGTAIL_DAISIE_FEED_MAX_OFFSET = 1_000_000
 
 # Optional: remote CSS compiler. When unset, django_tailwind_cli is used.
-TAILWIND_CSS_API = ""
+TAILWIND_CSS_API = {
+    "url": "https://css.example/compile",
+    "transport": "http",  # or "websocket"
+    "token": "",  # Python-only; never sent to the browser
+    "timeout": 30,
+}
 
-# Compiler timeout in seconds (default 30).
+# Fallback compiler timeout in seconds (default 30).
 TAILWIND_CSS_TIMEOUT = 30
+
+# Background/artifact settings (defaults shown).
+WAGTAIL_DAISIE_TAILWIND_ARTIFACT_TTL = 604800
+WAGTAIL_DAISIE_TAILWIND_ERROR_TTL = 300
+WAGTAIL_DAISIE_TAILWIND_EXECUTOR_WORKERS = 2
+WAGTAIL_DAISIE_TAILWIND_CELERY_TASK = (
+    "wagtail_daisIE.tailwindcss.tasks.compile_tailwind_css"
+)
+WAGTAIL_DAISIE_TAILWIND_POLL_INTERVAL = 250
+WAGTAIL_DAISIE_TAILWIND_POLL_MAX_INTERVAL = 2000
+WAGTAIL_DAISIE_TAILWIND_POLL_TIMEOUT = 60000
 
 # Optional: self-hosted Cally for the calendar block.
 WAGTAIL_DAISIE_CALLY_URL = "https://unpkg.com/cally@0.9.2"
