@@ -1374,7 +1374,420 @@ component behaviour and guide pages.
 
 ---
 
-# Epic 10 — Verification
+# Epic 10 — Context model admin performance
+
+**Outcome:** context-model metadata and search have one scoped implementation;
+saved bindings render with zero background requests; and model-field selection
+no longer renders one control per configured model.
+
+## UI-1 — Centralise context-model querysets and bounded search
+
+**User story:** As a maintainer, I want one scoped queryset/search path for
+context models, so the binding UI and feeds cannot drift in filtering, eager
+loading or safe search fields.
+
+**Required task:**
+- Add a shared `dynamic/querysets.py` with:
+  - `base_queryset(config, request=None, page=None)`, applying the configured
+    `queryset`, `select_related` and `prefetch_related`.
+  - `search_queryset(queryset, config, query, limit)`, using configured
+    `search_fields`.
+- Add optional `search_fields` to `WAGTAIL_DAISIE_CONTEXT_MODELS` and
+  `ContextModel`; support a string or iterable.
+- Define a safe fallback set (`title`, `name`, `slug`, `label`) that only uses
+  fields present on the model; never search password-like fields.
+- Replace the duplicated `base_queryset` implementations in
+  `dynamic/feeds.py` and `dynamic/resolvers.py` with the shared helper.
+- Replace the broad `TypeError` fallback for callable querysets with signature
+  inspection.
+- Replace blanket exception swallowing in filter/search resolution with
+  specific exceptions and structured warnings.
+
+**Acceptance criteria:**
+- [ ] Feed queries and binding search both honour the configured queryset,
+      `select_related` and `prefetch_related`.
+- [ ] A callable queryset works with `(request, page)` and with no arguments.
+- [ ] Search uses configured fields; fallback fields are only used when
+      present; password-like fields are never searched.
+- [ ] Invalid filter/search configuration is logged without hiding
+      programming errors.
+- [ ] No database access occurs at import time.
+- [ ] Regression tests cover scoping, eager loading, fallback fields and
+      callable signatures.
+
+**Expected file changes:**
+- new `src/wagtail_daisIE/dynamic/querysets.py`
+- `src/wagtail_daisIE/dynamic/registry.py`
+- `src/wagtail_daisIE/dynamic/resolvers.py`
+- `src/wagtail_daisIE/dynamic/feeds.py`
+- `src/wagtail_daisIE/dynamic/views.py`
+- `tests/dynamic/test_dynamic_context_models.py`
+- `tests/feeds/test_data_components.py`
+- `docs/context-models.md`
+
+**Blocking stories:** none.
+
+**Current status:** Not started — **Ready**.
+
+---
+
+## UI-2 — Cache context-model metadata and split runtime/help state
+
+**User story:** As an admin, I want context-model help and block metadata to be
+built once and sent only where needed, so every admin page does not rebuild
+field documentation it will not use.
+
+**Required task:**
+- Cache `field_docs`, `form_fields`, `help_fields` and `examples` on
+  `ContextModel`; invalidate them through `reset_context_models()`.
+- Split `get_context_models_state()` into:
+  - runtime state used by `block_controllers.js`: keys, labels, model paths,
+    modes and `fields`;
+  - help state: `helpFields`, `examples` and source summaries, used only by the
+    binding form and panels.
+- Inject only runtime state through `register_context_models_js`.
+- Update `FeedContextModelHelpPanel` and `FormModelFieldsHelpPanel` to use the
+  cached help state and render full field/example detail only for the active
+  model.
+- Limit help examples to 4–6 per model.
+
+**Acceptance criteria:**
+- [ ] Building runtime state performs no database queries.
+- [ ] The global admin script contains runtime fields only, not full help
+      tables/examples.
+- [ ] `reset_context_models()` invalidates every metadata cache.
+- [ ] Feed and form help panels still show the active model’s fields/examples.
+- [ ] Inactive model help does not render large hidden tables.
+- [ ] Tests cover cache invalidation, query-free metadata and the split payload.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/dynamic/registry.py`
+- `src/wagtail_daisIE/dynamic/panels.py`
+- `src/wagtail_daisIE/forms/panels.py`
+- `src/wagtail_daisIE/wagtail_hooks.py`
+- `tests/dynamic/test_dynamic_context_models.py`
+- `tests/feeds/test_data_components.py`
+
+**Blocking stories:** UI-1.
+
+**Current status:** Not started — **Blocked by UI-1**.
+
+---
+
+## UI-3 — Render saved context bindings with zero background requests
+
+**User story:** As an editor, I want a saved binding to show its selected
+instance immediately when I open the editor, without the page firing a request
+for every configured model.
+
+**Required task:**
+- Add a custom `ContextBindingValueBlock`/widget and telepath adapter whose
+  form state is `{id, title, edit_url}`.
+- Override `ContextBindingBlock.get_form_state()` to resolve the saved instance
+  through the shared queryset helper and supply that state.
+- Render the saved title/edit link server-side through the widget; use a small
+  JS widget class for initial state, `setState`, `getValue` and `getState`.
+- Remove `load@window->w-swap#submitLazy` from all binding forms.
+- Keep the inline search forms for changing the value; update the display and
+  hidden value when a result is clicked.
+- Clear the stale value/display when the context-model `key` changes.
+- Render a safe “missing” state when the saved object no longer exists or is
+  outside the configured queryset.
+- Cache resolved labels per request by `(model, pk)` if several bindings are
+  present.
+
+**Acceptance criteria:**
+- [ ] Opening an edit page with saved bindings makes zero binding XHRs.
+- [ ] The saved title/edit link renders on initial load.
+- [ ] A newly added binding renders blank.
+- [ ] Changing the model clears the previous model’s selection.
+- [ ] A deleted or out-of-scope instance renders safely and fails validation on
+      save.
+- [ ] No `load@window` binding action remains in the form template.
+- [ ] Tests cover saved, new, deleted and out-of-scope values plus key changes.
+- [ ] Telepath/StreamField tests cover newly added blocks.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/dynamic/blocks.py`
+- new `src/wagtail_daisIE/dynamic/widgets.py`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/admin/context_binding_form.html`
+- new widget JS under `src/wagtail_daisIE/static/wagtail_daisIE/js/`
+- `tests/dynamic/test_dynamic_context_models.py`
+- `tests/core/test_widgets.py`
+
+**Blocking stories:** UI-1, UI-2.
+
+**Current status:** Not started — **Blocked by UI-1, UI-2**.
+
+---
+
+## UI-4 — Harden and bound inline binding search
+
+**User story:** As an editor, I want binding search to be fast, scoped and
+permission-safe, without unnecessary display/current round-trips.
+
+**Required task:**
+- Reduce `binding_results` to the search path; remove `selected` and `current`
+  display modes if the zero-XHR widget makes them unused.
+- Protect the endpoint with `require_admin_access`.
+- Use the shared queryset/search helper; apply configured `search_fields`,
+  `select_related` and `prefetch_related`.
+- Require at least 2 characters and cap results at 20 (hard maximum 50).
+- Increase the client wait value to ~250 ms.
+- Remove the `current` hidden input and display-sync glue no longer needed.
+- Ensure invalid selectors and unknown/out-of-scope instances are rejected or
+  return an empty response without a 500.
+
+**Acceptance criteria:**
+- [ ] Staff without admin access cannot query the endpoint.
+- [ ] One-character searches make no database query.
+- [ ] Results are capped and scoped to the configured queryset.
+- [ ] Search is debounced at ~250 ms.
+- [ ] Removed display modes have no orphaned template/JS code.
+- [ ] Tests cover permission, scoping, minimum length, cap, invalid selectors
+      and deleted instances.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/dynamic/views.py`
+- `src/wagtail_daisIE/dynamic/blocks.py`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/admin/context_binding_form.html`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/admin/binding_results.html`
+- `tests/dynamic/test_dynamic_context_models.py`
+
+**Blocking stories:** UI-1, UI-3.
+
+**Current status:** Not started — **Blocked by UI-1, UI-3**.
+
+---
+
+## UI-5 — Optimise `ModelFieldSelect`
+
+**User story:** As a form-page editor, I want the model-field selector to show
+one useful control, not one hidden select per configured model.
+
+**Required task:**
+- Render one `<select>` server-side for the active model.
+- Add a small JS controller that repopulates it from the cached runtime state
+  when `instance_model` changes.
+- Preserve the current value when it exists in the new model’s fields;
+  otherwise reset to the empty option.
+- Reuse `config.form_fields()` from the metadata cache.
+- Remove per-model hidden/disabled selects and the per-select `w-rules` wiring.
+- Document that without JS only the active model’s fields are selectable; the
+  control still submits a real field name.
+
+**Acceptance criteria:**
+- [ ] One select is rendered per form field input, not one per model.
+- [ ] The active model’s options match `form_fields()`.
+- [ ] Changing the model repopulates options and preserves a valid value.
+- [ ] The runtime payload is reused; no new endpoint is added.
+- [ ] Tests cover active options, model changes, value preservation and the
+      absence of per-model duplicate selects.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/forms/fields.py`
+- new `src/wagtail_daisIE/static/wagtail_daisIE/js/model_field_select.js`
+- `tests/forms/test_form_pages.py`
+- `docs/forms.md`
+
+**Blocking stories:** UI-2.
+
+**Current status:** Not started — **Blocked by UI-2**.
+
+---
+
+# Epic 11 — Feed rendering and filtering performance
+
+**Outcome:** feeds use a standard Paginator/Page model, Load More appends only
+new items, large choice sets are bounded, and filter parsing is maintained by
+`django-filter` instead of bespoke code.
+
+## FD-1 — Use Paginator pages and append-only Load More
+
+**User story:** As a visitor, I want Load More to append the next page while the
+feed keeps a normal page/previous/next model, so earlier items are not
+re-rendered.
+
+**Required task:**
+- Use `Paginator`/`Page` as the feed loader.
+- Implement `CountlessPaginator` by default:
+  - fetch `page_size + 1` rows;
+  - derive `has_next` from the extra row;
+  - return a `Page` subclass without calling `count`/`num_pages`.
+- Fall back to stock `Paginator` only if the subclass is rejected; in that case
+  record the one-count-per-request behaviour in the story evidence.
+- Replace `limit`/`offset` rendering with `?page=N`.
+- Keep `limit`/`offset` as deprecated aliases for one release.
+- Load More requests `page.next_page_number()`, appends only new items to the
+  items container, and updates next/previous controls out-of-band.
+- Hide the previous control in the Load More UI while keeping a real previous
+  link in the DOM for no-JS.
+- Reset to page 1 on filter/layout changes.
+- Define the `total` policy: no total under `CountlessPaginator`; stock
+  `Paginator` may retain `data-daisie-feed-total`. Document the chosen policy.
+
+**Acceptance criteria:**
+- [ ] Initial page and next page use the Paginator/Page API.
+- [ ] Load More appends only new items; previous items are not re-rendered.
+- [ ] Previous is hidden by the UI but available without JS.
+- [ ] Filter/layout changes reset to page 1.
+- [ ] `CountlessPaginator` makes no count query; stock fallback makes exactly
+      one count query per request, recorded in tests.
+- [ ] Invalid, empty and huge page values are handled safely.
+- [ ] No duplicate items appear after repeated Load More requests.
+- [ ] Legacy `limit`/`offset` aliases are tested or removed with a documented
+      breaking change.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/dynamic/feeds.py`
+- `src/wagtail_daisIE/dynamic/views.py`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/feed_body.html`
+- new page/fragment template under
+  `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/`
+- `tests/feeds/test_data_components.py`
+- `docs/data-components.md`
+
+**Blocking stories:** UI-1.
+
+**Current status:** Not started — **Blocked by UI-1**.
+
+---
+
+## FD-2 — Bound filter choices and deduplicate filter work
+
+**User story:** As a visitor, I want filter controls to stay responsive even
+when a feed has large choice lists, without repeated resolution work.
+
+**Required task:**
+- Add optional `choice_limit` per filter: default 100; autocomplete default 20.
+- Always include currently selected values even when outside the first limit.
+- For long autocomplete lists, add remote search to the existing autocomplete
+  controller rather than rendering every option twice.
+- Resolve each filter’s choices once per request; pass the result to both
+  `resolve_order()` and `build_filters()`.
+- Compute the filter menu, submit CSS, layout CSS and filter panel CSS once in
+  `render_feed()`.
+- Remove duplicate `build_filter_menu()`/`build_design_css()` calls.
+
+**Acceptance criteria:**
+- [ ] Choice rendering is bounded by `choice_limit`.
+- [ ] Selected values are always present and labelled.
+- [ ] Long autocomplete filters search remotely instead of rendering all
+      options.
+- [ ] Sort choices are resolved once per request.
+- [ ] Filter menu/CSS work is computed once.
+- [ ] Tests cover caps, selected-value inclusion, large autocomplete lists and
+      duplicate-resolution regressions.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/dynamic/feeds.py`
+- `src/wagtail_daisIE/dynamic/views.py`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/feed_filter.html`
+- `src/wagtail_daisIE/static/wagtail_daisIE/js/daisyui_autocomplete.js`
+- `tests/feeds/test_data_components.py`
+- `docs/data-components.md`
+
+**Blocking stories:** FD-1.
+
+**Current status:** Not started — **Blocked by FD-1**.
+
+---
+
+## FD-3 — Adopt django-filter for standard feed filters
+
+**User story:** As a maintainer, I want standard filter parsing and validation
+maintained upstream, so this repository only owns the feed-specific UI and
+configuration.
+
+**Required task:**
+- Add `django-filter>=26.2,<27` as a direct dependency and regenerate
+  `uv.lock` through handover; do not hand-edit the lock file.
+- Add `dynamic/filters.py` with a cached dynamic `FilterSet` per context-model
+  filter set.
+- Preserve current URL parameter names:
+  - `filter_<key>` for choice, multi-choice, boolean and date;
+  - `filter_<key>_from`/`_to` for date ranges;
+  - `filter_<key>_min`/`_max` for numeric ranges;
+  - `feed_search` for search;
+  - custom `query` callables as `Filter.method` implementations.
+- Keep `resolve_order()` for sort filters; do not add iommi’s
+  Query/OrderingFilter.
+- Build `build_filters()` from the same normalised filter definitions and bound
+  form state; remove the manual `_apply_one` parser once parity is proven.
+- Record the iommi comparison and the decision not to adopt it for feeds.
+- Record the `django-listing` licence/fit rejection.
+
+**Acceptance criteria:**
+- [ ] All existing filter tests pass unchanged.
+- [ ] Invalid values behave like the existing implementation.
+- [ ] Custom `query` filters still work with `(queryset, params, key)`.
+- [ ] Sort filters still work through `resolve_order()`.
+- [ ] Query count does not increase relative to the manual parser.
+- [ ] No new database migrations are generated.
+- [ ] The dependency and lock update are applied through handover.
+- [ ] Docs describe django-filter as the standard filter engine and iommi as
+      assessed but not adopted.
+
+**Expected file changes:**
+- `pyproject.toml`
+- `uv.lock` (handover only)
+- new `src/wagtail_daisIE/dynamic/filters.py`
+- `src/wagtail_daisIE/dynamic/feeds.py`
+- `tests/feeds/test_data_components.py`
+- `docs/data-components.md`
+- `docs/architecture.md`
+
+**Blocking stories:** UI-1, FD-2, plus dependency approval.
+
+**Current status:** Not started — **Blocked by UI-1, FD-2 and dependency approval**.
+
+---
+
+## FD-4 — Prove feed query budgets and document package decisions
+
+**User story:** As a maintainer, I want evidence that feed rendering is bounded
+at each page load and that the build-vs-package decisions are recorded for
+future work.
+
+**Required task:**
+- Add query-count tests for initial render, append requests and filter changes.
+- Add an N+1 regression test with an item relation and the configured
+  `select_related`/`prefetch_related`.
+- Keep Feed editor help rendering to the active model and limit examples.
+- Update `docs/data-components.md`, `docs/context-models.md`,
+  `docs/architecture.md` and `README.md` for:
+  - page-based feed URLs;
+  - zero-XHR context bindings;
+  - `search_fields` and `choice_limit`;
+  - the Paginator/P2 decision;
+  - `django-filter` adoption;
+  - iommi and `django-listing` rejection reasons.
+- Update the Feeds help page with the new Load More/previous behaviour.
+
+**Acceptance criteria:**
+- [ ] Append query count does not grow with already-loaded items.
+- [ ] A tested feed item relation produces no N+1 queries.
+- [ ] Feed editor help renders full detail only for the active model.
+- [ ] Docs describe only implemented behaviour and all package decisions.
+- [ ] Help guide links/pages render in the existing admin guide tests.
+- [ ] No stale cumulative `limit`/`offset` claims remain.
+
+**Expected file changes:**
+- `src/wagtail_daisIE/dynamic/panels.py`
+- `tests/feeds/test_data_components.py`
+- `docs/data-components.md`
+- `docs/context-models.md`
+- `docs/architecture.md`
+- `README.md`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/help/pages/feeds.html`
+
+**Blocking stories:** FD-1, FD-3.
+
+**Current status:** Not started — **Blocked by FD-1, FD-3**.
+
+---
+
+# Epic 12 — Verification
 
 ## V-1 — Full verification and handover
 
@@ -1389,18 +1802,30 @@ safe.
 - [ ] `just lint` passes.
 - [ ] `just test` passes.
 - [ ] `uv run ./demo/manage.py makemigrations --check --noinput` passes.
+- [ ] `uv run ./demo/manage.py makemigrations --check --noinput` passes for the
+      feed, home and blog apps.
 - [ ] Any changed help guide page renders in the admin test.
 - [ ] Final summary records what changed, risks and follow-ups.
-- [ ] The tab-safe palette invariant test passes and no full `TabsBlock` is reachable below a `TabsBlock`.
+- [ ] The tab-safe palette invariant test passes and no full `TabsBlock` is
+      reachable below a `TabsBlock`.
 - [ ] Feed title migration applies cleanly.
 - [ ] Audience redirect data migrations preserve existing page destinations.
-- [ ] `uv run ./demo/manage.py makemigrations --check --noinput` passes for the feed, home and blog apps.
-- [ ] The consumer upgrade recipe for the removed `audience_denied_page` field is present and accurate.
+- [ ] The consumer upgrade recipe for the removed `audience_denied_page` field
+      is present and accurate.
+- [ ] Context bindings render saved selections with zero binding XHRs.
+- [ ] `ModelFieldSelect` renders one select per field input, not one per model.
+- [ ] Feed page/append tests show no duplicate items and the documented count
+      policy.
+- [ ] `django-filter` parity tests pass and the dependency/lock update is
+      recorded.
+- [ ] Package decision documentation covers Paginator/P2, django-filter, iommi
+      and django-listing.
 
 **Expected file changes:** none (verification only), unless fixes are required.
 
 **Blocking stories:** DI-1..DI-7, AB-1..AB-4, AF-1..AF-5, FL-1..FL-6,
-TS-1..TS-2, HG-1..HG-8., TAB-1, TAB-2, FT-1, AR-1, AR-2
+TS-1..TS-2, HG-1..HG-8, TAB-1, TAB-2, FT-1, AR-1, AR-2,
+UI-1..UI-5, FD-1..FD-4.
 
 **Current status:** Not started — **Blocked by all stories**.
 
@@ -1421,4 +1846,9 @@ TS-1..TS-2, HG-1..HG-8., TAB-1, TAB-2, FT-1, AR-1, AR-2
 9. **TAB-1**, **FT-1** and **AR-1** can start in parallel with the existing ready stories.
 10. **TAB-2** follows **TAB-1**.
 11. **AR-2** follows **AR-1** and the migration-exception approval.
-12. **V-1** last.
+12. **UI-1** is the shared query/search foundation; **UI-2** follows UI-1.
+13. **UI-3** follows UI-1/UI-2; **UI-4** follows UI-1/UI-3;
+    **UI-5** follows UI-2.
+14. **FD-1** follows UI-1; **FD-2** follows FD-1; **FD-3** follows UI-1/FD-2;
+    **FD-4** follows FD-1/FD-3.
+15. **V-1** last.
