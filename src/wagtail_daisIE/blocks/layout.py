@@ -21,6 +21,8 @@ from .stream import (
     InlineStreamBlock,
     LayoutStreamBlock,
     RowContentStreamBlock,
+    TabLayoutContainerContentStreamBlock,
+    TabLayoutStreamBlock,
 )
 
 
@@ -171,3 +173,31 @@ class GridInlineBlock(GridBlock):
 
     class Meta:
         label = _("Grid (inline)")
+
+
+class TabLayoutItemBlock(LayoutItemBlock):
+    content = TabLayoutStreamBlock()
+
+    class Meta:
+        label = _("Layout item (tab)")
+
+
+class TabRowBlock(RowBlock):
+    content = TabLayoutContainerContentStreamBlock()
+
+    class Meta:
+        label = _("Row (tab)")
+
+
+class TabColumnBlock(ColumnBlock):
+    content = TabLayoutContainerContentStreamBlock()
+
+    class Meta:
+        label = _("Column (tab)")
+
+
+class TabGridBlock(GridBlock):
+    content = TabLayoutContainerContentStreamBlock()
+
+    class Meta:
+        label = _("Grid (tab)")

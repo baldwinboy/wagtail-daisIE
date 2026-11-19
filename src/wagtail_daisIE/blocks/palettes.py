@@ -26,6 +26,17 @@ type Palette = tuple[PaletteEntry, ...]
 _PALETTES: dict[str, Palette] = {}
 
 
+#: Tab palettes must never contain the full ``TabsBlock``. They may only use
+#: ``tabs_inline`` (and the tab-safe layout variants).
+TAB_SAFE_PALETTE_KEYS = frozenset(
+    {
+        "tab_layout",
+        "tab_layout_container_content",
+        "tab_content",
+    }
+)
+
+
 #: Top-level block keys that are inline elements (no layout recursion).
 #: Full layouts, inline layout counterparts, specialized containers and data
 #: blocks are deliberately excluded.
@@ -187,6 +198,27 @@ def _inline_layout_container_content() -> list[PaletteEntry]:
     return [*_inline(), _inline_layout_item()]
 
 
+def _tab_layout() -> list[PaletteEntry]:
+    return list(_layout())
+
+
+def _tab_layout_container_content() -> list[PaletteEntry]:
+    from .layout import TabLayoutItemBlock
+
+    return [*_tab_layout(), ("layout_item", TabLayoutItemBlock())]
+
+
+def _tab_content() -> list[PaletteEntry]:
+    from .layout import TabColumnBlock, TabGridBlock, TabRowBlock
+
+    return [
+        *_tab_layout_container_content(),
+        ("row", TabRowBlock()),
+        ("column", TabColumnBlock()),
+        ("grid", TabGridBlock()),
+    ]
+
+
 def _dropdown() -> list[PaletteEntry]:
     from .display import DividerBlock
     from .icons import IconChooserBlock
@@ -233,6 +265,9 @@ _BUILDERS: dict[str, Callable[[], list[PaletteEntry]]] = {
     "inline_row_content": _inline_layout_container_content,
     "inline_column_content": _inline_layout_container_content,
     "inline_grid_content": _inline_layout_container_content,
+    "tab_layout": _tab_layout,
+    "tab_layout_container_content": _tab_layout_container_content,
+    "tab_content": _tab_content,
     "dropdown": _dropdown,
     "marquee": _marquee,
 }
@@ -258,6 +293,12 @@ def get_palette(key: str) -> Palette:
     if duplicates:
         raise ImproperlyConfigured(
             f"Palette {key!r} contains duplicate block types: {', '.join(duplicates)}."
+        )
+
+    if key in TAB_SAFE_PALETTE_KEYS and "tabs" in names:
+        raise ImproperlyConfigured(
+            f"Palette {key!r} must not contain the full TabsBlock; "
+            "use 'tabs_inline' instead."
         )
 
     _PALETTES[key] = entries

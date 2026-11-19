@@ -157,7 +157,23 @@ class DrawerSideStreamBlock(LayoutStreamBlock):
         label = _("Sidebar")
 
 
+class TabLayoutStreamBlock(LayoutStreamBlock):
+    palette = "tab_layout"
+
+    class Meta:
+        label = _("Tab layout content")
+
+
+class TabLayoutContainerContentStreamBlock(LayoutStreamBlock):
+    palette = "tab_layout_container_content"
+
+    class Meta:
+        label = _("Tab layout item content")
+
+
 class TabContentStreamBlock(LayoutStreamBlock):
+    palette = "tab_content"
+
     class Meta:
         label = _("Tab content")
 
@@ -208,4 +224,6 @@ __all__ = [
     "RowContentStreamBlock",
     "SlideContentStreamBlock",
     "TabContentStreamBlock",
+    "TabLayoutContainerContentStreamBlock",
+    "TabLayoutStreamBlock",
 ]

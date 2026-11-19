@@ -222,8 +222,9 @@ inline elements. See [block-palettes.md](block-palettes.md) for the exact
 palette of each container and for the restricted blocks.
 
 `TabItemBlock` carries an optional `icon`, `key` and `audience`, and its
-`content` stream uses the `layout` palette, so a tab can hold full-layout
-content and inline counterparts. The tab strip
+`content` stream uses the `tab_content` palette, so a tab can hold full
+tab-safe layout content (row, column, grid, layout item), data blocks and inline
+counterparts. The tab strip
 is rendered as DaisyUI `label.tab` controls containing a hidden radio, which
 keeps the icon/label visible while remaining pure CSS; the radio group is scoped
 per enclosing block id (the same `block.id` convention used by inputs, drawer,

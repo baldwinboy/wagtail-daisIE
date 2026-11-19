@@ -83,3 +83,14 @@ def test_container_streamfield_does_not_expand_the_palette():
     assert all(path.endswith("RegisteredBlock") for path in paths)
     assert "wagtail.blocks.StructBlock" not in paths
     assert "wagtail.blocks.StreamBlock" not in paths
+
+
+def test_tab_palette_deconstructs_compactly():
+    from wagtail.blocks.definition_lookup import BlockDefinitionLookupBuilder
+
+    from wagtail_daisIE.blocks.stream import TabContentStreamBlock
+
+    lookup = BlockDefinitionLookupBuilder()
+    path, _args, _kwargs = TabContentStreamBlock().deconstruct_with_lookup(lookup)
+    assert path == "wagtail_daisIE.blockref.RegisteredBlock"
+    assert lookup.get_lookup_as_dict() == {}

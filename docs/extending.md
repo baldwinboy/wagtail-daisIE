@@ -87,6 +87,11 @@ Use `inline` for an inline counterpart, `inline_layout` for a specialized
 container, and `layout` only for a full common layout. Never put a full layout
 inside `layout`.
 
+For tab content, use the tab-safe palettes (`tab_layout`,
+`tab_layout_container_content`, `tab_content`) and their dedicated block classes
+(`TabLayoutItemBlock`, `TabRowBlock`, `TabColumnBlock`, `TabGridBlock`). Never
+add a full `TabsBlock` to a tab palette; use `tabs_inline` for nested tabs.
+
 `PaletteStreamBlock` rejects constructor arguments on purpose; put the label and
 `required` flag in the subclass `Meta` so the block stays declarative and
 compact in migrations. If the containing `StructBlock` has no explicit

@@ -19,6 +19,24 @@ no cyclic block-definition graph.
 A full layout never contains another full layout. It contains inline
 counterparts instead. Inline counterparts contain inline elements only.
 
+## Tab-safe layouts
+
+Tab content uses `tab_content`, a superset of `layout` plus tab-safe layout
+variants:
+
+| Palette | Contents | Used by |
+|---|---|---|
+| `tab_layout` | Same keys as `layout` | `TabLayoutItemBlock` |
+| `tab_layout_container_content` | `tab_layout` + `layout_item` (`TabLayoutItemBlock`) | `TabRowBlock`, `TabColumnBlock`, `TabGridBlock` |
+| `tab_content` | `tab_layout_container_content` + `row`, `column`, `grid` (`Tab*Block`) | `TabContentStreamBlock` |
+
+`tab_content` keeps every key already available in `layout`, including
+`tabs_inline`, `feed`, `action`, `action_form` and `autocomplete`. A full
+`TabsBlock` is never added to any tab palette; only `tabs_inline` is allowed, so
+nested tabs stay inline-only. Tab-safe row, column, grid and layout item blocks
+use the dedicated `Tab*Block` classes and the existing row, column, grid and
+layout item templates.
+
 ## Full layouts and inline counterparts
 
 | Full layout | Inline counterpart | Counterpart content |

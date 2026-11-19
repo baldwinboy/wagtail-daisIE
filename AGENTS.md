@@ -353,13 +353,15 @@ When adding a block, subclass the appropriate `Themed*Block` from
   a top-level block and produces no migration.
 - **Tabs are CSS-only with per-block radio groups**: `TabItemBlock` has an
   optional `icon`, `key` (used by `?tab=`) and `audience`, and its `content`
-  includes `LIST_CONTENT_BLOCKS`, the data-input blocks and the
-  Action/Action-form blocks. `TabsBlock.get_context` resolves the per-tab list
-  (audience, checked state, first-allowed fallback) and `tabs.html` renders
-  DaisyUI `label.tab` controls containing a hidden radio, so an icon and label
-  show while the panel switching stays pure CSS. Radio-group names use the
-  inherited `block.id` (like inputs/drawer/modal), so accordions and tabs scope
-  their controls per enclosing block rather than page-wide.
+  uses `TabContentStreamBlock` (`tab_content` palette), a superset of `layout`
+  that adds tab-safe `row`/`column`/`grid`/`layout_item` variants plus data
+  blocks and `tabs_inline`. Full `TabsBlock` must never be added to any tab
+  palette. `TabsBlock.get_context` resolves the per-tab list (audience, checked
+  state, first-allowed fallback) and `tabs.html` renders DaisyUI `label.tab`
+  controls containing a hidden radio, so an icon and label show while the panel
+  switching stays pure CSS. Radio-group names use the inherited `block.id`
+  (like inputs/drawer/modal), so accordions and tabs scope their controls per
+  enclosing block rather than page-wide.
 - **htmx is progressive enhancement** (`django-htmx` is a hard dependency):
   `WAGTAIL_DAISIE_HTMX` (default `True`) / `WAGTAIL_DAISIE_HTMX_VERSION`
   (default `2`) control `{% daisie_htmx %}`; `checks.py` warns (W001/W002) when
