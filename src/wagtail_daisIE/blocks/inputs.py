@@ -18,8 +18,12 @@ from ..base_blocks import (
     RENDER_CHOICES,
     UPLOAD_DISPLAY_CHOICES,
     ColorChoiceBlock,
+    FieldGroupLayoutBlock,
+    FieldGroupLayoutMixin,
     FieldLayoutBlock,
     FieldLayoutMixin,
+    FieldOptionLayoutBlock,
+    FieldOptionLayoutMixin,
     InlineMarkupBlock,
     ItemDesignBlock,
     LayoutBlock,
@@ -144,7 +148,7 @@ class HelperTextMixin:
         return context
 
 
-class InputBlock(ThemedBlock):
+class InputBlock(FieldLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -166,6 +170,10 @@ class InputBlock(ThemedBlock):
         blank=True,
         label=_("Error message"),
         help_text=_("Shows the error state."),
+    )
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
     )
 
     class Meta:
@@ -197,12 +205,13 @@ class InputBlock(ThemedBlock):
                     ],
                     classname="collapsed",
                 ),
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["design", "audience"],
         )
 
 
-class TextareaBlock(ThemedBlock):
+class TextareaBlock(FieldLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -217,6 +226,10 @@ class TextareaBlock(ThemedBlock):
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
     error_text = InlineMarkupBlock(
         max_length=255, required=False, blank=True, label=_("Error message")
+    )
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
     )
 
     class Meta:
@@ -235,12 +248,13 @@ class TextareaBlock(ThemedBlock):
                 "error_text",
                 "color",
                 "size",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["design", "audience"],
         )
 
 
-class SelectBlock(ThemedBlock):
+class SelectBlock(FieldLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -256,6 +270,10 @@ class SelectBlock(ThemedBlock):
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
     error_text = InlineMarkupBlock(
         max_length=255, required=False, blank=True, label=_("Error message")
+    )
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
     )
 
     def get_context(self, value, parent_context=None):
@@ -278,6 +296,7 @@ class SelectBlock(ThemedBlock):
                 "error_text",
                 "color",
                 "size",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["design", "audience"],
         )
@@ -400,7 +419,7 @@ class ToggleBlock(FieldLayoutMixin, HelperTextMixin, ThemedBlock):
         )
 
 
-class RadioBlock(ThemedBlock):
+class RadioBlock(FieldGroupLayoutMixin, FieldOptionLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Group name")
@@ -412,6 +431,14 @@ class RadioBlock(ThemedBlock):
         choices=RADIO_COLOR_CHOICES, required=False, label=_("Colour")
     )
     size = blocks.ChoiceBlock(choices=RADIO_SIZE_CHOICES, required=False)
+    group_layout = FieldGroupLayoutBlock(
+        required=False,
+        label=_("Choice layout"),
+    )
+    option_layout = FieldOptionLayoutBlock(
+        required=False,
+        label=_("Option layout"),
+    )
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -424,12 +451,21 @@ class RadioBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/radio.html"
         form_layout = blocks.BlockGroup(
-            children=["label", "name", "options", "color", "size"],
+            children=[
+                "label",
+                "name",
+                "options",
+                "color",
+                "size",
+                collapsed_group(
+                    _("Choice layout"), "group_layout", "option_layout", icon="sliders"
+                ),
+            ],
             settings=["design", "audience"],
         )
 
 
-class RangeBlock(ThemedBlock):
+class RangeBlock(FieldLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -442,6 +478,10 @@ class RangeBlock(ThemedBlock):
         choices=RANGE_COLOR_CHOICES, required=False, label=_("Colour")
     )
     size = blocks.ChoiceBlock(choices=RANGE_SIZE_CHOICES, required=False)
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
+    )
 
     class Meta:
         icon = "minus"
@@ -458,12 +498,13 @@ class RangeBlock(ThemedBlock):
                 "value",
                 "color",
                 "size",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["design", "audience"],
         )
 
 
-class RatingBlock(ThemedBlock):
+class RatingBlock(FieldLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255, required=False)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Group name")
@@ -486,6 +527,10 @@ class RatingBlock(ThemedBlock):
         choices=DAISYUI_BG_COLOR_CHOICES,
         required=False,
         widget=DaisyUISwatchWidget(prefix="bg"),
+    )
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
     )
     star_colors = blocks.ListBlock(
         ColorChoiceBlock(
@@ -536,12 +581,13 @@ class RatingBlock(ThemedBlock):
                 "shape",
                 "color",
                 "star_colors",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["design", "audience"],
         )
 
 
-class FileInputBlock(ThemedBlock):
+class FileInputBlock(FieldLayoutMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -580,6 +626,10 @@ class FileInputBlock(ThemedBlock):
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
     tray_design = TrayDesignBlock()
     item_design = ItemDesignBlock()
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
+    )
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -612,6 +662,7 @@ class FileInputBlock(ThemedBlock):
                 "helper_text",
                 "color",
                 "size",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["design", "tray_design", "item_design", "audience"],
         )
@@ -623,7 +674,7 @@ def _context_model_choices():
     return get_context_model_choices()
 
 
-class AutocompleteSelectMultipleBlock(ThemedBlock):
+class AutocompleteSelectMultipleBlock(FieldLayoutMixin, ThemedBlock):
     """A searchable multi-select, with static or model-backed options."""
 
     label = InlineMarkupBlock(max_length=255)
@@ -680,6 +731,10 @@ class AutocompleteSelectMultipleBlock(ThemedBlock):
     layout_design = LayoutBlock()
     tray_design = TrayDesignBlock()
     item_design = ItemDesignBlock()
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
+    )
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
@@ -744,6 +799,7 @@ class AutocompleteSelectMultipleBlock(ThemedBlock):
                 "error_text",
                 "arrangement",
                 "options_position",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=[
                 "design",
@@ -774,11 +830,15 @@ FIELD_BLOCKS = [
 AUTOCOMPLETE_BLOCKS = [("autocomplete", AutocompleteSelectMultipleBlock())]
 
 
-class FieldsetBlock(ThemedBlock):
+class FieldsetBlock(FieldGroupLayoutMixin, ThemedBlock):
     legend = InlineMarkupBlock(max_length=255)
     description = InlineMarkupBlock(max_length=255, required=False, blank=True)
     content = DaisieStreamBlock(
         [*FIELD_BLOCKS, *AUTOCOMPLETE_BLOCKS], label=_("Fields")
+    )
+    group_layout = FieldGroupLayoutBlock(
+        required=False,
+        label=_("Choice layout"),
     )
 
     class Meta:
@@ -787,7 +847,12 @@ class FieldsetBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/fieldset.html"
         form_layout = blocks.BlockGroup(
-            children=["legend", "description", "content"],
+            children=[
+                "legend",
+                "description",
+                "content",
+                collapsed_group(_("Choice layout"), "group_layout", icon="bars"),
+            ],
             settings=["design", "audience"],
         )
 

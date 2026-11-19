@@ -727,13 +727,13 @@ a row, column or grid, with each option's input and label laid out predictably.
   new block type yet.
 
 **Acceptance criteria:**
-- [ ] A fieldset of checkboxes can render as row, column or grid.
-- [ ] Each checkbox in the group retains its own input/label/help layout.
-- [ ] Radio options can render as row, column or grid.
-- [ ] Radio option input/label placement is configurable.
-- [ ] Group spacing, wrapping, justify, align, gap, size and overflow render.
-- [ ] Tests cover row/column/grid groups and option layouts.
-- [ ] No new `CheckboxGroupBlock` is introduced.
+- [x] A fieldset of checkboxes can render as row, column or grid.
+- [x] Each checkbox in the group retains its own input/label/help layout.
+- [x] Radio options can render as row, column or grid.
+- [x] Radio option input/label placement is configurable.
+- [x] Group spacing, wrapping, justify, align, gap, size and overflow render.
+- [x] Tests cover row/column/grid groups and option layouts.
+- [x] No new `CheckboxGroupBlock` is introduced.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/inputs.py`
@@ -744,7 +744,8 @@ a row, column or grid, with each option's input and label laid out predictably.
 
 **Blocking stories:** FL-1, FL-2.
 
-**Current status:** Not started — **Blocked by FL-1, FL-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -763,11 +764,11 @@ every form field, not just checkboxes.
 - Add `field_layout` to each settings form layout.
 
 **Acceptance criteria:**
-- [ ] Every input template uses the shared field-part context.
-- [ ] Row/column/grid part placement works for each field type.
-- [ ] Existing inputs render unchanged when `field_layout` is empty.
-- [ ] File/autocomplete tray and item designs still work.
-- [ ] Tests cover at least input, textarea, select, range and file.
+- [x] Every input template uses the shared field-part context.
+- [x] Row/column/grid part placement works for each field type.
+- [x] Existing inputs render unchanged when `field_layout` is empty.
+- [x] File/autocomplete tray and item designs still work.
+- [x] Tests cover at least input, textarea, select, range and file.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/inputs.py`
@@ -777,7 +778,8 @@ every form field, not just checkboxes.
 
 **Blocking stories:** FL-1.
 
-**Current status:** Not started — **Blocked by FL-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

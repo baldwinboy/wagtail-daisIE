@@ -68,6 +68,15 @@ def build_field_group_css(value):
     )
 
 
+def build_field_group_context(value):
+    """Flat template context for a ``FieldGroupLayoutBlock`` value."""
+    css = build_field_group_css(value)
+    return {
+        "field_group_css": css,
+        "field_group_configured": bool(css),
+    }
+
+
 def _is_grid(layout):
     return layout == "grid"
 
@@ -154,6 +163,14 @@ def build_field_option_context(value, *, layout=""):
         context[f"option_{part}_css"] = part_context["css"]
         context[f"option_{part}_hidden"] = part_context["hidden"]
         context[f"option_{part}_sr_only"] = part_context["sr_only"]
+    context["option_layout_configured"] = bool(
+        any(
+            context[f"option_{part}_css"]
+            or context[f"option_{part}_hidden"]
+            or context[f"option_{part}_sr_only"]
+            for part in ("input", "label")
+        )
+    )
     return context
 
 
@@ -266,4 +283,28 @@ class FieldLayoutMixin:
         context = super().get_context(value, parent_context)
         layout_value = (value or {}).get(self.field_layout_key) or {}
         context.update(build_field_layout_context(layout_value))
+        return context
+
+
+class FieldGroupLayoutMixin:
+    """Expose group layout context for a block's ``group_layout`` value."""
+
+    field_group_layout_key = "group_layout"
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        layout_value = (value or {}).get(self.field_group_layout_key) or {}
+        context.update(build_field_group_context(layout_value))
+        return context
+
+
+class FieldOptionLayoutMixin:
+    """Expose option layout context for a block's ``option_layout`` value."""
+
+    field_option_layout_key = "option_layout"
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        layout_value = (value or {}).get(self.field_option_layout_key) or {}
+        context.update(build_field_option_context(layout_value))
         return context

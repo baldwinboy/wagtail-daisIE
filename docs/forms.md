@@ -351,6 +351,21 @@ design** applies the same typography, size, spacing, border and background
 controls as other design fields. The helper is linked to the control with
 `aria-describedby`, and the same markup is reused by action-form fields.
 
+### Field and choice layout
+
+Every data-input block has a **Field layout** group. When configured, it
+replaces the default label-wrapped markup and lets editors place the input,
+label, help and error text independently in a row, column or grid, with
+visibility, max lines and advanced item placement controls.
+
+For multiple checkboxes, use a **Fieldset** with its **Choice layout** group:
+the group layout applies to the wrapper around the child fields, while each
+checkbox keeps its own field layout. Radio blocks expose both a group layout
+for the option list and an option layout for each option's input and label.
+
+When no layout is configured, the existing markup and helper positions are
+preserved. No separate checkbox-group block is introduced.
+
 ## Form pages vs the Action form block
 
 `DaisieFormPage` is the right tool when a page **is** a form: it has one form,

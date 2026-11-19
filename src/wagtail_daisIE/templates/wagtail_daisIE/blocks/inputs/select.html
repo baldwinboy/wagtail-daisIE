@@ -1,17 +1,50 @@
 {% load notifications %}
+{% firstof id block.id as field_id %}
 {% if audience_allowed %}
   <fieldset class="fieldset w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    <label class="fieldset-legend" for="daisie-{{ block.id }}">{% daisie_markup value.label %}</label>
-    <select
-      id="daisie-{{ block.id }}"
-      {% if value.name %}name="{{ value.name }}"{% endif %}
-      class="select {{ value.color }} {{ value.size }}{% if value.error_text %} validator select-error{% endif %}"
-      {% if value.error_text %}aria-invalid="true" aria-describedby="daisie-{{ block.id }}-error"{% elif value.helper_text %}aria-describedby="daisie-{{ block.id }}-help"{% endif %}
-    >
-      {% if value.placeholder %}<option value="">{{ value.placeholder }}</option>{% endif %}
-      {% for option in select_options %}<option value="{{ option }}">{{ option }}</option>{% endfor %}
-    </select>
-    {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{% daisie_markup value.helper_text %}</p>{% endif %}
-    {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{% daisie_markup value.error_text %}</p>{% endif %}
+    {% if field_layout_configured %}
+      <div class="{{ field_layout_css }}">
+        {% if not field_label_hidden %}
+          <div class="{{ field_label_css }}" data-daisie-field-part="label">
+            <label class="fieldset-legend" for="daisie-{{ field_id }}">{% daisie_markup value.label %}</label>
+          </div>
+        {% endif %}
+        <div class="{{ field_input_css }}" data-daisie-field-part="input">
+          <select
+            id="daisie-{{ field_id }}"
+            {% if value.name %}name="{{ value.name }}"{% endif %}
+            class="select {{ value.color }} {{ value.size }}{% if value.error_text %} validator select-error{% endif %}"
+            {% if field_label_hidden and value.label %}aria-label="{{ value.label|daisie_strip_markup }}"{% endif %}
+            {% if value.error_text and not field_error_hidden %}aria-invalid="true" aria-describedby="daisie-{{ field_id }}-error"{% elif value.helper_text and not field_help_hidden %}aria-describedby="daisie-{{ field_id }}-help"{% endif %}
+          >
+            {% if value.placeholder %}<option value="">{{ value.placeholder }}</option>{% endif %}
+            {% for option in select_options %}<option value="{{ option }}">{{ option }}</option>{% endfor %}
+          </select>
+        </div>
+        {% if value.helper_text and not field_help_hidden %}
+          <div class="{{ field_help_css }}" data-daisie-field-part="help">
+            {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with id=field_id helper_block="1" %}
+          </div>
+        {% endif %}
+        {% if value.error_text and not field_error_hidden %}
+          <div class="{{ field_error_css }}" data-daisie-field-part="error">
+            <p class="validator-hint text-error" id="daisie-{{ field_id }}-error" role="alert">{% daisie_markup value.error_text %}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <label class="fieldset-legend" for="daisie-{{ block.id }}">{% daisie_markup value.label %}</label>
+      <select
+        id="daisie-{{ block.id }}"
+        {% if value.name %}name="{{ value.name }}"{% endif %}
+        class="select {{ value.color }} {{ value.size }}{% if value.error_text %} validator select-error{% endif %}"
+        {% if value.error_text %}aria-invalid="true" aria-describedby="daisie-{{ block.id }}-error"{% elif value.helper_text %}aria-describedby="daisie-{{ block.id }}-help"{% endif %}
+      >
+        {% if value.placeholder %}<option value="">{{ value.placeholder }}</option>{% endif %}
+        {% for option in select_options %}<option value="{{ option }}">{{ option }}</option>{% endfor %}
+      </select>
+      {% if value.helper_text %}<p class="label" id="daisie-{{ block.id }}-help">{% daisie_markup value.helper_text %}</p>{% endif %}
+      {% if value.error_text %}<p class="validator-hint text-error" id="daisie-{{ block.id }}-error" role="alert">{% daisie_markup value.error_text %}</p>{% endif %}
+    {% endif %}
   </fieldset>
 {% endif %}

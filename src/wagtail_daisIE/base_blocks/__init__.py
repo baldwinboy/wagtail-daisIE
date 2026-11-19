@@ -44,9 +44,11 @@ from .design import (
 )
 from .field_layout import (
     FieldGroupLayoutBlock,
+    FieldGroupLayoutMixin,
     FieldLayoutBlock,
     FieldLayoutMixin,
     FieldOptionLayoutBlock,
+    FieldOptionLayoutMixin,
     FieldPartLayoutBlock,
 )
 from .fields import ColorChoiceBlock
@@ -95,9 +97,11 @@ __all__ = [
     "DaisieStructBlock",
     "DesignBlock",
     "FieldGroupLayoutBlock",
+    "FieldGroupLayoutMixin",
     "FieldLayoutBlock",
     "FieldLayoutMixin",
     "FieldOptionLayoutBlock",
+    "FieldOptionLayoutMixin",
     "FieldPartLayoutBlock",
     "FALLBACK_CHOICES",
     "GradientStopBlock",

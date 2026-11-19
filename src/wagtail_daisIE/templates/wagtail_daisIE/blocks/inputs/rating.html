@@ -1,18 +1,47 @@
 {% load notifications %}
+{% firstof id block.id as field_id %}
 {% if audience_allowed %}
   <fieldset class="fieldset{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    {% if value.label %}<legend class="fieldset-legend">{% daisie_markup value.label %}</legend>{% endif %}
-    <div class="rating {{ value.size }}">
-      {% for star in stars %}
-        <input
-          type="radio"
-          name="{% if value.name %}{{ value.name }}{% else %}daisie-rating-{{ block.id }}{% endif %}"
-          value="{{ star.value }}"
-          class="mask {{ shape }} {{ star.color }}"
-          aria-label="{{ star.value }} / {{ value.maximum }}"
-          {% if star.checked %}checked{% endif %}
-        />
-      {% endfor %}
-    </div>
+    {% if field_layout_configured %}
+      <div class="{{ field_layout_css }}">
+        {% if value.label and not field_label_hidden %}
+          <div class="{{ field_label_css }}" data-daisie-field-part="label">
+            <span id="daisie-{{ field_id }}-label" class="fieldset-legend">{% daisie_markup value.label %}</span>
+          </div>
+        {% endif %}
+        <div class="{{ field_input_css }}" data-daisie-field-part="input">
+          <div
+            class="rating {{ value.size }}"
+            {% if value.label %}role="group" aria-labelledby="daisie-{{ field_id }}-label"{% endif %}
+            {% if field_label_hidden and value.label %}aria-label="{{ value.label|daisie_strip_markup }}"{% endif %}
+          >
+            {% for star in stars %}
+              <input
+                type="radio"
+                name="{% if value.name %}{{ value.name }}{% else %}daisie-rating-{{ block.id }}{% endif %}"
+                value="{{ star.value }}"
+                class="mask {{ shape }} {{ star.color }}"
+                aria-label="{{ star.value }} / {{ value.maximum }}"
+                {% if star.checked %}checked{% endif %}
+              />
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      {% if value.label %}<legend class="fieldset-legend">{% daisie_markup value.label %}</legend>{% endif %}
+      <div class="rating {{ value.size }}">
+        {% for star in stars %}
+          <input
+            type="radio"
+            name="{% if value.name %}{{ value.name }}{% else %}daisie-rating-{{ block.id }}{% endif %}"
+            value="{{ star.value }}"
+            class="mask {{ shape }} {{ star.color }}"
+            aria-label="{{ star.value }} / {{ value.maximum }}"
+            {% if star.checked %}checked{% endif %}
+          />
+        {% endfor %}
+      </div>
+    {% endif %}
   </fieldset>
 {% endif %}
