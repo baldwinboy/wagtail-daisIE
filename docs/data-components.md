@@ -94,6 +94,17 @@ that covers the card (the card gets `relative overflow-hidden cursor-pointer`),
 so the whole card is the click target while the rest of the content still
 renders. Outside a card the option is ignored and the button renders normally.
 
+### Confirmation dialog
+
+A configured pre-submit dialog renders in both normal and clickable-card modes.
+In clickable-card mode the card overlay opens the dialog instead of submitting;
+confirming submits the action and cancelling closes the dialog without
+submitting.
+
+**Dialog panel design** styles the modal panel, while **Confirm button** and
+**Cancel button** appearance settings style the dialog actions. The dialog uses
+`role="dialog"`, `aria-modal="true"`, a labelled title and a described body.
+
 ## Action forms
 
 The **Action form** block collects inputs and posts them to a configured action

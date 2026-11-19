@@ -323,12 +323,12 @@ consistently, including when the action button makes a whole card clickable.
 - Add dialog accessibility attributes.
 
 **Acceptance criteria:**
-- [ ] Configured dialog renders title/text/confirm label.
-- [ ] Dialog renders in normal and clickable-card modes.
-- [ ] Dialog design classes/style appear on `.modal-box`.
-- [ ] Confirm/cancel buttons use their configured appearance.
-- [ ] Cancel closes without submitting.
-- [ ] Empty confirm stream renders no dialog.
+- [x] Configured dialog renders title/text/confirm label.
+- [x] Dialog renders in normal and clickable-card modes.
+- [x] Dialog design classes/style appear on `.modal-box`.
+- [x] Confirm/cancel buttons use their configured appearance.
+- [x] Cancel closes without submitting.
+- [x] Empty confirm stream renders no dialog.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
@@ -339,7 +339,8 @@ consistently, including when the action button makes a whole card clickable.
 
 **Blocking stories:** AB-1, DI-5.
 
-**Current status:** Not started — **Blocked by AB-1, DI-5**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

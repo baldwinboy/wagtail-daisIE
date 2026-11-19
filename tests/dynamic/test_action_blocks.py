@@ -272,6 +272,96 @@ def test_legacy_confirmation_bulk_conversion():
     assert [len(value) for value in alerts] == [1, 0]
 
 
+def test_confirm_dialog_design_appearances_and_accessibility():
+    block = ActionButtonBlock()
+    value = block.to_python(
+        {
+            "text": "Delete",
+            "confirm": {
+                "title": "Delete item?",
+                "text": "This cannot be undone.",
+                "confirm_label": "Delete",
+                "panel_design": {
+                    "padding": {"all_padding": "p-4"},
+                    "background": [
+                        {
+                            "type": "layer",
+                            "value": {"layer_type": "solid", "color": "#abcdef"},
+                        }
+                    ],
+                },
+                "confirm_appearance": {"normal": {"color": "btn-warning"}},
+                "cancel_appearance": {"normal": {"color": "btn-ghost"}},
+            },
+            "design": {},
+            "audience": {},
+        }
+    )
+    html = block.render(value)
+
+    assert 'role="dialog"' in html
+    assert 'aria-modal="true"' in html
+    assert 'aria-labelledby="daisie-action-confirm-title-' in html
+    assert 'aria-describedby="daisie-action-confirm-text-' in html
+    assert "Delete item?" in html
+    assert "This cannot be undone." in html
+    assert "Delete" in html
+
+    box_tag = re.search(r'<div class="modal-box[^"]*"[^>]*>', html)
+    assert box_tag is not None
+    assert "p-4" in box_tag.group(0)
+    assert 'style="background: #abcdef"' in box_tag.group(0)
+
+    confirm_tag = re.search(r'<button type="submit" class="([^"]*)"', html)
+    assert confirm_tag is not None
+    assert "btn-warning" in confirm_tag.group(1)
+
+    cancel_tag = re.search(r'<a href="#" class="([^"]*)"', html)
+    assert cancel_tag is not None
+    assert "btn-ghost" in cancel_tag.group(1)
+    assert 'href="#"' in cancel_tag.group(0)
+
+
+def test_confirm_dialog_renders_in_clickable_card_mode():
+    card = CardBlock()
+    value = card.to_python(
+        {
+            "design": CARD_DESIGN,
+            "audience": {},
+            "content": [
+                {
+                    "type": "action",
+                    "value": {
+                        "action": "demo",
+                        "target_expression": "",
+                        "button": {
+                            "text": "Delete",
+                            "make_parent_clickable": True,
+                            "confirm": {
+                                "title": "Delete?",
+                                "text": "Permanent.",
+                                "confirm_label": "Delete",
+                            },
+                            "design": {},
+                            "audience": {},
+                        },
+                    },
+                }
+            ],
+        }
+    )
+    html = card.render(value)
+
+    overlay = re.search(r'<a[^>]*class="absolute! inset-0!"[^>]*>', html)
+    assert overlay is not None
+    assert 'href="#daisie-action-confirm-' in overlay.group(0)
+    assert 'aria-haspopup="dialog"' in overlay.group(0)
+    assert not re.search(r'<button type="submit" class="absolute! inset-0!"', html)
+    assert 'role="dialog"' in html
+    assert "Delete?" in html
+    assert "Permanent." in html
+
+
 def test_action_form_without_confirmation_has_no_alert_fields():
     block = ActionFormBlock()
     value = block.to_python(

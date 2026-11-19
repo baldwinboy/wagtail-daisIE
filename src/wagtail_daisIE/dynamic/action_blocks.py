@@ -22,7 +22,12 @@ from django.urls import NoReverseMatch, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import InlineMarkupBlock, SpacedDesignBlock, collapsed_group
+from ..base_blocks import (
+    ButtonAppearanceBlock,
+    InlineMarkupBlock,
+    SpacedDesignBlock,
+    collapsed_group,
+)
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
 from ..base_blocks.css import build_background_style, build_design_css
 from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
@@ -78,6 +83,20 @@ _CONFIRMATION_VALUE_KEYS = (
     "style",
     "direction",
 )
+
+
+_BUTTON_STATE_KEYS = ("color", "style", "size", "behavior", "modifier")
+
+
+def _appearance_css(value, fallback):
+    """Return button appearance classes, or ``fallback`` when unconfigured."""
+    if not value:
+        return fallback
+    for state in ("normal", "hover", "active"):
+        state_value = value.get(state) or {}
+        if any(state_value.get(key) for key in _BUTTON_STATE_KEYS):
+            return build_design_css({"button_appearance": value}) or fallback
+    return fallback
 
 
 def _legacy_stream_value(value):
@@ -177,6 +196,18 @@ class ActionConfirmBlock(DaisieStructBlock):
     confirm_label = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Confirm label")
     )
+    panel_design = SpacedDesignBlock(
+        required=False,
+        label=_("Dialog panel design"),
+    )
+    confirm_appearance = ButtonAppearanceBlock(
+        required=False,
+        label=_("Confirm button"),
+    )
+    cancel_appearance = ButtonAppearanceBlock(
+        required=False,
+        label=_("Cancel button"),
+    )
 
     class Meta:
         icon = "warning"
@@ -184,6 +215,11 @@ class ActionConfirmBlock(DaisieStructBlock):
         collapsed = True
         form_layout = blocks.BlockGroup(
             children=["title", "text", "confirm_label"],
+            settings=[
+                "panel_design",
+                "confirm_appearance",
+                "cancel_appearance",
+            ],
             heading=_("Confirmation dialog"),
         )
 
@@ -225,9 +261,18 @@ class ActionButtonBlock(ButtonBlock):
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
-        confirm = _first_stream_item((value or {}).get("confirm"))
-        context["confirm"] = confirm or {}
-        context["has_confirm"] = bool(confirm)
+        confirm_value = _first_stream_item((value or {}).get("confirm")) or {}
+        panel_design = confirm_value.get("panel_design")
+        context["confirm"] = confirm_value
+        context["has_confirm"] = bool(confirm_value)
+        context["confirm_panel_css"] = build_design_css(panel_design)
+        context["confirm_panel_style"] = build_background_style(panel_design)
+        context["confirm_button_css"] = _appearance_css(
+            confirm_value.get("confirm_appearance"), "btn btn-error"
+        )
+        context["cancel_button_css"] = _appearance_css(
+            confirm_value.get("cancel_appearance"), "btn"
+        )
         return context
 
     class Meta:
