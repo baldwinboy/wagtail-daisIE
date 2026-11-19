@@ -22,7 +22,7 @@
     {% endif %}
     <div class="flex w-full flex-col">
       {% for field in form_fields %}
-        <div class="w-full">{% include_block field with block=field %}</div>
+        <div class="w-full">{% include_block field with block=field id=field.id %}</div>
       {% endfor %}
     </div>
     {% include_block value.button %}
