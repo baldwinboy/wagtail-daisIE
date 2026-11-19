@@ -141,6 +141,23 @@ def check_tailwind_compiler(app_configs, **kwargs):
 
 
 @register()
+def check_action_fields(app_configs, **kwargs):
+    """Validate field presets in ``WAGTAIL_DAISIE_ACTIONS``."""
+    from .dynamic.actions import get_action_config, validate_action_fields
+
+    errors = []
+    for key, config in get_action_config().items():
+        if not isinstance(config, dict):
+            continue
+        fields = config.get("fields")
+        if fields is None:
+            continue
+        for message in validate_action_fields(fields):
+            errors.append(Error(f"Action {key!r}: {message}", id="wagtail_daisIE.E002"))
+    return errors
+
+
+@register()
 def check_detail_page_configs(app_configs, **kwargs):
     """Validate ``WAGTAIL_DAISIE_DETAIL_PAGES`` without database access."""
     from .detail_pages.exceptions import DetailPageConfigurationError

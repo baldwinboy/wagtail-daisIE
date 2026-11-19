@@ -430,22 +430,23 @@ so editors do not have to recreate them.
 - Add a system check for malformed field specs.
 
 **Acceptance criteria:**
-- [ ] An action form with no editor fields and no config fields is valid.
-- [ ] Config fields are returned in declaration order.
-- [ ] Unsupported types/duplicate names/missing options are reported by `checks`.
-- [ ] Existing action configs without `fields` still work.
+- [x] An action form with no editor fields and no config fields is valid.
+- [x] Config fields are returned in declaration order.
+- [x] Unsupported types/duplicate names/missing options are reported by `checks`.
+- [x] Existing action configs without `fields` still work.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/actions.py`
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
 - `src/wagtail_daisIE/checks.py`
 - `tests/dynamic/test_action_blocks.py`
-- `tests/core/test_checks.py` (or existing checks tests)
+- `tests/core/test_checks.py`
 - `docs/data-components.md`
 
 **Blocking stories:** none.
 
-**Current status:** Not started — **Ready**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

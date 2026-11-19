@@ -361,7 +361,11 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         blank=True,
         help_text=_("Sent as 'target', e.g. {{ bread.pk }}."),
     )
-    fields = DaisieStreamBlock([*FIELD_BLOCKS, *AUTOCOMPLETE_BLOCKS], label=_("Fields"))
+    fields = DaisieStreamBlock(
+        [*FIELD_BLOCKS, *AUTOCOMPLETE_BLOCKS],
+        label=_("Fields"),
+        required=False,
+    )
     button = ActionButtonBlock()
     confirmation = ActionConfirmationStreamBlock(
         required=False,

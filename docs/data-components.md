@@ -126,6 +126,54 @@ It is a struct of:
   `Follow the response`.
 - **Confirmation** — an optional DaisyUI alert shown after the action runs.
 
+Action fields can also be declared in settings, so editors do not need to
+recreate them:
+
+```python
+WAGTAIL_DAISIE_ACTIONS = {
+    "profile.update": {
+        "label": "Update profile",
+        "handler": "myapp.actions.update_profile",
+        "fields": [
+            {
+                "type": "input",
+                "name": "display_name",
+                "label": "Display name",
+                "required": True,
+            },
+            {
+                "type": "select",
+                "name": "diet",
+                "label": "Diet",
+                "options": ["Omnivore", "Vegetarian"],
+            },
+            {
+                "type": "checkbox",
+                "name": "newsletter",
+                "label": "Newsletter",
+            },
+        ],
+    },
+}
+```
+
+`fields` is optional, and declaration order is preserved. Every field needs
+`type`, `name` and `label`; `required` is optional. Supported types and their
+additional keys:
+
+- `input` — `input_type`, `placeholder`, `value`, `helper_text`, `error_text`
+- `textarea` — `placeholder`, `rows`, `helper_text`, `error_text`
+- `select` — `options`, `placeholder`, `helper_text`, `error_text`
+- `checkbox` / `toggle` — `checked`, `helper_text`
+- `radio` — `options`
+- `range` — `minimum`, `maximum`, `step`, `value`
+- `rating` — `maximum`, `value`
+- `file` — `accept`, `multiple`, `helper_text`
+- `autocomplete` — `options` or `options_source`, `selected`, `value_field`,
+  `label_field`, `placeholder`, `helper_text`, `error_text`
+
+Malformed field presets are reported by the `wagtail_daisIE.E002` system check.
+
 The form posts to the same action endpoint as the button action. On htmx
 requests the endpoint returns a small alert fragment (the **After submit**
 behaviour above); without JavaScript it is a normal `POST` that redirects back

@@ -366,6 +366,21 @@ def test_confirm_dialog_renders_in_clickable_card_mode():
     assert "Permanent." in html
 
 
+def test_action_form_without_fields_is_valid(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+    block = ActionFormBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "target_expression": "",
+            "button": {"text": "Save", "design": {}, "audience": {}},
+            "behaviour": "inline",
+        }
+    )
+    block.clean(value)
+    assert block.child_blocks["fields"].required is False
+
+
 def test_action_form_without_confirmation_has_no_alert_fields():
     block = ActionFormBlock()
     value = block.to_python(
