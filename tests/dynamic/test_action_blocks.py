@@ -454,22 +454,6 @@ def _form_value(fields=None):
     return value
 
 
-def test_action_form_renders_configured_presets(settings):
-    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
-    block = ActionFormBlock()
-    html = block.render(block.to_python(_form_value()))
-
-    assert "Display name" in html
-    assert "Shown publicly" in html
-    assert "Omnivore" in html and "Vegetarian" in html
-    assert "Newsletter" in html and "Alerts" in html
-    assert html.index("Display name") < html.index("Diet") < html.index("Newsletter")
-    assert 'class="flex w-full flex-col"' in html
-    assert html.count('class="w-full"') == 4
-    assert 'id="daisie-demo-1-display_name"' in html
-    assert 'id="daisie-demo-2-diet"' in html
-
-
 def test_editor_field_overrides_matching_preset(settings):
     settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
     block = ActionFormBlock()

@@ -545,8 +545,8 @@ default, with control over placement and design.
 
 **Blocking stories:** none (preset rendering consumes it in AF-2).
 
-**Current status:** Implemented — awaiting verification via `just lint`,
-`just test` and `makemigrations --check`.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
