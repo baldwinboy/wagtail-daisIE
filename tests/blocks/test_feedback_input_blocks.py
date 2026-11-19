@@ -458,7 +458,6 @@ class TestCheckboxToggleFieldLayout:
             }
         )
         html = block.render(value, context={"id": "cb"})
-        print(html)
         span = re.search(r'<span\b[^>]*id="daisie-cb-help"[^>]*>', html)
         assert span is not None
         classes = re.search(r'class="([^"]*)"', span.group(0)).group(1).split()

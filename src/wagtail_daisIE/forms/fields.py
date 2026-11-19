@@ -25,6 +25,11 @@ from ..base_blocks.design import (
     SpacedDesignBlock,
     TypographyDesignBlock,
 )
+from ..base_blocks.field_layout import (
+    FieldLayoutBlock,
+    build_field_layout_context,
+    build_field_option_context,
+)
 from ..base_blocks.input_widget import (
     InputWidgetDesignBlock,
     UploadWidgetDesignBlock,
@@ -312,6 +317,15 @@ class DaisieFormField(AbstractFormField):
         verbose_name=_("Choice options"),
     )
 
+    field_layout = StreamField(
+        [("layout", FieldLayoutBlock())],
+        blank=True,
+        max_num=1,
+        use_json_field=True,
+        verbose_name=_("Field layout"),
+        help_text=_("Layout for the input, label, help and error text."),
+    )
+
     panels = [
         MultiFieldPanel(
             [
@@ -369,6 +383,7 @@ class DaisieFormField(AbstractFormField):
                     "upload_design",
                     rules={"field_type": get_upload_field_type_keys},
                 ),
+                FieldPanel("field_layout"),
             ],
             attrs={
                 "data-controller": "w-rules",
@@ -422,6 +437,19 @@ class DaisieFormField(AbstractFormField):
         return build_background_style(
             self.choice_options[0].value if self.choice_options else None
         )
+
+    def get_field_layout_value(self):
+        return self.field_layout[0].value if self.field_layout else {}
+
+    def get_field_layout_context(self) -> dict:
+        return build_field_layout_context(self.get_field_layout_value())
+
+    def get_choice_options_value(self):
+        return self.choice_options[0].value if self.choice_options else None
+
+    def get_choice_options_context(self) -> dict:
+        value = self.get_choice_options_value() or {}
+        return build_field_option_context(value.get("option_layout"))
 
     def get_widget_design(self):
         value = self.upload_design[0].value if self.upload_design else None

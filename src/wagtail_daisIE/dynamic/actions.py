@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 SETTING_NAME = "WAGTAIL_DAISIE_ACTIONS"
 
 #: Keys every action field preset may use.
-ACTION_FIELD_COMMON_KEYS = frozenset({"type", "name", "label", "required"})
+ACTION_FIELD_COMMON_KEYS = frozenset(
+    {"type", "name", "label", "required", "field_layout"}
+)
 
 #: Supported preset types and their additional keys.
 ACTION_FIELD_TYPES = {
@@ -39,7 +41,7 @@ ACTION_FIELD_TYPES = {
     "select": frozenset({"options", "placeholder", "helper_text", "error_text"}),
     "checkbox": frozenset({"checked", "helper_text"}),
     "toggle": frozenset({"checked", "helper_text"}),
-    "radio": frozenset({"options"}),
+    "radio": frozenset({"options", "group_layout", "option_layout"}),
     "range": frozenset({"minimum", "maximum", "step", "value"}),
     "rating": frozenset({"maximum", "value"}),
     "file": frozenset({"accept", "multiple", "helper_text"}),

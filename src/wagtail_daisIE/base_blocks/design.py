@@ -9,6 +9,8 @@ from .background_layer import BackgroundStreamBlock
 from .box import BorderBlock, BoxBlock, MarginBlock, PaddingBlock, SpacingBlock
 from .compact import DaisieStructBlock
 from .css import build_background_style, build_design_css
+from .field_layout import FieldOptionLayoutBlock
+from .form_layout import collapsed_group
 from .layout_design import LayoutBlock
 from .mjml import build_design_style
 from .responsive import build_responsive_css, responsive_overrides
@@ -180,6 +182,10 @@ class ChoiceOptionsDesignBlock(DesignBlock):
     """Container design for a group of checkbox or radio choices."""
 
     layout_design = LayoutBlock()
+    option_layout = FieldOptionLayoutBlock(
+        required=False,
+        label=_("Option layout"),
+    )
 
     @staticmethod
     def _upgrade_legacy_scroll(value):
@@ -206,7 +212,11 @@ class ChoiceOptionsDesignBlock(DesignBlock):
         label = _("Choice options")
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=["layout_design", *_BLOCK_CHILDREN],
+            children=[
+                "layout_design",
+                collapsed_group(_("Option layout"), "option_layout", icon="sliders"),
+                *_BLOCK_CHILDREN,
+            ],
             heading=_("Choice options"),
         )
 

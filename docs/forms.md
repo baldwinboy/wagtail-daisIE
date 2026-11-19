@@ -67,7 +67,15 @@ Each field also has a **Container design** for the wrapper around the label,
 input, help text and errors, and upload fields have a separate **Upload design**
 (tray and item styling, item rendering and empty fallback). Choice fields
 (checkboxes and radio buttons) have **Choice options**: layout, wrap, grid
-columns, overflow scrolling, size and box styling around the option list.
+columns, overflow scrolling, size and box styling around the option list. Choice
+options also expose an **Option layout** for each option's input and label.
+
+Each field also has a **Field layout**: an optional row, column or grid layout
+for the input, label, help and error text, with per-part visibility and
+placement. Existing fields with no field layout render unchanged.
+
+Concrete form-field models inherit this as a StreamField, so projects must run
+`makemigrations` after upgrading.
 
 The page's **Form design** controls the `<form>` container; when set it replaces
 the default `mt-8 space-y-4` classes. The **Submit button** field exposes the

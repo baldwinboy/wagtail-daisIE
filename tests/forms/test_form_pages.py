@@ -751,3 +751,170 @@ def test_choice_options_explicit_overflow_is_preserved():
 
     assert "overflow-x-auto" in css
     assert "overflow-y-auto" not in css
+
+
+class _LayoutField:
+    label = "Name"
+    clean_name = "name"
+    field_type = "singleline"
+    required = True
+    choices = ""
+    default_value = ""
+    help_text = "Help"
+    errors = []
+
+    def get_field_layout_context(self):
+        return {
+            "field_layout_configured": True,
+            "field_layout_css": "flex flex-row grow",
+            "field_label_css": "order-first",
+            "field_label_hidden": False,
+            "field_input_css": "order-none",
+            "field_help_css": "order-last",
+            "field_help_hidden": False,
+            "field_error_css": "order-last",
+            "field_error_hidden": False,
+        }
+
+    def get_choice_options_context(self):
+        return {}
+
+
+class TestFormFieldLayout:
+    def test_text_input_layout_renders_part_wrappers(self):
+        field = _LayoutField()
+        django_field = DaisyUIFormBuilder([]).create_singleline_field(
+            field,
+            {"label": "Name", "help_text": "Help", "required": True},
+        )
+        form = forms.Form()
+        form.fields["name"] = django_field
+        bound = form["name"]
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": bound})
+        )
+        assert 'data-daisie-field-part="label"' in html
+        assert 'data-daisie-field-part="input"' in html
+        assert 'data-daisie-field-part="help"' in html
+        assert "order-first" in html
+        assert "order-none" in html
+        assert "order-last" in html
+
+    def test_single_checkbox_hidden_label_uses_aria_label(self):
+        class _CheckboxField(_LayoutField):
+            label = "Agree"
+            clean_name = "agree"
+            field_type = "checkbox"
+
+            def get_field_layout_context(self):
+                ctx = _LayoutField.get_field_layout_context(self)
+                ctx["field_label_hidden"] = True
+                return ctx
+
+        field = _CheckboxField()
+        django_field = DaisyUIFormBuilder([]).create_checkbox_field(field, {})
+        assert django_field.widget.attrs.get("aria-label") == "Agree"
+        form = forms.Form()
+        form.fields["agree"] = django_field
+        bound = form["agree"]
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": bound})
+        )
+        assert 'data-daisie-field-part="input"' in html
+        assert 'data-daisie-field-part="label"' not in html
+        assert 'aria-label="Agree"' in html
+
+    def test_choice_group_layout_renders_group_and_option_parts(self):
+        class _ChoiceField(_LayoutField):
+            label = "Choices"
+            clean_name = "choices"
+            field_type = "checkboxes"
+            choices = "a,b"
+
+            def get_field_layout_context(self):
+                return {
+                    "field_layout_configured": True,
+                    "field_layout_css": "flex flex-row grow",
+                    "field_label_css": "order-first",
+                    "field_label_hidden": False,
+                    "field_input_css": "order-none",
+                    "field_help_css": "order-last",
+                    "field_help_hidden": False,
+                    "field_error_css": "",
+                    "field_error_hidden": False,
+                }
+
+            def get_choice_options_context(self):
+                return {
+                    "option_layout_configured": True,
+                    "option_input_css": "sr-only order-first",
+                    "option_input_hidden": False,
+                    "option_label_css": "order-last",
+                    "option_label_hidden": False,
+                }
+
+        field = _ChoiceField()
+        django_field = DaisyUIFormBuilder([]).create_checkboxes_field(field, {})
+        assert getattr(django_field.widget, "option_layout_configured", False) is True
+        form = forms.Form()
+        form.fields["choices"] = django_field
+        bound = form["choices"]
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": bound})
+        )
+        assert 'data-daisie-field-part="label"' in html
+        assert 'data-daisie-field-part="input"' in html
+        assert 'data-daisie-option-part="input"' in html
+        assert 'data-daisie-option-part="label"' in html
+        assert "sr-only" in html
+
+    def test_hidden_option_label_omits_label_and_sets_aria(self):
+        class _ChoiceField(_LayoutField):
+            label = "Choices"
+            clean_name = "choices"
+            field_type = "checkboxes"
+            choices = "a,b"
+
+            def get_field_layout_context(self):
+                return {
+                    "field_layout_configured": True,
+                    "field_layout_css": "flex flex-row grow",
+                    "field_label_css": "order-first",
+                    "field_label_hidden": False,
+                    "field_input_css": "order-none",
+                    "field_help_css": "order-last",
+                    "field_help_hidden": False,
+                    "field_error_css": "",
+                    "field_error_hidden": False,
+                }
+
+            def get_choice_options_context(self):
+                return {
+                    "option_layout_configured": True,
+                    "option_input_css": "order-first",
+                    "option_input_hidden": False,
+                    "option_label_css": "order-last",
+                    "option_label_hidden": True,
+                }
+
+        field = _ChoiceField()
+        django_field = DaisyUIFormBuilder([]).create_checkboxes_field(field, {})
+        form = forms.Form()
+        form.fields["choices"] = django_field
+        bound = form["choices"]
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": bound})
+        )
+        assert 'data-daisie-option-part="label"' not in html
+        assert 'aria-label="a"' in html or 'aria-label="b"' in html
+
+    def test_no_layout_keeps_legacy_markup(self):
+        field = forms.CharField(required=True, label="Name")
+        form = forms.Form()
+        form.fields["name"] = field
+        bound = form["name"]
+        html = Template('{% include "wagtail_daisIE/forms/form_field.html" %}').render(
+            Context({"field": bound})
+        )
+        assert "data-daisie-field-part" not in html
+        assert "<fieldset" in html

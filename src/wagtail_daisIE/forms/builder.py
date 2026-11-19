@@ -156,6 +156,16 @@ class DaisyUIFormBuilder(FormBuilder):
         container_style = _design_value(form_field, "get_container_style")
         choice_options_css = _design_value(form_field, "get_choice_options_css")
         choice_options_style = _design_value(form_field, "get_choice_options_style")
+        field_layout_context = {}
+        get_field_layout_context = getattr(form_field, "get_field_layout_context", None)
+        if callable(get_field_layout_context):
+            field_layout_context = get_field_layout_context() or {}
+        choice_options_context = {}
+        get_choice_options_context = getattr(
+            form_field, "get_choice_options_context", None
+        )
+        if callable(get_choice_options_context):
+            choice_options_context = get_choice_options_context() or {}
         if input_css:
             widget = django_field.widget
             existing = widget.attrs.get("class", "")
@@ -166,6 +176,20 @@ class DaisyUIFormBuilder(FormBuilder):
         django_field.container_style = container_style
         django_field.choice_options_css = choice_options_css
         django_field.choice_options_style = choice_options_style
+        for key, value in field_layout_context.items():
+            setattr(django_field, key, value)
+        for key, value in choice_options_context.items():
+            setattr(django_field.widget, key, value)
+        if field_layout_context.get("field_label_hidden") and getattr(
+            form_field, "label", ""
+        ):
+            widget = django_field.widget
+            is_choice_group = (
+                getattr(widget, "allow_multiple_selected", False)
+                or getattr(widget, "input_type", "") == "radio"
+            )
+            if not is_choice_group:
+                widget.attrs.setdefault("aria-label", str(form_field.label))
         get_widget_design = getattr(form_field, "get_widget_design", None)
         if callable(get_widget_design):
             design = get_widget_design()

@@ -1,4 +1,15 @@
-<label class="label cursor-pointer justify-start gap-3">
-  {% include "django/forms/widgets/input.html" %}
-  <span class="label-text">{{ widget.label }}</span>
-</label>
+{% if widget.option_layout_configured %}
+  <label class="label cursor-pointer justify-start gap-3">
+    <span class="{{ widget.option_input_css }}" data-daisie-option-part="input">
+      {% include "django/forms/widgets/input.html" %}
+    </span>
+    {% if not widget.option_label_hidden %}
+      <span class="label-text {{ widget.option_label_css }}" data-daisie-option-part="label">{{ widget.label }}</span>
+    {% endif %}
+  </label>
+{% else %}
+  <label class="label cursor-pointer justify-start gap-3">
+    {% include "django/forms/widgets/input.html" %}
+    <span class="label-text">{{ widget.label }}</span>
+  </label>
+{% endif %}

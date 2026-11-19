@@ -1202,3 +1202,78 @@ def test_multiple_action_forms_in_tabs_keep_their_own_status(settings):
     assert 'name="second_name"' not in first
     assert 'name="first_name"' not in second
     assert "daisie-action-form-status-" not in html
+
+
+def test_preset_checkbox_fields_honour_field_layout(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {
+            "label": "Demo",
+            "handler": "handler",
+            "fields": [
+                {
+                    "type": "checkbox",
+                    "name": "first",
+                    "label": "First",
+                    "field_layout": {"layout": {"layout": "row"}},
+                },
+                {
+                    "type": "checkbox",
+                    "name": "second",
+                    "label": "Second",
+                    "field_layout": {"layout": {"layout": "grid", "columns": 2}},
+                },
+            ],
+        }
+    }
+    block = ActionFormBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "fields": [],
+            "button": {"text": "Save", "design": {}, "audience": {}},
+            "behaviour": "inline",
+            "container_design": {},
+        }
+    )
+    html = block.render(value)
+    assert "flex flex-row grow" in html
+    assert "grid grow grid-cols-1 sm:grid-cols-2" in html
+    assert html.count('data-daisie-field-part="input"') == 2
+    assert "absolute" not in html
+
+
+def test_preset_radio_accepts_group_and_option_layout(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {
+            "label": "Demo",
+            "handler": "handler",
+            "fields": [
+                {
+                    "type": "radio",
+                    "name": "choice",
+                    "label": "Choice",
+                    "options": ["A", "B"],
+                    "group_layout": {"layout": {"layout": "row"}},
+                    "option_layout": {
+                        "input": {"placement": "end"},
+                        "label": {"placement": "start"},
+                    },
+                }
+            ],
+        }
+    }
+    block = ActionFormBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "fields": [],
+            "button": {"text": "Save", "design": {}, "audience": {}},
+            "behaviour": "inline",
+            "container_design": {},
+        }
+    )
+    html = block.render(value)
+    assert "flex flex-row grow" in html
+    assert "order-last" in html
+    assert "order-first" in html
+    assert "absolute" not in html

@@ -1,33 +1,86 @@
-{% with widget=field.field.widget container_css=field.field.container_css container_style=field.field.container_style %}
+{% with widget=field.field.widget container_css=field.field.container_css container_style=field.field.container_style field_id=field.auto_id %}
 <div{% if container_css %} class="{{ container_css }}"{% endif %}{% if container_style %} style="{{ container_style }}"{% endif %}>
-    {% if widget.input_type == "checkbox" and not widget.allow_multiple_selected %}
-        <label class="label cursor-pointer justify-start gap-3{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
-            {{ field }}
-            <span class="label-text">{{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}</span>
-        </label>
-        {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
-    {% elif widget.input_type == "checkbox" or widget.input_type == "radio" %}
-        <fieldset class="fieldset w-full">
-            <legend class="fieldset-legend{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
-                {{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}
-            </legend>
-            <div{% if field.auto_id %} id="{{ field.auto_id }}"{% endif %}{% if field.field.choice_options_css %} class="{{ field.field.choice_options_css }}"{% endif %}{% if field.field.choice_options_style %} style="{{ field.field.choice_options_style }}"{% endif %}>
-                {{ field }}
-            </div>
-            {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
-        </fieldset>
+    {% if field.field.field_layout_configured %}
+        <div class="{{ field.field.field_layout_css }}">
+            {% if widget.input_type == "checkbox" and not widget.allow_multiple_selected %}
+                <div class="{{ field.field.field_input_css }}" data-daisie-field-part="input">
+                    {{ field }}
+                </div>
+                {% if not field.field.field_label_hidden %}
+                    <div class="{{ field.field.field_label_css }}" data-daisie-field-part="label">
+                        <label class="label cursor-pointer justify-start gap-3" for="{{ field.id_for_label }}">
+                            <span class="label-text">{{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}</span>
+                        </label>
+                    </div>
+                {% endif %}
+                {% if not field.field.field_help_hidden and field.help_text %}<div class="{{ field.field.field_help_css }}" data-daisie-field-part="help"><p class="label">{{ field.help_text }}</p></div>{% endif %}
+                {% if not field.field.field_error_hidden and field.errors %}
+                    <div class="{{ field.field.field_error_css }}" data-daisie-field-part="error">
+                        {% for error in field.errors %}<p class="label text-error" role="alert">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+            {% elif widget.input_type == "checkbox" or widget.input_type == "radio" %}
+                {% if not field.field.field_label_hidden %}
+                    <div class="{{ field.field.field_label_css }}" data-daisie-field-part="label">
+                        <span id="{{ field_id }}_label" class="fieldset-legend">{% if field.field.label %}{{ field.label }}{% endif %}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}</span>
+                    </div>
+                {% endif %}
+                <div class="{{ field.field.field_input_css }} {{ field.field.choice_options_css }}" data-daisie-field-part="input" id="{{ field_id }}"{% if field.field.choice_options_style %} style="{{ field.field.choice_options_style }}"{% endif %}{% if field.field.field_label_hidden and field.label %} role="group" aria-label="{{ field.label }}"{% elif field.label %} role="group" aria-labelledby="{{ field_id }}_label"{% endif %}>
+                    {{ field }}
+                </div>
+                {% if not field.field.field_help_hidden and field.help_text %}<div class="{{ field.field.field_help_css }}" data-daisie-field-part="help"><p class="label">{{ field.help_text }}</p></div>{% endif %}
+                {% if not field.field.field_error_hidden and field.errors %}
+                    <div class="{{ field.field.field_error_css }}" data-daisie-field-part="error">
+                        {% for error in field.errors %}<p class="label text-error" role="alert">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if not field.field.field_label_hidden %}
+                    <div class="{{ field.field.field_label_css }}" data-daisie-field-part="label">
+                        <label class="fieldset-legend" for="{{ field.id_for_label }}">{% if field.field.label %}{{ field.label }}{% endif %}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}</label>
+                    </div>
+                {% endif %}
+                <div class="{{ field.field.field_input_css }}" data-daisie-field-part="input">
+                    {{ field }}
+                </div>
+                {% if not field.field.field_help_hidden and field.help_text %}<div class="{{ field.field.field_help_css }}" data-daisie-field-part="help"><p class="label">{{ field.help_text }}</p></div>{% endif %}
+                {% if not field.field.field_error_hidden and field.errors %}
+                    <div class="{{ field.field.field_error_css }}" data-daisie-field-part="error">
+                        {% for error in field.errors %}<p class="label text-error" role="alert">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
     {% else %}
-        <fieldset class="fieldset w-full">
-            <legend class="fieldset-legend{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
-                {{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}
-            </legend>
-            {{ field }}
+        {% if widget.input_type == "checkbox" and not widget.allow_multiple_selected %}
+            <label class="label cursor-pointer justify-start gap-3{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
+                {{ field }}
+                <span class="label-text">{{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}</span>
+            </label>
             {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
-        </fieldset>
-    {% endif %}
+        {% elif widget.input_type == "checkbox" or widget.input_type == "radio" %}
+            <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
+                    {{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}
+                </legend>
+                <div{% if field.auto_id %} id="{{ field.auto_id }}"{% endif %}{% if field.field.choice_options_css %} class="{{ field.field.choice_options_css }}"{% endif %}{% if field.field.choice_options_style %} style="{{ field.field.choice_options_style }}"{% endif %}>
+                    {{ field }}
+                </div>
+                {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
+            </fieldset>
+        {% else %}
+            <fieldset class="fieldset w-full">
+                <legend class="fieldset-legend{% if field.field.label_css %} {{ field.field.label_css }}{% endif %}">
+                    {{ field.label }}{% if field.field.required %} <span class="text-error" aria-hidden="true">*</span>{% endif %}
+                </legend>
+                {{ field }}
+                {% if field.help_text %}<p class="label">{{ field.help_text }}</p>{% endif %}
+            </fieldset>
+        {% endif %}
 
-    {% for error in field.errors %}
-        <p class="label text-error" role="alert">{{ error }}</p>
-    {% endfor %}
+        {% for error in field.errors %}
+            <p class="label text-error" role="alert">{{ error }}</p>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endwith %}

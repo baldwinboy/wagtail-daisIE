@@ -38,7 +38,8 @@ from ..base_blocks.css import (
     build_design_css,
     build_layout_item_css,
 )
-from ..base_blocks.layout_design import LayoutBlock, LayoutItemDesignBlock
+from ..base_blocks.field_layout import FieldGroupLayoutBlock, build_field_group_context
+from ..base_blocks.layout_design import LayoutItemDesignBlock
 from ..base_blocks.utils import build_class
 from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
 from ..blocks.inline import HeaderBlock, InlineTextBlock
@@ -475,7 +476,7 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         required=False,
         label=_("Form design"),
     )
-    fields_layout = LayoutBlock(
+    fields_layout = FieldGroupLayoutBlock(
         required=False,
         label=_("Field list layout"),
     )
@@ -666,11 +667,15 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         context["form_css"] = build_design_css(design)
         context["form_style"] = build_background_style(design)
 
-        layout_value = value.get("fields_layout") or {}
-        layout_choice = layout_value.get("layout")
+        group_context = build_field_group_context(value.get("fields_layout"))
+        layout_choice = (value.get("fields_layout") or {}).get("layout")
+        if isinstance(layout_choice, dict):
+            layout_choice = layout_choice.get("layout")
         context["fields_css"] = build_class(
-            "w-full" if layout_choice else "flex w-full flex-col",
-            build_design_css(layout_value),
+            "w-full"
+            if group_context["field_group_configured"]
+            else "flex w-full flex-col",
+            group_context["field_group_css"],
         )
         item_value = value.get("field_wrapper_layout") or {}
         item_css = build_layout_item_css(item_value, grid=layout_choice == "grid")

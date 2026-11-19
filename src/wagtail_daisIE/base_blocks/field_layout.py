@@ -219,6 +219,22 @@ class FieldGroupLayoutBlock(DaisieStructBlock):
     layout = LayoutBlock()
     size = BlockSizeBlock()
 
+    def _normalise_legacy(self, value):
+        if not isinstance(value, dict):
+            return value
+        layout = value.get("layout")
+        if isinstance(layout, str):
+            return {"layout": value, "size": value.get("size") or {}}
+        return value
+
+    def to_python(self, value):
+        return super().to_python(self._normalise_legacy(value))
+
+    def bulk_to_python(self, values):
+        return super().bulk_to_python(
+            [self._normalise_legacy(value) for value in values]
+        )
+
     class Meta:
         icon = "bars"
         label = _("Field group layout")

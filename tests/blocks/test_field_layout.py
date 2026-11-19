@@ -229,3 +229,13 @@ def test_layout_item_grid_starts():
         )
         == ""
     )
+
+
+def test_field_group_layout_normalises_legacy_flat_value():
+    from wagtail_daisIE.base_blocks import FieldGroupLayoutBlock
+    from wagtail_daisIE.base_blocks.field_layout import build_field_group_context
+
+    value = FieldGroupLayoutBlock().to_python({"layout": "row", "gap": "gap-4"})
+    context = build_field_group_context(value)
+    assert "flex flex-row grow" in context["field_group_css"]
+    assert "gap-4" in context["field_group_css"]

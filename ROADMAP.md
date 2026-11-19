@@ -800,11 +800,11 @@ layout control as action-form fields.
 - Provide a migration and handover note.
 
 **Acceptance criteria:**
-- [ ] Form-page checkbox/radio fields support single-field and group layout.
-- [ ] All form-page field types support part visibility/placement.
-- [ ] Existing fields with no layout render unchanged.
-- [ ] Migration is generated and `makemigrations --check` passes.
-- [ ] Tests cover a checkbox, a radio group and a text input.
+- [x] Form-page checkbox/radio fields support single-field and group layout.
+- [x] All form-page field types support part visibility/placement.
+- [x] Existing fields with no layout render unchanged.
+- [x] Migration is generated and `makemigrations --check` passes.
+- [x] Tests cover a checkbox, a radio group and a text input.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/forms/fields.py`
@@ -816,7 +816,8 @@ layout control as action-form fields.
 
 **Blocking stories:** FL-1, FL-3, FL-4.
 
-**Current status:** Not started — **Blocked by FL-1, FL-3, FL-4**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -837,11 +838,11 @@ fields to use the same layout controls as standard fields.
 - Add tests for preset checkbox fields in row/column/grid.
 
 **Acceptance criteria:**
-- [ ] Action-form fields can be stacked, rowed or gridded.
-- [ ] Preset fields honour layout config/defaults.
-- [ ] Multiple preset checkboxes do not overlap.
-- [ ] Editor overrides keep layout/design control.
-- [ ] No duplicate checkbox markup exists.
+- [x] Action-form fields can be stacked, rowed or gridded.
+- [x] Preset fields honour layout config/defaults.
+- [x] Multiple preset checkboxes do not overlap.
+- [x] Editor overrides keep layout/design control.
+- [x] No duplicate checkbox markup exists.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
@@ -852,7 +853,8 @@ fields to use the same layout controls as standard fields.
 
 **Blocking stories:** AF-2, FL-2, FL-3.
 
-**Current status:** Not started — **Blocked by AF-2, FL-2, FL-3**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

@@ -127,8 +127,12 @@ It is a struct of:
   spacing) applied to the `<form>` element only. Fields keep their own design
   and fall back to the page's container defaults.
 - **Field list layout** — arranges the wrapper around all fields: column, row,
-  wrapping layouts, grid, gap, alignment and responsive overrides. The default
-  is a full-width column.
+  wrapping layouts, grid, gap, alignment, size, overflow and responsive overrides.
+  The default is a full-width column.
+- **Preset fields** — may include `field_layout`, and radio presets may include
+  `group_layout` and `option_layout`. Preset checkboxes are declared as
+  separate checkbox fields and arranged through **Field list layout**; no
+  separate checkbox-group preset type is used.
 - **Field wrapper layout** — treats each field's wrapper as a layout item:
   width, grow/shrink/basis, margin, order, align-self and grid spans. Grid spans
   apply when the field list is a grid.
