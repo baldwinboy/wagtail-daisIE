@@ -1310,7 +1310,8 @@ component behaviour and guide pages.
 
 **Blocking stories:** none.
 
-**Current status:** Ready.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

@@ -7,4 +7,5 @@ class FeedViewSet(SnippetViewSet):
     icon = "list-ul"
     menu_label = "Feeds"
     model = Feed
-    list_display = ["name", "context_model", "layout"]
+    list_display = ["title", "name", "context_model", "layout"]
+    search_fields = ["title", "name"]

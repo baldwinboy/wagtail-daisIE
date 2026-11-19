@@ -354,9 +354,10 @@ Render project data and trigger actions with reusable components:
 - **Feeds** — a snippet (Design → Feeds) that lists a context model with
   admin-designed item cards, typed filters (choice/multi, boolean, date, date
   range, price range, search), AJAX filtering and optional infinite scroll.
-  Block **visibility** lets editors control content with a switch or a
-  model-context condition, including per feed item and calendar event. See
-  [docs/visibility.md](docs/visibility.md).
+  Each feed has a friendly **Title** for the CMS and a unique **Internal name**
+  that is filled in from the title until edited. Block **visibility** lets
+  editors control content with a switch or a model-context condition, including
+  per feed item and calendar event. See [docs/visibility.md](docs/visibility.md).
 - **Action** — a struct of a themed button and an optional confirmation alert
   that posts to a developer-defined action (`WAGTAIL_DAISIE_ACTIONS`), e.g.
   *Add to basket*. Inside a card it can make the whole card clickable.

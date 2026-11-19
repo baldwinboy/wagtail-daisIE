@@ -159,7 +159,25 @@ class FeedFilterMenuBlock(DaisieStructBlock):
 class Feed(ClusterableModel):
     """An admin-designed, filterable list of a context model."""
 
-    name = models.CharField(max_length=255, unique=True, verbose_name=_("Name"))
+    title = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name=_("Title"),
+        help_text=_(
+            "Shown in the CMS and feed chooser. Defaults to the internal name "
+            "when blank."
+        ),
+    )
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Internal name"),
+        help_text=_(
+            "Unique identifier used in templates and feed blocks. Not shown to "
+            "visitors."
+        ),
+    )
     context_model = models.CharField(
         max_length=64,
         choices=get_context_model_choices,
@@ -272,7 +290,14 @@ class Feed(ClusterableModel):
     )
 
     panels = [
-        FieldPanel("name"),
+        FieldPanel(
+            "title",
+            attrs={"data-controller": "daisie-feed-title-slug"},
+        ),
+        FieldPanel(
+            "name",
+            attrs={"data-daisie-feed-title-slug-target": "name"},
+        ),
         FieldPanel("context_model"),
         FeedContextModelHelpPanel(),
         MultiFieldPanel(
@@ -364,7 +389,7 @@ class Feed(ClusterableModel):
         ordering = ["name"]
 
     def __str__(self):
-        return self.name
+        return self.title or self.name
 
     def clean(self):
         super().clean()

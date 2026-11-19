@@ -311,6 +311,15 @@ def register_block_controllers_js():
     )
 
 
+# Keep a Feed's internal name in sync with its display title.
+@hooks.register("insert_global_admin_js")
+def register_feed_title_slug_js():
+    return format_html(
+        '<script src="{}"></script>',
+        static("wagtail_daisIE/js/feed_title_slug.js"),
+    )
+
+
 # Register the shared widget render protocol and the widget definitions.
 # Emitted from one hook so the scripts always load in dependency order.
 

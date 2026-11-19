@@ -709,6 +709,7 @@ def _breads_feed():
     return _ensure_feed(
         "Breads feed",
         "bread",
+        title="Breads",
         order_by="name",
         page_size=6,
         empty_message="No breads yet.",
@@ -901,6 +902,7 @@ def _ensure_feed(
     name,
     context_model,
     *,
+    title=None,
     order_by="-pk",
     page_size=6,
     infinite=False,
@@ -912,6 +914,7 @@ def _ensure_feed(
     feed, _ = Feed.objects.update_or_create(
         name=name,
         defaults={
+            "title": title if title is not None else name,
             "context_model": context_model,
             "order_by": order_by,
             "page_size": page_size,
@@ -930,6 +933,7 @@ def _ensure_data_pages(theme, home, *, force=False):
     basket_feed = _ensure_feed(
         "Basket feed",
         "basket",
+        title="Basket",
         order_by="",
         page_size=20,
         empty_message="Your basket is empty.",
@@ -1330,6 +1334,7 @@ class Command(BaseCommand):
             blog_feed = _ensure_feed(
                 "Blog feed",
                 "blog_post",
+                title="Blog",
                 order_by="-date_published",
                 page_size=6,
                 empty_message="No posts yet.",

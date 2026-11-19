@@ -676,3 +676,36 @@ class TestVisibilityScope:
         rendered = "".join(context["days"][0]["events"])
         assert 'data-daisie-switch-scope="calendar-event"' in rendered
         assert "[data-daisie-calendar-event]" in rendered
+
+
+class TestFeedTitle:
+    def test_title_optional_and_fallback(self):
+        feed = Feed(name="internal", context_model="user")
+        assert str(feed) == "internal"
+        feed.title = "Friendly"
+        assert str(feed) == "Friendly"
+        feed.title = ""
+        assert str(feed) == "internal"
+
+    def test_duplicate_titles_are_allowed(self):
+        first = Feed.objects.create(name="first", title="Same", context_model="user")
+        second = Feed.objects.create(name="second", title="Same", context_model="user")
+        assert str(first) == "Same"
+        assert str(second) == "Same"
+
+    def test_title_is_not_unique(self):
+        field = Feed._meta.get_field("title")
+        assert field.blank is True
+        assert getattr(field, "unique", False) is False
+
+    def test_name_remains_required_and_unique(self):
+        field = Feed._meta.get_field("name")
+        assert field.blank is False
+        assert field.unique is True
+
+    def test_viewset_search_and_list_display(self):
+        from wagtail_daisIE.feeds.view_sets import FeedViewSet
+
+        assert "title" in FeedViewSet.list_display
+        assert "name" in FeedViewSet.list_display
+        assert FeedViewSet.search_fields == ["title", "name"]

@@ -225,6 +225,11 @@ blocks.
 
 Feed fields:
 
+* **Title** — a friendly display name shown in the CMS and snippet chooser.
+  Defaults to the internal name when blank.
+* **Internal name** — a unique identifier used in templates and feed blocks;
+  not shown to visitors. The admin fills it from the title as you type, until you
+  edit it manually.
 * **Model** — a key from `WAGTAIL_DAISIE_CONTEXT_MODELS`.
 * **Order by**, **Items per page**, **Empty message**.
 * **Infinite scroll** — load more on scroll; otherwise a **Load more** button.
