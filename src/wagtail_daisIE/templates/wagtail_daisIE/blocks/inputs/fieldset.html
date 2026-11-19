@@ -4,7 +4,7 @@
     <legend class="fieldset-legend">{% daisie_markup value.legend %}</legend>
     {% if value.description %}<p class="label">{% daisie_markup value.description %}</p>{% endif %}
     {% for child in value.content %}
-      {% include_block child %}
+      {% include_block child with id=child.id %}
     {% endfor %}
   </fieldset>
 {% endif %}

@@ -1,15 +1,24 @@
 {% load notifications %}
 {% if audience_allowed %}
-  <div class="{% if block_css %}{{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
-    <label class="label cursor-pointer justify-start gap-3">
+  <div class="w-full{% if block_css %} {{ block_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    {% if helper_above %}
+      {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" %}
+    {% endif %}
+    <label class="label flex w-full cursor-pointer items-start justify-start gap-3">
       <input
         type="checkbox"
         {% if value.name %}name="{{ value.name }}"{% endif %}
         class="checkbox {{ value.color }} {{ value.size }}"
         {% if value.checked %}checked{% endif %}
+        {% if value.helper_text %}aria-describedby="daisie-{{ id }}-help"{% endif %}
       />
       <span class="label-text">{% daisie_markup value.label %}</span>
+      {% if helper_inline %}
+        {% include "wagtail_daisIE/blocks/inputs/helper_text.html" %}
+      {% endif %}
     </label>
-    {% if value.helper_text %}<p class="label">{% daisie_markup value.helper_text %}</p>{% endif %}
+    {% if helper_below %}
+      {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" %}
+    {% endif %}
   </div>
 {% endif %}

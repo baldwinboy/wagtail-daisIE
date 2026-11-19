@@ -103,6 +103,19 @@ def _input_field(label, design=None):
     }
 
 
+def _checkbox_field(label, helper_text, block_id):
+    return {
+        "type": "checkbox",
+        "id": block_id,
+        "value": {
+            "label": label,
+            "helper_text": helper_text,
+            "design": {},
+            "audience": {},
+        },
+    }
+
+
 def _render_action_form(fields, container_design):
     card = CardBlock()
     value = card.to_python(
@@ -176,6 +189,36 @@ def test_action_form_fields_use_page_default_and_own_design():
 
     fieldset_tags = re.findall(r'<fieldset class="[^"]*"[^>]*>', html)
     assert all("style=" not in tag for tag in fieldset_tags)
+
+
+def test_action_form_checkbox_fields_stack_without_overlap():
+    block = ActionFormBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "target_expression": "",
+            "fields": [
+                _checkbox_field("First", "First helper", "first-checkbox"),
+                _checkbox_field("Second", "Second helper", "second-checkbox"),
+            ],
+            "button": {"text": "Save", "design": {}, "audience": {}},
+            "behaviour": "inline",
+        }
+    )
+    html = block.render(value)
+
+    assert 'class="flex w-full flex-col gap-4"' in html
+    assert len(re.findall(r'<div class="w-full[^"]*"', html)) == 2
+    assert html.count("items-start") == 2
+
+    label_rows = re.findall(r"<label[^>]*>.*?</label>", html, re.S)
+    assert len(label_rows) == 2
+    assert all("helper" not in row.lower() for row in label_rows)
+
+    described_by = re.findall(r'aria-describedby="([^"]+)"', html)
+    assert len(described_by) == 2
+    assert len(set(described_by)) == 2
+    assert html.index("First helper") < html.index("Second helper")
 
 
 def test_action_button_keeps_menu_defaults_and_own_design():

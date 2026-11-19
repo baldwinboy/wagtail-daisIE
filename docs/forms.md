@@ -343,6 +343,14 @@ tooltip) and the **Data input** block group (input, textarea, select, checkbox,
 toggle, radio, range, rating, file, fieldset) can be used in the success/error
 bodies (and any page body) to design the look of those states without code.
 
+### Checkbox and toggle helper text
+
+Checkboxes and toggles render **Helper text** below the label by default.
+**Helper position** can move it above the label or inline with it, and **Helper
+design** applies the same typography, size, spacing, border and background
+controls as other design fields. The helper is linked to the control with
+`aria-describedby`, and the same markup is reused by action-form fields.
+
 ## Form pages vs the Action form block
 
 `DaisieFormPage` is the right tool when a page **is** a form: it has one form,

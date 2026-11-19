@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from wagtail_daisIE.blocks.feedback import (
@@ -7,10 +9,12 @@ from wagtail_daisIE.blocks.feedback import (
 )
 from wagtail_daisIE.blocks.inputs import (
     AutocompleteSelectMultipleBlock,
+    CheckboxBlock,
     InputBlock,
     RadioBlock,
     RatingBlock,
     SelectBlock,
+    ToggleBlock,
 )
 
 
@@ -118,3 +122,97 @@ class TestInputBlocks:
         assert "data-daisyui-autocomplete" in html
         assert "input-primary" in html
         assert "Pick some" in html
+
+
+def _helper_span(html):
+    match = re.search(r'<span\b[^>]*id="[^"]+-help"[^>]*>', html)
+    assert match is not None
+    return match
+
+
+def _helper_classes(span):
+    match = re.search(r'class="([^"]*)"', span.group(0))
+    assert match is not None
+    return match.group(1).split()
+
+
+@pytest.mark.parametrize("block_class", [CheckboxBlock, ToggleBlock])
+class TestCheckboxToggleHelper:
+    def test_helper_defaults_to_below_label(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "design": {},
+                "audience": {},
+            }
+        )
+
+        span = _helper_span(html)
+        classes = _helper_classes(span)
+        assert "label-text-alt" in classes
+        assert "text-sm" in classes
+        assert "block" in classes
+        assert span.start() > html.index("</label>")
+        assert 'aria-describedby="daisie-' in html
+        assert '<p class="label"' not in html
+
+    @pytest.mark.parametrize("position", ["above", "below", "inline"])
+    def test_helper_positions(self, block_class, position):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "helper_position": position,
+                "design": {},
+                "audience": {},
+            }
+        )
+
+        span = _helper_span(html)
+        classes = _helper_classes(span)
+        label_start = html.index("<label")
+        label_end = html.index("</label>")
+
+        if position == "above":
+            assert span.start() < label_start
+            assert "block" in classes
+        elif position == "below":
+            assert span.start() > label_end
+            assert "block" in classes
+        else:
+            assert label_start < span.start() < label_end
+            assert "block" not in classes
+
+    def test_helper_design_classes_and_background_render(self, block_class):
+        block = block_class()
+        value = block.to_python(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "helper_design": {
+                    "typography": {"font_weight": "font-bold"},
+                    "padding": {"all_padding": "p-2"},
+                    "background": [
+                        {
+                            "type": "layer",
+                            "value": {"layer_type": "solid", "color": "#123456"},
+                        }
+                    ],
+                },
+                "design": {},
+                "audience": {},
+            }
+        )
+        html = block.render(value)
+
+        span = _helper_span(html).group(0)
+        assert "font-bold" in span
+        assert "p-2" in span
+        assert 'style="background: #123456"' in span
+
+    def test_helper_markup_is_absent_without_helper_text(self, block_class):
+        html = block_class().render({"label": "Notify", "design": {}, "audience": {}})
+
+        assert "-help" not in html
+        assert "aria-describedby" not in html

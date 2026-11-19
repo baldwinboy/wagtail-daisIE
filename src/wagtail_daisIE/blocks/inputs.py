@@ -23,9 +23,11 @@ from ..base_blocks import (
     LayoutBlock,
     ThemedBlock,
     TrayDesignBlock,
+    TypographyDesignBlock,
 )
 from ..base_blocks.compact import DaisieStreamBlock
-from ..base_blocks.css import build_class, build_design_css
+from ..base_blocks.css import build_background_style, build_class, build_design_css
+from ..choicelist import ChoiceList
 from ..choices import (
     AUTOCOMPLETE_ARRANGEMENT_CHOICES,
     DAISYUI_BG_COLOR_CHOICES,
@@ -110,6 +112,33 @@ def _model_autocomplete_options(key, request, page, value_field, label_field):
         )
         options.append({"value": value, "label": label})
     return options
+
+
+HELPER_POSITION_CHOICES = ChoiceList(
+    [
+        ("below", _("Below label")),
+        ("above", _("Above label")),
+        ("inline", _("Inline with label")),
+    ],
+    "HELPER_POSITION_CHOICES",
+)
+
+
+class HelperTextMixin:
+    """Resolve helper placement and design for a checkbox-like field."""
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        value = value or {}
+        design = value.get("helper_design") or {}
+        position = value.get("helper_position") or "below"
+        context["helper_position"] = position
+        context["helper_above"] = position == "above"
+        context["helper_below"] = position == "below"
+        context["helper_inline"] = position == "inline"
+        context["helper_css"] = build_design_css(design)
+        context["helper_style"] = build_background_style(design)
+        return context
 
 
 class InputBlock(ThemedBlock):
@@ -251,7 +280,7 @@ class SelectBlock(ThemedBlock):
         )
 
 
-class CheckboxBlock(ThemedBlock):
+class CheckboxBlock(HelperTextMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -264,6 +293,16 @@ class CheckboxBlock(ThemedBlock):
     )
     size = blocks.ChoiceBlock(choices=CHOICE_SIZE_CHOICES, required=False)
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    helper_position = blocks.ChoiceBlock(
+        choices=HELPER_POSITION_CHOICES,
+        default="below",
+        required=False,
+        label=_("Helper position"),
+    )
+    helper_design = TypographyDesignBlock(
+        required=False,
+        label=_("Helper design"),
+    )
 
     class Meta:
         icon = "tick-inverse"
@@ -271,12 +310,20 @@ class CheckboxBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/checkbox.html"
         form_layout = blocks.BlockGroup(
-            children=["label", "name", "checked", "helper_text", "color", "size"],
-            settings=["design", "audience"],
+            children=[
+                "label",
+                "name",
+                "checked",
+                "helper_text",
+                "helper_position",
+                "color",
+                "size",
+            ],
+            settings=["helper_design", "design", "audience"],
         )
 
 
-class ToggleBlock(ThemedBlock):
+class ToggleBlock(HelperTextMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -304,6 +351,16 @@ class ToggleBlock(ThemedBlock):
     )
     size = blocks.ChoiceBlock(choices=TOGGLE_SIZE_CHOICES, required=False)
     helper_text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    helper_position = blocks.ChoiceBlock(
+        choices=HELPER_POSITION_CHOICES,
+        default="below",
+        required=False,
+        label=_("Helper position"),
+    )
+    helper_design = TypographyDesignBlock(
+        required=False,
+        label=_("Helper design"),
+    )
 
     class Meta:
         icon = "cog"
@@ -311,8 +368,22 @@ class ToggleBlock(ThemedBlock):
         collapsed = True
         template = "wagtail_daisIE/blocks/inputs/toggle.html"
         form_layout = blocks.BlockGroup(
-            children=["label", "name", "helper_text", "color", "size"],
-            settings=["logic_label", "logic_key", "checked", "design", "audience"],
+            children=[
+                "label",
+                "name",
+                "helper_text",
+                "helper_position",
+                "color",
+                "size",
+            ],
+            settings=[
+                "logic_label",
+                "logic_key",
+                "checked",
+                "helper_design",
+                "design",
+                "audience",
+            ],
         )
 
 

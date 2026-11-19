@@ -529,11 +529,11 @@ default, with control over placement and design.
 - Apply the same layout to preset action fields.
 
 **Acceptance criteria:**
-- [ ] Default helper text appears below the checkbox/toggle label.
-- [ ] `above` and `inline` positions work.
-- [ ] Helper design classes render.
-- [ ] Multiple checkbox fields stack without overlap in an action form.
-- [ ] Tests assert markup/classes for each position.
+- [x] Default helper text appears below the checkbox/toggle label.
+- [x] `above` and `inline` positions work.
+- [x] Helper design classes render.
+- [x] Multiple checkbox fields stack without overlap in an action form.
+- [x] Tests assert markup/classes for each position.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/inputs.py`
@@ -547,7 +547,8 @@ default, with control over placement and design.
 
 **Blocking stories:** none (preset rendering consumes it in AF-2).
 
-**Current status:** Not started — **Ready**.
+**Current status:** Implemented — awaiting verification via `just lint`,
+`just test` and `makemigrations --check`.
 
 ---
 

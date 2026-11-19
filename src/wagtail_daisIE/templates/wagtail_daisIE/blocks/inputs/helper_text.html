@@ -1,0 +1,8 @@
+{% load notifications %}
+{% if value.helper_text %}
+  <span
+    id="daisie-{{ id }}-help"
+    class="label-text-alt text-sm{% if helper_block %} block{% endif %}{% if helper_css %} {{ helper_css }}{% endif %}"
+    {% if helper_style %}style="{{ helper_style }}"{% endif %}
+  >{% daisie_markup value.helper_text %}</span>
+{% endif %}
