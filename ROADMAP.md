@@ -249,9 +249,9 @@ calendar events follow the new inheritance rule.
 - Update tests/docs that previously asserted the old cascade.
 
 **Acceptance criteria:**
-- [ ] The tests above exist and pass.
-- [ ] Docs no longer claim block design cascades to descendants.
-- [ ] Any intentional exception is documented with a test.
+- [x] The tests above exist and pass.
+- [x] Docs no longer claim block design cascades to descendants.
+- [x] Any intentional exception is documented with a test.
 
 **Expected file changes:**
 - `tests/core/test_page_design.py`
@@ -262,7 +262,8 @@ calendar events follow the new inheritance rule.
 
 **Blocking stories:** DI-1.
 
-**Current status:** Not started — **Blocked by DI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

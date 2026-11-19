@@ -224,7 +224,7 @@ class TestAccordion:
 
 
 class TestReusableBlock:
-    def test_renders_referenced_content_with_inherited_design(self):
+    def test_reusable_content_gets_page_channel_but_not_wrapper_design(self):
         from wagtail_daisIE.blocks.reusable import ReusableBlockBlock
         from wagtail_daisIE.models import ReusableBlock
 
@@ -242,21 +242,64 @@ class TestReusableBlock:
         reusable.save()
 
         block = ReusableBlockBlock()
-        value = block.to_python({"reusable": reusable.pk, "design": {}, "audience": {}})
+        value = block.to_python(
+            {
+                "reusable": reusable.pk,
+                "design": {"padding": {"all_padding": "p-8"}},
+                "audience": {},
+            }
+        )
         html = block.render(
             value,
             context={"container_css": "p-4", "menu_default_css": "font-body"},
         )
         assert "Hello" in html
-        assert "p-4" in html  # the wrapper inherits the container channel
         assert "text-primary" in html  # the saved block's own design
 
         wrapper = re.search(r'<div class="([^"]*)"', html)
         nested = re.search(r'<span class="([^"]*)"', html)
         assert wrapper is not None and nested is not None
-        # Menu item defaults style the top-level reusable wrapper only.
+        # The wrapper keeps the page channel and its own design.
+        assert {"p-4", "p-8"} <= set(wrapper.group(1).split())
+        # Neither the wrapper design nor menu defaults reach its content.
+        assert "p-8" not in nested.group(1).split()
         assert "font-body" in wrapper.group(1).split()
         assert "font-body" not in nested.group(1).split()
+
+    def test_reusable_container_content_uses_page_channel_only(self):
+        from wagtail_daisIE.blocks.reusable import ReusableBlockBlock
+        from wagtail_daisIE.models import ReusableBlock
+
+        reusable = ReusableBlock.objects.create(name="promo-section")
+        reusable.content = [
+            {
+                "type": "accordion",
+                "value": {
+                    "items": [],
+                    "design": {},
+                    "alignment": {},
+                    "audience": {},
+                },
+            }
+        ]
+        reusable.save()
+
+        block = ReusableBlockBlock()
+        value = block.to_python(
+            {
+                "reusable": reusable.pk,
+                "design": {"padding": {"all_padding": "p-8"}},
+                "audience": {},
+            }
+        )
+        html = block.render(value, context={"container_css": "p-4"})
+
+        divs = re.findall(r'<div class="([^"]*)"', html)
+        assert len(divs) == 2
+        wrapper, accordion = divs
+        assert {"p-4", "p-8"} <= set(wrapper.split())
+        assert "p-4" in accordion.split()
+        assert "p-8" not in accordion.split()
 
     def test_missing_snippet_renders_nothing(self):
         from wagtail_daisIE.blocks.reusable import ReusableBlockBlock

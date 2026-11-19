@@ -102,6 +102,51 @@ class TestCalendarBlock:
         assert "ada" in "".join(context["days"][0]["events"])
         assert "bob" in "".join(context["days"][1]["events"])
 
+    def test_event_content_does_not_inherit_calendar_design(self):
+        now = timezone.now()
+        USER_MODEL.objects.create(username="ada", date_joined=now)
+        block = CalendarBlock()
+        context = block.get_context(
+            block.to_python(
+                {
+                    "context_model": "user",
+                    "date_field": "date_joined",
+                    "event": [
+                        {
+                            "type": "text",
+                            "value": {
+                                "text": "Event",
+                                "design": {"typography": {"text_color": "text-accent"}},
+                                "audience": {},
+                            },
+                        }
+                    ],
+                    "limit": 50,
+                    "empty_message": "",
+                    "design": {
+                        "padding": {"all_padding": "p-8"},
+                        "background": [
+                            {
+                                "type": "layer",
+                                "value": {
+                                    "layer_type": "solid",
+                                    "color": "#ff0000",
+                                },
+                            }
+                        ],
+                    },
+                    "audience": {},
+                }
+            )
+        )
+        assert "p-8" in context["block_css"].split()
+        assert context["block_style"] == "background: #ff0000"
+
+        event_html = "".join(context["days"][0]["events"])
+        assert "text-accent" in event_html
+        assert "p-8" not in event_html
+        assert "background: #ff0000" not in event_html
+
 
 def _query_username(queryset, params, key):
     value = (params.get(f"filter_{key}") or "").strip()

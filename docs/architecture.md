@@ -243,7 +243,9 @@ modal, etc.).
 Only the page category channel survives into child contexts. A block's own
 design and menu item defaults style the current element and are not written
 back, so nested blocks do not duplicate the parent's padding, background or
-border.
+border. Tab panels, reusable wrappers and calendar event cards follow the same
+boundary: their own design is scoped to the rendered element and is not passed
+to the content they contain.
 
 Menu defaults use this: `DaisyUIMenu.get_item_css()` returns the classes for
 `item_design`, and `menu_block.html` wraps the layout in

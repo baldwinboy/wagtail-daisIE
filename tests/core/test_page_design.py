@@ -8,6 +8,8 @@ from wagtail_daisIE.base_blocks.design import (
     ThemedTableBlock,
     ThemedTypographyBlock,
 )
+from wagtail_daisIE.blocks.cards import CardBlock
+from wagtail_daisIE.blocks.layout_components import TabsBlock
 
 
 def _get_context(block, design, parent):
@@ -145,6 +147,33 @@ class TestCategoryIsolation:
         )
         assert "text-primary" in ctx["cell_css"].split()
         assert "text-primary" in ctx["header_cell_css"].split()
+
+
+class TestTabsInheritance:
+    def test_tab_designs_stay_on_their_elements(self):
+        context = TabsBlock().get_context(
+            {
+                "tabs": [{"label": "One", "content": [], "audience": {}}],
+                "style": "tabs-box",
+                "size": "",
+                "placement": "",
+                "design": {"padding": {"all_padding": "p-8"}},
+                "panel_design": {"padding": {"all_padding": "p-6"}},
+                "audience": {},
+            },
+            {"container_css": "p-4"},
+        )
+        assert "p-8" in context["block_css"].split()
+        assert "p-6" in context["tab_panel_css"].split()
+
+        child = CardBlock().get_context(
+            {"content": [], "design": {}, "audience": {}, "alignment": {}},
+            context,
+        )
+        classes = child["block_css"].split()
+        assert "p-4" in classes
+        assert "p-8" not in classes
+        assert "p-6" not in classes
 
 
 def test_build_background_style_from_design_value():

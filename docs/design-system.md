@@ -105,6 +105,9 @@ context["menu_default_style"] = ""
   any category inherits. `ThemedBlock` clears both channels before rendering
   descendants, so `DaisyUIMenu.item_design` does not cascade into nested
   content.
+- Tabs, reusable blocks and calendar event cards follow the same boundary:
+  `panel_design`, the reusable wrapper design and the calendar wrapper design
+  style their own elements and are not visible to the content they render.
 
 `StyledPageMixin.get_context` seeds the four channels from
 `PageDesignBlock` (see [architecture.md](architecture.md#page-rendering)), so
