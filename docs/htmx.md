@@ -95,6 +95,12 @@ for the non-inline behaviours; in **Update in place** the redirect is ignored so
 Without htmx the form is a normal `POST`: the view adds the confirmation to
 Django messages and redirects back, and `{% daisie_messages %}` renders it.
 
+The inline and plain paths use the same configured confirmation values. With no
+confirmation, **Update in place** returns an empty status area and the plain
+path adds no message. With a confirmation but no alert colour/style/direction,
+the inline fragment uses the same `alert-<level>` fallback as
+`{% daisie_messages %}`.
+
 The button-only **Action** block is not htmx-enhanced; it posts normally and
 relies on `{% daisie_messages %}`.
 

@@ -40,6 +40,9 @@ _MESSAGE_LEVELS = {
     "info": messages.INFO,
 }
 
+#: Django messages level constant -> alert class suffix.
+_MESSAGE_LEVEL_TAGS = {level: name for name, level in _MESSAGE_LEVELS.items()}
+
 
 def _safe_icon_html(icon):
     """Render a validated icon value to safe HTML, or an empty string."""
@@ -198,13 +201,14 @@ def action(request, action_key):
         if behaviour == "inline":
             # Update the status area in place; ignore any handler redirect so
             # "save on change" does not navigate away.
-            text, icon, tags, _level = _confirmation_values(request)
+            text, icon, tags, level = _confirmation_values(request)
             fragment = render_to_string(
                 "wagtail_daisIE/blocks/data/action_form_status.html",
                 {
                     "message_text": text,
                     "message_icon": icon,
                     "message_tags": " ".join(tags),
+                    "message_level": _MESSAGE_LEVEL_TAGS.get(level, "info"),
                 },
                 request=request,
             )

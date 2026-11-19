@@ -2,6 +2,10 @@ import re
 
 import pytest
 
+from django.contrib.messages import get_messages
+from django.shortcuts import redirect
+from django.urls import reverse
+
 from wagtail_daisIE.blocks.cards import CardBlock
 from wagtail_daisIE.dynamic.action_blocks import (
     ActionBlock,
@@ -501,3 +505,104 @@ def test_new_confirmation_streams_render():
     assert "Proceed?" in html
     assert "Confirm this." in html
     assert 'name="daisie_message" value="Done"' in html
+
+
+def _action_endpoint():
+    return reverse("wagtail_daisIE_dynamic:action", args=["demo"])
+
+
+def test_action_endpoint_configured_confirmation_matches_plain_and_inline(
+    settings, client
+):
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {"label": "Demo", "handler": lambda request, data: None}
+    }
+    url = _action_endpoint()
+    data = {
+        "daisie_message": "Saved now",
+        "daisie_message_icon": "wagtail:home",
+        "daisie_message_tags": "alert-success alert-soft alert-vertical invalid-class",
+        "daisie_message_level": "success",
+    }
+
+    response = client.post(url, data, HTTP_REFERER="/back/")
+    assert response.status_code == 302
+    message = list(get_messages(response.wsgi_request))[0]
+    assert "Saved now" in str(message)
+    assert "<svg" in str(message)
+    assert message.extra_tags == "alert-success alert-soft alert-vertical"
+    assert message.level_tag == "success"
+
+    inline = client.post(
+        url,
+        {**data, "daisie_behaviour": "inline"},
+        HTTP_HX_REQUEST="true",
+    )
+    content = inline.content.decode()
+    assert "alert alert-success alert-soft alert-vertical" in content
+    assert "invalid-class" not in content
+    assert "Saved now" in content
+    assert "<svg" in content
+
+    fallback = client.post(
+        url,
+        {"daisie_message": "Saved", "daisie_message_level": "error"},
+        HTTP_HX_REQUEST="true",
+    )
+    assert "alert alert-error" in fallback.content.decode()
+
+
+def test_action_endpoint_without_confirmation_has_no_message_or_fragment(
+    settings, client
+):
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {"label": "Demo", "handler": lambda request, data: None}
+    }
+    url = _action_endpoint()
+
+    response = client.post(url, HTTP_REFERER="/back/")
+    assert response.status_code == 302
+    assert list(get_messages(response.wsgi_request)) == []
+
+    inline = client.post(url, {"daisie_behaviour": "inline"}, HTTP_HX_REQUEST="true")
+    assert inline.content.decode().strip() == ""
+
+
+def test_action_endpoint_escapes_confirmation_text(settings, client):
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {"label": "Demo", "handler": lambda request, data: None}
+    }
+    inline = client.post(
+        _action_endpoint(),
+        {"daisie_message": "<b>Saved</b>", "daisie_behaviour": "inline"},
+        HTTP_HX_REQUEST="true",
+    )
+    content = inline.content.decode()
+    assert "<b>Saved</b>" not in content
+    assert "&lt;b&gt;Saved&lt;/b&gt;" in content
+
+
+def test_action_form_htmx_behaviours(settings, client):
+    def handler(request, data):
+        if data.get("daisie_behaviour") == "navigate":
+            return redirect("/next/")
+        return None
+
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": handler}}
+    url = _action_endpoint()
+
+    inline = client.post(
+        url,
+        {"daisie_message": "Saved", "daisie_behaviour": "inline"},
+        HTTP_HX_REQUEST="true",
+    )
+    assert inline.status_code == 200
+    assert "Saved" in inline.content.decode()
+
+    refresh = client.post(url, {"daisie_behaviour": "reload"}, HTTP_HX_REQUEST="true")
+    assert refresh["HX-Refresh"] == "true"
+
+    navigate = client.post(
+        url, {"daisie_behaviour": "navigate"}, HTTP_HX_REQUEST="true"
+    )
+    assert navigate["HX-Redirect"] == "/next/"

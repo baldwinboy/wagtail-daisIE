@@ -357,17 +357,14 @@ text, icon and styles I configured, and no alert when I configured none.
 - Verify plain POST + messages and htmx inline paths use the same values.
 
 **Acceptance criteria:**
-- [ ] Configured text/icon/colour/style/direction reach messages and the inline fragment.
-- [ ] No configured confirmation produces no alert.
-- [ ] Alert classes are allowlisted and escaped.
-- [ ] Action form inline/reload/navigate behaviours still work.
-- [ ] Tests cover configured and unconfigured paths.
+- [x] Configured text/icon/colour/style/direction reach messages and the inline fragment.
+- [x] No configured confirmation produces no alert.
+- [x] Alert classes are allowlisted and escaped.
+- [x] Action form inline/reload/navigate behaviours still work.
+- [x] Tests cover configured and unconfigured paths.
 
 **Expected file changes:**
-- `src/wagtail_daisIE/dynamic/action_blocks.py`
 - `src/wagtail_daisIE/dynamic/views.py`
-- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_button.html`
-- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_form.html`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_form_status.html`
 - `tests/dynamic/test_action_blocks.py`
 - `docs/htmx.md`
@@ -375,7 +372,8 @@ text, icon and styles I configured, and no alert when I configured none.
 
 **Blocking stories:** AB-1.
 
-**Current status:** Not started — **Blocked by AB-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

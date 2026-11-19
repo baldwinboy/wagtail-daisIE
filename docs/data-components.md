@@ -129,8 +129,10 @@ It is a struct of:
 The form posts to the same action endpoint as the button action. On htmx
 requests the endpoint returns a small alert fragment (the **After submit**
 behaviour above); without JavaScript it is a normal `POST` that redirects back
-with the confirmation in `{% daisie_messages %}`. The confirmation fields are
-treated as untrusted (escaped text, validated icon, allowlisted alert classes).
+with the confirmation in `{% daisie_messages %}`. Both paths use the same
+configured values; an unconfigured confirmation produces no message or fragment.
+The confirmation fields are treated as untrusted (escaped text, validated icon,
+allowlisted alert classes).
 
 Unlike `DaisieFormPage`, an **Action form** is not bound to a model and does not
 create an instance automatically — the handler decides what to do with the
