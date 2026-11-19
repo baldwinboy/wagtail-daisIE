@@ -101,6 +101,12 @@ path adds no message. With a confirmation but no alert colour/style/direction,
 the inline fragment uses the same `alert-<level>` fallback as
 `{% daisie_messages %}`.
 
+Each form targets its own `.daisie-action-form-status` area, so multiple forms
+on one page — including forms in separate tabs — do not share status output.
+Forms containing a **File input** automatically use `multipart/form-data` for
+both normal and htmx submissions (`enctype` and `hx-encoding`), so uploads reach
+the handler in `request.FILES`.
+
 The button-only **Action** block is not htmx-enhanced; it posts normally and
 relies on `{% daisie_messages %}`.
 

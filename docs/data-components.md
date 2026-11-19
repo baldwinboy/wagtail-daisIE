@@ -207,8 +207,10 @@ allowlisted alert classes).
 
 Unlike `DaisieFormPage`, an **Action form** is not bound to a model and does not
 create an instance automatically — the handler decides what to do with the
-posted data (`request.POST` / `request.FILES`). It can be placed inside a
-**Tab** block so several independent forms share one page.
+posted data (`request.POST` / `request.FILES`). A form containing a **File
+input** automatically uses `multipart/form-data`, so uploads arrive in
+`request.FILES`. It can be placed inside a **Tab** block so several independent
+forms share one page; each form keeps its own status area.
 
 ## Feeds
 

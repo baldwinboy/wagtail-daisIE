@@ -563,10 +563,10 @@ with and without htmx, including file uploads and preset fields.
 - Test multiple action forms on one page/in tabs.
 
 **Acceptance criteria:**
-- [ ] Each behaviour is covered for htmx and non-htmx requests.
-- [ ] File uploads reach the handler.
-- [ ] Multiple forms do not cross-post or share status areas.
-- [ ] Tests use the configured confirmation values.
+- [x] Each behaviour is covered for htmx and non-htmx requests.
+- [x] File uploads reach the handler.
+- [x] Multiple forms do not cross-post or share status areas.
+- [x] Tests use the configured confirmation values.
 
 **Expected file changes:**
 - `tests/dynamic/test_action_blocks.py`
@@ -576,7 +576,8 @@ with and without htmx, including file uploads and preset fields.
 
 **Blocking stories:** AF-2, AB-3.
 
-**Current status:** Not started — **Blocked by AF-2, AB-3**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

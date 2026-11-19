@@ -4,10 +4,12 @@ import pytest
 
 from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.shortcuts import redirect
 from django.urls import reverse
 
 from wagtail_daisIE.blocks.cards import CardBlock
+from wagtail_daisIE.blocks.layout_components import TabsBlock
 from wagtail_daisIE.dynamic.action_blocks import (
     ActionBlock,
     ActionButtonBlock,
@@ -918,6 +920,14 @@ def _action_endpoint():
     return reverse("wagtail_daisIE_dynamic:action", args=["demo"])
 
 
+CONFIRMATION_POST = {
+    "daisie_message": "Saved now",
+    "daisie_message_icon": "wagtail:home",
+    "daisie_message_tags": "alert-success alert-soft alert-vertical",
+    "daisie_message_level": "success",
+}
+
+
 def test_action_endpoint_configured_confirmation_matches_plain_and_inline(
     settings, client
 ):
@@ -989,27 +999,176 @@ def test_action_endpoint_escapes_confirmation_text(settings, client):
     assert "&lt;b&gt;Saved&lt;/b&gt;" in content
 
 
-def test_action_form_htmx_behaviours(settings, client):
+FILE_AUTOCOMPLETE_FIELDS = [
+    {"type": "file", "name": "attachment", "label": "Attachment"},
+    {
+        "type": "autocomplete",
+        "name": "tags",
+        "label": "Tags",
+        "options": ["One", "Two"],
+    },
+]
+
+
+@pytest.mark.parametrize("behaviour", ["inline", "reload", "navigate"])
+def test_action_form_htmx_behaviours(settings, client, behaviour):
     def handler(request, data):
         if data.get("daisie_behaviour") == "navigate":
             return redirect("/next/")
         return None
 
     settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": handler}}
-    url = _action_endpoint()
-
-    inline = client.post(
-        url,
-        {"daisie_message": "Saved", "daisie_behaviour": "inline"},
+    response = client.post(
+        _action_endpoint(),
+        {**CONFIRMATION_POST, "daisie_behaviour": behaviour},
         HTTP_HX_REQUEST="true",
     )
-    assert inline.status_code == 200
-    assert "Saved" in inline.content.decode()
 
-    refresh = client.post(url, {"daisie_behaviour": "reload"}, HTTP_HX_REQUEST="true")
-    assert refresh["HX-Refresh"] == "true"
+    if behaviour == "inline":
+        assert response.status_code == 200
+        assert "Saved now" in response.content.decode()
+    elif behaviour == "reload":
+        assert response["HX-Refresh"] == "true"
+    else:
+        assert response["HX-Redirect"] == "/next/"
 
-    navigate = client.post(
-        url, {"daisie_behaviour": "navigate"}, HTTP_HX_REQUEST="true"
+
+@pytest.mark.parametrize("behaviour", ["inline", "reload", "navigate"])
+def test_action_form_plain_post_behaviours(settings, client, behaviour):
+    def handler(request, data):
+        if data.get("daisie_behaviour") == "navigate":
+            return redirect("/next/")
+        return None
+
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": handler}}
+    response = client.post(
+        _action_endpoint(),
+        {**CONFIRMATION_POST, "daisie_behaviour": behaviour},
+        HTTP_REFERER="/back/",
     )
-    assert navigate["HX-Redirect"] == "/next/"
+
+    assert response.status_code == 302
+    expected = "/next/" if behaviour == "navigate" else "/back/"
+    assert response["Location"] == expected
+
+    message = list(get_messages(response.wsgi_request))[0]
+    assert "Saved now" in str(message)
+    assert message.level_tag == "success"
+
+
+def test_action_form_file_and_autocomplete_presets(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {
+            "label": "Demo",
+            "handler": "handler",
+            "fields": FILE_AUTOCOMPLETE_FIELDS,
+        }
+    }
+    block = ActionFormBlock()
+    html = block.render(block.to_python(_form_value()))
+
+    form_tag = re.search(r"<form\b[^>]*>", html, re.S)
+    assert form_tag is not None
+    form = form_tag.group(0)
+    assert 'enctype="multipart/form-data"' in form
+    assert 'hx-encoding="multipart/form-data"' in form
+    assert 'hx-target="find .daisie-action-form-status"' in form
+    assert 'name="attachment"' in html
+    assert re.search(r'<select[^>]*name="tags"[^>]*multiple', html, re.S)
+    assert html.count('class="daisie-action-form-status"') == 1
+
+
+def test_action_form_without_file_fields_has_no_multipart_encoding(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+    block = ActionFormBlock()
+    html = block.render(
+        block.to_python(_form_value([{"type": "input", "value": _input_value("name")}]))
+    )
+
+    form_tag = re.search(r"<form\b[^>]*>", html, re.S)
+    assert form_tag is not None
+    assert "multipart/form-data" not in form_tag.group(0)
+
+
+@pytest.mark.parametrize("htmx", [False, True])
+def test_action_form_file_upload_reaches_handler(settings, client, htmx):
+    captured = {}
+
+    def handler(request, data):
+        upload = request.FILES.get("attachment")
+        captured["name"] = upload.name
+        captured["content"] = upload.read()
+        captured["tags"] = data.getlist("tags")
+        return None
+
+    settings.WAGTAIL_DAISIE_ACTIONS = {
+        "demo": {
+            "label": "Demo",
+            "handler": handler,
+            "fields": FILE_AUTOCOMPLETE_FIELDS,
+        }
+    }
+    upload = SimpleUploadedFile("note.txt", b"hello", content_type="text/plain")
+    data = {"attachment": upload, "tags": ["One", "Two"]}
+
+    if htmx:
+        response = client.post(
+            _action_endpoint(),
+            {**data, "daisie_behaviour": "inline"},
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+    else:
+        response = client.post(_action_endpoint(), data, HTTP_REFERER="/back/")
+        assert response.status_code == 302
+
+    assert captured == {
+        "name": "note.txt",
+        "content": b"hello",
+        "tags": ["One", "Two"],
+    }
+
+
+def test_multiple_action_forms_in_tabs_keep_their_own_status(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+
+    def form(field_name, label, block_id):
+        return {
+            "type": "action_form",
+            "id": block_id,
+            "value": _form_value(
+                [{"type": "input", "value": _input_value(field_name, label)}]
+            ),
+        }
+
+    tabs = TabsBlock().to_python(
+        {
+            "tabs": [
+                {
+                    "label": "First",
+                    "content": [form("first_name", "First name", "form-first")],
+                    "audience": {},
+                },
+                {
+                    "label": "Second",
+                    "content": [form("second_name", "Second name", "form-second")],
+                    "audience": {},
+                },
+            ],
+            "style": "tabs-box",
+        }
+    )
+    html = TabsBlock().render(tabs)
+    forms = re.findall(r"<form\b.*?</form>", html, re.S)
+
+    assert len(forms) == 2
+    first = next(form_html for form_html in forms if 'name="first_name"' in form_html)
+    second = next(form_html for form_html in forms if 'name="second_name"' in form_html)
+
+    for form_html in (first, second):
+        assert 'hx-target="find .daisie-action-form-status"' in form_html
+        assert form_html.count('class="daisie-action-form-status"') == 1
+
+    assert 'name="second_name"' not in first
+    assert 'name="first_name"' not in second
+    assert "daisie-action-form-status-" not in html

@@ -3,10 +3,11 @@
   <form
     method="post"
     action="{{ action_url }}"
+    {% if form_enctype %}enctype="{{ form_enctype }}" hx-encoding="{{ form_enctype }}"{% endif %}
     class="{{ form_css }}"
     {% if form_style %}style="{{ form_style }}"{% endif %}
     hx-post="{{ action_url }}"
-    hx-target="#daisie-action-form-status-{{ block.id }}"
+    hx-target="find .daisie-action-form-status"
     hx-swap="innerHTML"
   >
     {% csrf_token %}
@@ -28,6 +29,6 @@
       </div>
     {% endif %}
     {% include_block value.button %}
-    <div id="daisie-action-form-status-{{ block.id }}" role="status" aria-live="polite"></div>
+    <div class="daisie-action-form-status" role="status" aria-live="polite"></div>
   </form>
 {% endif %}

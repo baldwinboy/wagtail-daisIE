@@ -683,8 +683,12 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         )
 
         action_key = value.get("action", "")
-        context["form_fields"] = self._resolve_form_fields(
-            value, action_key, parent_context
+        form_fields = self._resolve_form_fields(value, action_key, parent_context)
+        context["form_fields"] = form_fields
+        context["form_enctype"] = (
+            "multipart/form-data"
+            if any(field.block_type == "file" for field in form_fields)
+            else ""
         )
         try:
             context["action_url"] = reverse(
