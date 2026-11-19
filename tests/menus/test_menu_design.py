@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from django.contrib.auth import get_user_model
@@ -100,6 +102,69 @@ def _menu_with_designs(name, layout, theme, text="Text item", *, branding=True):
     ]
     menu.save()
     return menu
+
+
+LINK_LIST_DESIGN = {
+    "padding": {"all_padding": "p-3"},
+    "background": [
+        {
+            "type": "layer",
+            "value": {"layer_type": "solid", "color": "#abcdef"},
+        }
+    ],
+}
+
+
+def _link_list_value():
+    return {
+        "heading": {
+            "text": "More",
+            "design": {"typography": {"text_color": "text-accent"}},
+            "audience": {},
+        },
+        "content": [
+            {
+                "text": "Nested",
+                "destination": [{"type": "link_url", "value": "/nested"}],
+                "design": {"typography": {"text_color": "text-accent"}},
+                "audience": {},
+            }
+        ],
+        "design": LINK_LIST_DESIGN,
+        "audience": {},
+    }
+
+
+def _link_menu(name, layout, *, include_plain=False, item_style=False):
+    menu = DaisyUIMenu.objects.create(name=name, layout=layout)
+    item_design = {"typography": {"text_color": "text-secondary"}}
+    if item_style:
+        item_design["background"] = [
+            {"type": "layer", "value": {"layer_type": "solid", "color": "#ff0000"}}
+        ]
+    menu.item_design = [("item", item_design)]
+    body = []
+    if include_plain:
+        body.append(
+            {
+                "type": "link",
+                "value": {
+                    "text": "Plain",
+                    "destination": [{"type": "link_url", "value": "/plain"}],
+                    "open_in_new_tab": False,
+                },
+            }
+        )
+    body.append({"type": "link_list", "value": _link_list_value()})
+    menu.body = body
+    menu.save()
+    return menu
+
+
+def _classes(tag):
+    match = re.search(r'class="([^"]*)"', tag)
+    assert match is not None
+    return set(match.group(1).split())
 
 
 class TestMenuItemDesign:
@@ -206,6 +271,69 @@ class TestMenuPageDesignIsolation:
         assert live == preview
         for css in PAGE_DESIGN_CONTEXT.values():
             assert css not in live
+
+
+class TestMegamenuLinkList:
+    def test_plain_link_and_trigger_share_item_contract(self):
+        menu = _link_menu(
+            "Megamenu contract", "megamenu", include_plain=True, item_style=True
+        )
+        html = _render(menu.name)
+
+        plain_tag = re.search(r'<a href="/plain"[^>]*>', html)
+        assert plain_tag is not None
+        plain_classes = _classes(plain_tag.group(0))
+        assert {"link", "link-hover", "text-secondary"} <= plain_classes
+        assert 'style="background: #ff0000"' in plain_tag.group(0)
+
+        trigger_tag = re.search(r'<button type="button"[^>]*>', html)
+        assert trigger_tag is not None
+        trigger_classes = _classes(trigger_tag.group(0))
+        assert {
+            "megamenu-trigger",
+            "link",
+            "link-hover",
+            "text-secondary",
+            "text-accent",
+        } <= trigger_classes
+        assert f'popovertarget="daisie-mm-{menu.pk}-2"' in trigger_tag.group(0)
+        assert 'style="background: #ff0000"' in trigger_tag.group(0)
+
+    def test_megamenu_link_list_renders_panel_design_and_isolates_nested_links(self):
+        menu = _link_menu("Megamenu panel", "megamenu", item_style=True)
+        html = _render(menu.name)
+
+        panel_tag = re.search(r'<div id="daisie-mm-[^"]+"[^>]*>', html)
+        assert panel_tag is not None
+        panel_classes = _classes(panel_tag.group(0))
+        assert "p-3" in panel_classes
+        assert "text-secondary" not in panel_classes
+        assert "background: #abcdef" in panel_tag.group(0)
+        assert "background: #ff0000" not in panel_tag.group(0)
+
+        nested_tag = re.search(r'<a href="/nested"[^>]*>', html)
+        assert nested_tag is not None
+        nested_classes = _classes(nested_tag.group(0))
+        assert {"link", "link-hover", "text-accent"} <= nested_classes
+        assert "text-secondary" not in nested_classes
+        assert "background: #ff0000" not in nested_tag.group(0)
+
+    def test_link_list_design_renders_in_normal_menu_layout(self):
+        menu = _link_menu("Horizontal list", "horizontal")
+        html = _render(menu.name)
+
+        wrapper_tag = re.search(r'<div class="[^"]*\bp-3\b[^"]*"[^>]*>', html)
+        assert wrapper_tag is not None
+        wrapper_classes = _classes(wrapper_tag.group(0))
+        assert "p-3" in wrapper_classes
+        assert "text-secondary" in wrapper_classes
+        assert "background: #abcdef" in wrapper_tag.group(0)
+
+        nested_tag = re.search(r'<a href="/nested"[^>]*>', html)
+        assert nested_tag is not None
+        nested_classes = _classes(nested_tag.group(0))
+        assert "text-secondary" not in nested_classes
+        assert "text-accent" in nested_classes
 
 
 class TestMenuBranding:

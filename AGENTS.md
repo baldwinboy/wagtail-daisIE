@@ -314,6 +314,11 @@ When adding a block, subclass the appropriate `Themed*Block` from
   `menu_default_css`/`menu_default_style` before rendering, so branding keeps
   its own design and ignores item defaults. Every menu layout renders branding
   once before its items; list layouts wrap it in `<li>`.
+- **Megamenu link-list triggers share the top-level link contract**: the
+  trigger is a `<button type="button">` with `popovertarget`, `link link-hover`
+  and the item-design/heading classes. The submenu panel uses
+  `daisie_design_css`/`daisie_design_style` for `LinkListBlock.design`; nested
+  links clear menu item defaults and use their own design.
 - **The `<main>` container is editor-designed**: `MainDesignBlock` on the theme
   (`DaisyUITheme.main_design`) and pages (`StyledPageMixin.main_design`); the page
   value wins over the theme, with no package fallback. Templates use

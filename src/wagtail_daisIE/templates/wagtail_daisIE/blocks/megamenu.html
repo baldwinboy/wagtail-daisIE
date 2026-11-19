@@ -7,17 +7,34 @@
       .megamenu .megamenu-submenu:hover { display: block; }
     }
     .megamenu .megamenu-submenu:target { display: block; }
+    @layer base {
+      .megamenu .megamenu-trigger {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-align: inherit;
+      }
+    }
   </style>
   {% for item in menu_items %}
     {% if item.block_type == "link_list" %}
-      {% daisie_block_css item.value.heading as heading_css %}
-      <button class="megamenu-trigger" popovertarget="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}"><span class="{{ heading_css }}">{% daisie_markup item.value.heading.text %}</span></button>
-      <div id="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}" popover class="megamenu-submenu">
-        <ul class="menu w-full md:menu-horizontal">
-          {% for link in item.value.content %}
-            <li>{% include_block link %}</li>
-          {% endfor %}
-        </ul>
+      {% daisie_block_css item.value.heading as trigger_css %}
+      {% daisie_design_style item.value.heading as trigger_style %}
+      {% daisie_design_css item.value as submenu_css %}
+      {% daisie_design_style item.value as submenu_style %}
+      <button type="button" class="megamenu-trigger link link-hover {{ trigger_css }}"{% if trigger_style %} style="{{ trigger_style }}"{% elif menu_default_style %} style="{{ menu_default_style }}"{% endif %} popovertarget="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}">{% daisie_markup item.value.heading.text %}</button>
+      <div id="daisie-mm-{{ menu.pk }}-{{ forloop.counter }}" popover class="megamenu-submenu {{ submenu_css }}"{% if submenu_style %} style="{{ submenu_style }}"{% endif %}>
+        {% with menu_default_css="" menu_default_style="" %}
+          <ul class="menu w-full md:menu-horizontal">
+            {% for link in item.value.content %}
+              <li>{% include_block link %}</li>
+            {% endfor %}
+          </ul>
+        {% endwith %}
       </div>
     {% elif item.block_type == "header" %}
       {% daisie_block_css item.value as header_css %}

@@ -152,13 +152,13 @@ container design.
   editor spacing/background/border.
 
 **Acceptance criteria:**
-- [ ] A plain top-level link and a `link_list` trigger receive the same item
+- [x] A plain top-level link and a `link_list` trigger receive the same item
       default class contract and `link link-hover`.
-- [ ] A `link_list` trigger is still a button and keeps `popovertarget`.
-- [ ] The submenu panel renders the LinkList design classes/style.
-- [ ] Nested links do not receive `item_design`.
-- [ ] `LinkListBlock.design` still renders on normal list layouts.
-- [ ] Regression tests assert trigger classes, submenu design, and nested-link isolation.
+- [x] A `link_list` trigger is still a button and keeps `popovertarget`.
+- [x] The submenu panel renders the LinkList design classes/style.
+- [x] Nested links do not receive `item_design`.
+- [x] `LinkListBlock.design` still renders on normal list layouts.
+- [x] Regression tests assert trigger classes, submenu design, and nested-link isolation.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/templatetags/wagtail_daisIE_tags.py`
@@ -166,10 +166,12 @@ container design.
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/list.html`
 - `tests/menus/test_menu_design.py`
 - `docs/menus.md`
+- `AGENTS.md`
 
 **Blocking stories:** DI-1, DI-2.
 
-**Current status:** Not started — **Blocked by DI-1, DI-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

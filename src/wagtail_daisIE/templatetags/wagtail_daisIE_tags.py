@@ -449,6 +449,27 @@ def daisie_block_css(context, value):
     )
 
 
+@register.simple_tag
+def daisie_design_css(value):
+    """Return a block value's own design and responsive classes."""
+    from ..base_blocks.css import build_class, build_design_css
+    from ..base_blocks.responsive import build_responsive_css
+
+    value = value or {}
+    return build_class(
+        build_design_css(value.get("design")),
+        build_responsive_css(value.get("responsive")),
+    )
+
+
+@register.simple_tag
+def daisie_design_style(value):
+    """Return a block value's own background style."""
+    from ..base_blocks.css import build_background_style
+
+    return build_background_style((value or {}).get("design"))
+
+
 @register.simple_tag(takes_context=True)
 def daisyui_main_attrs(context, theme=None):
     """Render ``class``/``style`` attributes for the main container."""

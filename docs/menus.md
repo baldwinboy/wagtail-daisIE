@@ -58,6 +58,13 @@ values remain available. Container templates render
 `menu_design_css`/`menu_design_style` and are wrapped in `.daisyui-menu` for
 isolated styling.
 
+Megamenu `link_list` items render their trigger as a `<button type="button">`
+with the same `link link-hover` and item-design classes as a top-level link.
+The trigger opens a submenu panel styled by the LinkList's own design; nested
+links use their own design and ignore item defaults. A scoped base-layer reset
+removes native button chrome without overriding editor spacing, background or
+border utilities.
+
 Layouts: `navbar` (dropdown on mobile + **megamenu** on desktop), standalone
 `megamenu` (`<button popovertarget>` + `<div popover>` pairs, responsive
 vertical on small screens), `footer`, `sidebar`, `horizontal`, `vertical` and
