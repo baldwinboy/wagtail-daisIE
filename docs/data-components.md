@@ -190,6 +190,13 @@ design; presets without an editor override still render. Fields are stacked
 vertically and full width, with preset checkbox fields kept in separate
 wrappers.
 
+When an action declares fields, editor fields are overrides only: each one needs
+a unique **Field name** that matches a configured field and the same block type.
+The configured `name` and `type` are authoritative, and a declared `required`
+value overrides the editor’s setting. Invalid overrides are rejected with an
+admin validation message. With no configured fields, editor fields define the
+form on their own, but each still needs a unique, non-empty name.
+
 The form posts to the same action endpoint as the button action. On htmx
 requests the endpoint returns a small alert fragment (the **After submit**
 behaviour above); without JavaScript it is a normal `POST` that redirects back

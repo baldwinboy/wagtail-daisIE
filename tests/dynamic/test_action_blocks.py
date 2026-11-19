@@ -3,6 +3,7 @@ import re
 import pytest
 
 from django.contrib.messages import get_messages
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django.urls import reverse
 
@@ -463,6 +464,29 @@ def _form_value(fields=None, **overrides):
     return value
 
 
+def _input_value(name, label="Field"):
+    return {
+        "label": label,
+        "name": name,
+        "design": {},
+        "audience": {},
+    }
+
+
+def _clean_error(block, value):
+    with pytest.raises(ValidationError) as exc_info:
+        block.clean(value)
+    return exc_info.value
+
+
+def _field_errors(error):
+    stream_error = error.block_errors["fields"]
+    return {
+        index: child_error.messages
+        for index, child_error in stream_error.block_errors.items()
+    }
+
+
 def test_action_form_field_list_and_wrapper_layouts(settings):
     settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
     block = ActionFormBlock()
@@ -549,6 +573,179 @@ def test_editor_only_fields_are_preserved(settings):
     assert "Editor only" in html
     assert "daisie-demo-1-editor_only" in html
     assert "None" not in re.findall(r'id="daisie-[^"]+"', html)[0]
+
+
+@pytest.mark.parametrize(
+    ("fields", "error_index", "message"),
+    [
+        (
+            [{"type": "input", "value": _input_value("extra", "Extra")}],
+            0,
+            "not a field declared by this action",
+        ),
+        (
+            [
+                {"type": "input", "value": _input_value("display_name", "One")},
+                {"type": "input", "value": _input_value("display_name", "Two")},
+            ],
+            1,
+            "used by more than one field",
+        ),
+        (
+            [{"type": "input", "value": _input_value("", "No name")}],
+            0,
+            "Enter a field name",
+        ),
+        (
+            [
+                {
+                    "type": "select",
+                    "value": {
+                        "label": "Wrong type",
+                        "name": "display_name",
+                        "options": "One\nTwo",
+                        "design": {},
+                        "audience": {},
+                    },
+                }
+            ],
+            0,
+            "is configured as input, but this field is select",
+        ),
+    ],
+)
+def test_action_form_rejects_invalid_editor_fields(
+    settings, fields, error_index, message
+):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(_form_value(fields))
+
+    error = _clean_error(block, value)
+    errors = _field_errors(error)
+
+    assert set(errors) == {error_index}
+    assert message in errors[error_index][0]
+    assert "fields" in error.as_json_data()["blockErrors"]
+
+
+def test_action_form_editor_only_requires_named_unique_fields(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+    block = ActionFormBlock()
+
+    unnamed = block.to_python(
+        _form_value([{"type": "input", "value": _input_value("", "No name")}])
+    )
+    error = _clean_error(block, unnamed)
+    assert "Enter a field name" in _field_errors(error)[0][0]
+
+    duplicate = block.to_python(
+        _form_value(
+            [
+                {"type": "input", "value": _input_value("editor_only")},
+                {"type": "input", "value": _input_value("editor_only")},
+            ]
+        )
+    )
+    error = _clean_error(block, duplicate)
+    assert "used by more than one field" in _field_errors(error)[1][0]
+
+
+def test_action_form_accepts_valid_partial_override_and_contract(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            [
+                {
+                    "type": "input",
+                    "value": {
+                        **_input_value("display_name", "Custom name"),
+                        "required": False,
+                    },
+                }
+            ]
+        )
+    )
+
+    cleaned = block.clean(value)
+    field = cleaned["fields"][0]
+
+    assert field.value["name"] == "display_name"
+    assert field.value["required"] is True
+    assert field.value["label"] == "Custom name"
+
+
+def test_action_form_editor_only_fields_are_valid(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value([{"type": "input", "value": _input_value("editor_only")}])
+    )
+
+    cleaned = block.clean(value)
+    assert cleaned["fields"][0].value["name"] == "editor_only"
+
+
+def test_action_form_config_only_fields_are_valid(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(_form_value())
+
+    cleaned = block.clean(value)
+    assert list(cleaned["fields"]) == []
+
+
+def test_action_form_render_uses_configured_required(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            [
+                {
+                    "type": "input",
+                    "value": {
+                        **_input_value("display_name"),
+                        "required": False,
+                    },
+                }
+            ]
+        )
+    )
+
+    html = block.render(value)
+    tag = re.search(r'<input[^>]*name="display_name"[^>]*>', html)
+
+    assert tag is not None
+    assert "required" in tag.group(0)
+    assert value["fields"][0].value["required"] is False
+
+
+def test_action_form_render_ignores_mismatched_override(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            [
+                {
+                    "type": "select",
+                    "value": {
+                        "label": "Custom select",
+                        "name": "display_name",
+                        "options": "One\nTwo",
+                        "design": {},
+                        "audience": {},
+                    },
+                }
+            ]
+        )
+    )
+
+    html = block.render(value)
+
+    assert "Display name" in html
+    assert "Custom select" not in html
+    assert re.search(r'<select[^>]*name="display_name"', html) is None
 
 
 def test_action_form_with_no_fields_renders_button_only(settings):

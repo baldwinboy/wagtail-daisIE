@@ -497,10 +497,10 @@ submitted field contract cannot drift.
 - Surface clear validation messages in the admin.
 
 **Acceptance criteria:**
-- [ ] Unknown, duplicate, unnamed and type-mismatched fields fail validation.
-- [ ] Valid partial overrides save.
-- [ ] Config-only and editor-only forms save.
-- [ ] Tests cover every validation branch.
+- [x] Unknown, duplicate, unnamed and type-mismatched fields fail validation.
+- [x] Valid partial overrides save.
+- [x] Config-only and editor-only forms save.
+- [x] Tests cover every validation branch.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
@@ -509,7 +509,8 @@ submitted field contract cannot drift.
 
 **Blocking stories:** AF-1, AF-2.
 
-**Current status:** Not started — **Blocked by AF-1, AF-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

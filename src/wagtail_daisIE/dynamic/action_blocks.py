@@ -125,6 +125,8 @@ def _preset_field_value(spec):
     field_type = spec.get("type")
     allowed = ACTION_FIELD_COMMON_KEYS | ACTION_FIELD_TYPES.get(field_type, frozenset())
     value = {key: spec[key] for key in allowed if key != "type" and key in spec}
+    if "name" in value:
+        value["name"] = str(value["name"]).strip()
     if isinstance(value.get("options"), (list, tuple)):
         value["options"] = "\n".join(str(option) for option in value["options"])
     if isinstance(value.get("selected"), (list, tuple)):
@@ -138,6 +140,29 @@ def _stable_field_id(parent_context, action_key, index, name):
     form_id = getattr(form, "id", "") or slugify(action_key) or "action"
     slug = slugify(name) or "field"
     return f"{form_id}-{index}-{slug}"
+
+
+def _field_name(field):
+    """Return the cleaned ``name`` of an editor field."""
+    field_value = getattr(field, "value", field)
+    return str((field_value or {}).get("name") or "").strip()
+
+
+def _field_type(field):
+    """Return the block type of an editor field."""
+    return getattr(field, "block_type", "")
+
+
+def _apply_field_contract(spec, field_value, fields_block):
+    """Apply the configured name and required values to an editor override."""
+    field_value["name"] = str(spec.get("name") or "").strip()
+    field_block = fields_block.child_blocks.get(spec.get("type"))
+    if (
+        "required" in spec
+        and field_block is not None
+        and "required" in field_block.child_blocks
+    ):
+        field_value["required"] = bool(spec["required"])
 
 
 def _normalise_confirm_block(value):
@@ -483,16 +508,85 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
             ],
         )
 
+    def clean(self, value):
+        value = super().clean(value)
+        fields_block = self.child_blocks["fields"]
+        specs = get_action_fields(value.get("action", ""))
+
+        configured = {}
+        for spec in specs:
+            if not isinstance(spec, dict):
+                continue
+            name = str(spec.get("name") or "").strip()
+            if name:
+                configured[name] = spec
+
+        errors = {}
+        seen = set()
+        for index, field in enumerate(value.get("fields") or []):
+            field_value = getattr(field, "value", field)
+            name = _field_name(field)
+            field_type = _field_type(field)
+            messages = []
+
+            if not name:
+                messages.append(_("Enter a field name."))
+            elif name in seen:
+                messages.append(
+                    _("%(name)s is used by more than one field.") % {"name": name}
+                )
+            else:
+                seen.add(name)
+                spec = configured.get(name)
+                if specs and spec is None:
+                    messages.append(
+                        _("%(name)s is not a field declared by this action.")
+                        % {"name": name}
+                    )
+                elif (
+                    spec is not None
+                    and spec.get("type") in ACTION_FIELD_TYPES
+                    and spec["type"] != field_type
+                ):
+                    messages.append(
+                        _(
+                            "%(name)s is configured as %(expected)s, but this "
+                            "field is %(actual)s."
+                        )
+                        % {
+                            "name": name,
+                            "expected": spec["type"],
+                            "actual": field_type,
+                        }
+                    )
+                elif spec is not None:
+                    _apply_field_contract(spec, field_value, fields_block)
+                else:
+                    field_value["name"] = name
+
+            if messages:
+                errors[index] = ValidationError(messages)
+
+        if errors:
+            raise blocks.StructBlockValidationError(
+                block_errors={
+                    "fields": blocks.StreamBlockValidationError(block_errors=errors)
+                }
+            )
+        return value
+
     def _resolve_form_fields(self, value, action_key, parent_context):
         fields_block = self.child_blocks["fields"]
         editor_fields = list(value.get("fields") or [])
         specs = get_action_fields(action_key)
 
-        def editor_entry(field, index):
-            field_value = getattr(field, "value", field)
-            name = str((field_value or {}).get("name") or "").strip()
+        def editor_entry(field, index, spec=None):
+            field_value = dict(getattr(field, "value", field) or {})
+            if spec is not None:
+                _apply_field_contract(spec, field_value, fields_block)
+            name = str(field_value.get("name") or "").strip()
             return {
-                "type": getattr(field, "block_type", ""),
+                "type": spec.get("type") if spec is not None else _field_type(field),
                 "value": field_value,
                 "id": getattr(field, "id", None)
                 or _stable_field_id(parent_context, action_key, index, name),
@@ -508,8 +602,7 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
 
         editor_by_name = {}
         for field in editor_fields:
-            field_value = getattr(field, "value", field)
-            name = str((field_value or {}).get("name") or "").strip()
+            name = _field_name(field)
             if name:
                 editor_by_name.setdefault(name, field)
 
@@ -525,8 +618,16 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
             name = str(spec.get("name") or "").strip()
             editor = editor_by_name.get(name)
             if editor is not None:
-                combined.append(editor_entry(editor, index))
-                continue
+                if _field_type(editor) == spec.get("type"):
+                    combined.append(editor_entry(editor, index, spec))
+                    continue
+                logger.warning(
+                    "Ignoring action field override %r: configured type %r, "
+                    "editor type %r",
+                    name,
+                    spec.get("type"),
+                    _field_type(editor),
+                )
 
             field_type = spec.get("type")
             field_block = fields_block.child_blocks.get(field_type)
