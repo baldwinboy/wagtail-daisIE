@@ -284,6 +284,7 @@ class ActionButtonBlock(ButtonBlock):
             children=[
                 "text",
                 collapsed_group(_("Icon"), "icon", "icon_after", icon="image"),
+                "label",
                 "make_parent_clickable",
                 "confirm",
             ],

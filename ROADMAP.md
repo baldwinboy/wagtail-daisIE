@@ -390,22 +390,25 @@ and no text to show the icon and remain accessible.
 - Add a regression test for an icon with empty text.
 
 **Acceptance criteria:**
-- [ ] Icon-only menu links/buttons render the SVG and an accessible label.
-- [ ] Text + icon rendering is unchanged.
-- [ ] Tests cover empty text, icon only and icon + text.
+- [x] Icon-only menu links/buttons render the SVG and an accessible label.
+- [x] Text + icon rendering is unchanged.
+- [x] Tests cover empty text, icon only and icon + text.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/link.py`
+- `src/wagtail_daisIE/dynamic/action_blocks.py`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/link.html`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/button.html`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_button_inner.html`
 - `tests/blocks/test_blocks.py`
 - `tests/menus/test_menu_design.py`
-- `docs/accessibility` guidance in the help guide
+- `src/wagtail_daisIE/templates/wagtail_daisIE/help/pages/accessibility.html`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/help/pages/buttons-and-actions.html`
 
 **Blocking stories:** AB-2.
 
-**Current status:** Not started — **Blocked by AB-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

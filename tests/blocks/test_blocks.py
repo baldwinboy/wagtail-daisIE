@@ -17,6 +17,7 @@ from wagtail_daisIE.base_blocks.css import (
 from wagtail_daisIE.base_blocks.link import link_is_active, link_url
 from wagtail_daisIE.base_blocks.utils import build_class
 from wagtail_daisIE.blocks.accordion import AccordionBlock
+from wagtail_daisIE.blocks.link import ButtonBlock, LabelLinkBlock
 
 
 # Rendering blocks runs ``{% daisie_markup %}``, which resolves the current
@@ -221,6 +222,77 @@ class TestAccordion:
         assert names_a == ["accordion-a", "accordion-a"]  # items share one group
         assert names_b == ["accordion-b"]  # different accordion, different group
         assert names_a[0] != names_b[0]  # the cross-accordion bug is fixed
+
+
+def _icon_link_value(*, text="", label="", icon="wagtail:home", icon_after=True):
+    return {
+        "text": text,
+        "label": label,
+        "icon": icon,
+        "icon_after": icon_after,
+        "destination": [{"type": "link_url", "value": "/home"}],
+        "open_in_new_tab": False,
+        "design": {},
+        "audience": {},
+    }
+
+
+class TestIconOnlyControls:
+    def test_label_link_icon_only_has_accessible_label(self):
+        block = LabelLinkBlock()
+        html = block.render(block.to_python(_icon_link_value(label="Home")))
+        anchor = re.search(r"<a[^>]*>", html)
+        assert anchor is not None
+        assert "<svg" in html
+        assert 'aria-hidden="true"' in html
+        assert 'aria-label="Home"' in anchor.group(0)
+        assert "inline-flex" in anchor.group(0)
+        assert "items-center" in anchor.group(0)
+        assert "justify-center" in anchor.group(0)
+
+    def test_label_link_text_and_icon_is_unchanged(self):
+        block = LabelLinkBlock()
+        html = block.render(
+            block.to_python(_icon_link_value(text="Home", label="Ignored"))
+        )
+        anchor = re.search(r"<a[^>]*>", html)
+        assert anchor is not None
+        assert "Home" in html
+        assert "<svg" in html
+        assert "aria-label" not in anchor.group(0)
+        assert "inline-flex" not in anchor.group(0)
+
+    def test_button_icon_only_has_accessible_label(self):
+        block = ButtonBlock()
+        html = block.render(block.to_python(_icon_link_value(label="Run")))
+        anchor = re.search(r"<a[^>]*>", html)
+        assert anchor is not None
+        assert "<svg" in html
+        assert 'aria-label="Run"' in anchor.group(0)
+        assert "inline-flex" in anchor.group(0)
+
+    def test_action_button_icon_only_has_accessible_label(self):
+        from wagtail_daisIE.dynamic.action_blocks import ActionButtonBlock
+
+        block = ActionButtonBlock()
+        value = block.to_python(
+            {
+                "text": "",
+                "label": "Run action",
+                "icon": "wagtail:home",
+                "icon_after": True,
+                "design": {},
+                "audience": {},
+            }
+        )
+        html = block.render(value)
+        button = re.search(r"<button[^>]*>", html)
+        assert button is not None
+        assert "<svg" in html
+        assert 'aria-label="Run action"' in button.group(0)
+        assert "inline-flex" in button.group(0)
+        assert "items-center" in button.group(0)
+        assert "justify-center" in button.group(0)
 
 
 class TestReusableBlock:

@@ -42,6 +42,13 @@ class LabelLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
         required=False,
         help_text=_("Place the icon after the text"),
     )
+    label = blocks.CharBlock(
+        max_length=255,
+        required=False,
+        blank=True,
+        label=_("Accessible label"),
+        help_text=_("Used as the accessible name when the visible text is empty."),
+    )
 
     class Meta:
         icon = "link"
@@ -52,6 +59,7 @@ class LabelLinkBlock(AbstractLinkBlock, ThemedTypographyBlock):
             children=[
                 "text",
                 collapsed_group(_("Icon"), "icon", "icon_after", icon="image"),
+                "label",
                 "destination",
                 "open_in_new_tab",
             ],
@@ -69,6 +77,13 @@ class ButtonBlock(AbstractLinkBlock, ThemedButtonBlock):
         default=True,
         required=False,
         help_text=_("Place the icon after the text"),
+    )
+    label = blocks.CharBlock(
+        max_length=255,
+        required=False,
+        blank=True,
+        label=_("Accessible label"),
+        help_text=_("Used as the accessible name when the visible text is empty."),
     )
     make_parent_clickable = blocks.BooleanBlock(
         default=False,
@@ -99,6 +114,7 @@ class ButtonBlock(AbstractLinkBlock, ThemedButtonBlock):
             children=[
                 "text",
                 collapsed_group(_("Icon"), "icon", "icon_after", icon="image"),
+                "label",
                 "destination",
                 collapsed_group(
                     _("Link options"),

@@ -476,6 +476,33 @@ class TestMenuStaticItems:
             assert 'class="menu-static"' in _render(f"Static {layout}")
 
 
+def test_icon_only_menu_link_has_accessible_label():
+    menu = DaisyUIMenu.objects.create(name="Icon only link", layout="horizontal")
+    menu.body = [
+        {
+            "type": "link",
+            "value": {
+                "text": "",
+                "label": "Home",
+                "icon": "wagtail:home",
+                "icon_after": True,
+                "destination": [{"type": "link_url", "value": "/home"}],
+                "open_in_new_tab": False,
+            },
+        }
+    ]
+    menu.save()
+
+    html = _render("Icon only link")
+    anchor = re.search(r"<a[^>]*>", html)
+    assert anchor is not None
+    assert "<svg" in html
+    assert 'aria-label="Home"' in anchor.group(0)
+    assert "inline-flex" in anchor.group(0)
+    assert "items-center" in anchor.group(0)
+    assert "justify-center" in anchor.group(0)
+
+
 def test_top_level_search_fields_are_removed():
     from django.core.exceptions import FieldDoesNotExist
 

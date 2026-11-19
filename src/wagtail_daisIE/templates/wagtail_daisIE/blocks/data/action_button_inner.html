@@ -5,7 +5,7 @@
       <a
         href="#daisie-action-confirm-{{ block.id }}"
         class="absolute! inset-0!"
-        aria-label="{% if value.text %}{{ value.text|daisie_strip_markup }}{% else %}{% trans 'Run action' %}{% endif %}"
+        aria-label="{% if value.text %}{{ value.text|daisie_strip_markup }}{% elif value.label %}{{ value.label }}{% else %}{% trans 'Run action' %}{% endif %}"
         aria-haspopup="dialog"
         aria-controls="daisie-action-confirm-{{ block.id }}"
       ></a>
@@ -13,20 +13,20 @@
       <button
         type="submit"
         class="absolute! inset-0!"
-        aria-label="{% if value.text %}{{ value.text|daisie_strip_markup }}{% else %}{% trans 'Run action' %}{% endif %}"
+        aria-label="{% if value.text %}{{ value.text|daisie_strip_markup }}{% elif value.label %}{{ value.label }}{% else %}{% trans 'Run action' %}{% endif %}"
       ></button>
     {% endif %}
   {% elif has_confirm %}
     <a
       href="#daisie-action-confirm-{{ block.id }}"
-      class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}
+      class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}{% if not value.text and value.icon %} inline-flex items-center justify-center{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}{% if not value.text %} aria-label="{% if value.label %}{{ value.label }}{% else %}{% trans 'Run action' %}{% endif %}"{% endif %}
       aria-haspopup="dialog"
       aria-controls="daisie-action-confirm-{{ block.id }}"
     >
       {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
     </a>
   {% else %}
-    <button type="submit" class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
+    <button type="submit" class="{% if block_css %}{{ block_css }}{% else %}btn{% endif %}{% if not value.text and value.icon %} inline-flex items-center justify-center{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}{% if not value.text %} aria-label="{% if value.label %}{{ value.label }}{% else %}{% trans 'Run action' %}{% endif %}"{% endif %}>
       {% if value.icon and not value.icon_after %}{% daisyui_icon value.icon %}{% endif %}{% daisie_markup value.text allow_links=False %}{% if value.icon and value.icon_after %}{% daisyui_icon value.icon %}{% endif %}
     </button>
   {% endif %}
