@@ -190,6 +190,11 @@ class ActionBlock(VisibilityMixin, DaisieStructBlock):
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
+        # The action form is a layout wrapper, not a design surface: do not let
+        # an enclosing card/section style it. The nested button resolves its
+        # own design (and menu item defaults) in ActionButtonBlock.get_context.
+        context["block_css"] = ""
+        context["block_style"] = ""
         action_key = value.get("action", "")
         try:
             context["action_url"] = reverse(

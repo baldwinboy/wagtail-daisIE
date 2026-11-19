@@ -340,6 +340,8 @@ When adding a block, subclass the appropriate `Themed*Block` from
   confirmation alert. The action view adds the confirmation to Django messages;
   `{% daisie_messages %}` renders them. `make_parent_clickable` is only honored
   inside a card and renders the control as a bare `absolute! inset-0!` overlay.
+  The action `<form>` wrapper clears inherited `block_css`/`block_style`; the
+  nested button resolves its own design and menu item defaults.
 - **The Action form block** (`ActionFormBlock`, same module) collects
   data-input blocks and posts them to an action in one `<form>`. Its
   **After submit** `behaviour` (`inline` / `reload` / `navigate`) is submitted

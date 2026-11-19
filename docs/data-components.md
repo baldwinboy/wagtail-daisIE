@@ -60,9 +60,11 @@ Daisie URLs in your project:
 (path("daisie/", include("wagtail_daisIE.dynamic.urls")),)
 ```
 
-The button-only action is a plain form; the action view adds its confirmation to
-Django messages and redirects back. See the htmx-enhanced **Action form** below
-for data-collecting forms.
+The action `<form>` is a layout wrapper only: it ignores the surrounding card or
+section design, while the button keeps its own design (and menu item defaults in
+a menu). The button-only action is a plain form; the action view adds its
+confirmation to Django messages and redirects back. See the htmx-enhanced
+**Action form** below for data-collecting forms.
 
 ### Confirmation alerts
 

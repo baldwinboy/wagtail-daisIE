@@ -186,18 +186,20 @@ use its own button design, not the surrounding container’s CSS.
 - Keep the nested `ActionButtonBlock` design and menu item defaults intact.
 
 **Acceptance criteria:**
-- [ ] The outer action `<form>` no longer renders parent padding/background/border.
-- [ ] The nested button still renders its own design.
-- [ ] Test covers an Action block inside a Card/Section context.
+- [x] The outer action `<form>` no longer renders parent padding/background/border.
+- [x] The nested button still renders its own design.
+- [x] Test covers an Action block inside a Card/Section context.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
-- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_button.html`
 - `tests/dynamic/test_action_blocks.py`
+- `docs/data-components.md`
+- `AGENTS.md`
 
 **Blocking stories:** DI-1.
 
-**Current status:** Not started — **Blocked by DI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
