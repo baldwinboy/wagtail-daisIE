@@ -19,7 +19,9 @@ from wagtail_daisIE.choices import (
     JUSTIFY_CHOICES,
     LAYOUT_ITEM_BASIS_CHOICES,
     LAYOUT_ITEM_GRID_COLUMN_SPAN_CHOICES,
+    LAYOUT_ITEM_GRID_COLUMN_START_CHOICES,
     LAYOUT_ITEM_GRID_ROW_SPAN_CHOICES,
+    LAYOUT_ITEM_GRID_ROW_START_CHOICES,
     LAYOUT_ITEM_GROW_CHOICES,
     LAYOUT_ITEM_JUSTIFY_SELF_CHOICES,
     LAYOUT_ITEM_ORDER_CHOICES,
@@ -121,11 +123,25 @@ class LayoutItemDesignBlock(DaisieStructBlock):
         required=False,
         label=_("Align self"),
     )
+    grid_column_start = blocks.ChoiceBlock(
+        choices=LAYOUT_ITEM_GRID_COLUMN_START_CHOICES,
+        default="",
+        required=False,
+        label=_("Column start"),
+        help_text=_("Only applies when the layout item is inside a grid."),
+    )
     grid_column_span = blocks.ChoiceBlock(
         choices=LAYOUT_ITEM_GRID_COLUMN_SPAN_CHOICES,
         default="",
         required=False,
         label=_("Column span"),
+        help_text=_("Only applies when the layout item is inside a grid."),
+    )
+    grid_row_start = blocks.ChoiceBlock(
+        choices=LAYOUT_ITEM_GRID_ROW_START_CHOICES,
+        default="",
+        required=False,
+        label=_("Row start"),
         help_text=_("Only applies when the layout item is inside a grid."),
     )
     grid_row_span = blocks.ChoiceBlock(
@@ -158,7 +174,9 @@ class LayoutItemDesignBlock(DaisieStructBlock):
                 "margin",
                 blocks.BlockGroup(
                     children=[
+                        "grid_column_start",
                         "grid_column_span",
+                        "grid_row_start",
                         "grid_row_span",
                         "justify_self",
                     ],

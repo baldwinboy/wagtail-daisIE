@@ -42,6 +42,13 @@ from .design import (
     ThemedTypographyBlock,
     TypographyDesignBlock,
 )
+from .field_layout import (
+    FieldGroupLayoutBlock,
+    FieldLayoutBlock,
+    FieldLayoutMixin,
+    FieldOptionLayoutBlock,
+    FieldPartLayoutBlock,
+)
 from .fields import ColorChoiceBlock
 from .form_layout import collapsed_group
 from .input_widget import (
@@ -87,6 +94,11 @@ __all__ = [
     "DaisieStreamBlock",
     "DaisieStructBlock",
     "DesignBlock",
+    "FieldGroupLayoutBlock",
+    "FieldLayoutBlock",
+    "FieldLayoutMixin",
+    "FieldOptionLayoutBlock",
+    "FieldPartLayoutBlock",
     "FALLBACK_CHOICES",
     "GradientStopBlock",
     "InputWidgetDesignBlock",

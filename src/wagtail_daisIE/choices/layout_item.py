@@ -98,3 +98,40 @@ LAYOUT_ITEM_JUSTIFY_SELF_CHOICES = ChoiceList(
     ],
     "LAYOUT_ITEM_JUSTIFY_SELF_CHOICES",
 )
+
+
+LAYOUT_ITEM_GRID_COLUMN_START_CHOICES = ChoiceList(
+    [
+        ("", _("Default (inherit)")),
+        *[(f"col-start-{i}", str(i)) for i in range(1, 8)],
+    ],
+    "LAYOUT_ITEM_GRID_COLUMN_START_CHOICES",
+)
+
+LAYOUT_ITEM_GRID_ROW_START_CHOICES = ChoiceList(
+    [
+        ("", _("Default (inherit)")),
+        *[(f"row-start-{i}", str(i)) for i in range(1, 8)],
+    ],
+    "LAYOUT_ITEM_GRID_ROW_START_CHOICES",
+)
+
+FIELD_PART_PLACEMENT_CHOICES = ChoiceList(
+    [
+        ("auto", _("Auto")),
+        ("start", _("Start")),
+        ("middle", _("Middle")),
+        ("end", _("End")),
+        ("grid", _("Grid placement")),
+    ],
+    "FIELD_PART_PLACEMENT_CHOICES",
+)
+
+FIELD_PART_VISIBILITY_CHOICES = ChoiceList(
+    [
+        ("", _("Shown")),
+        ("sr-only", _("Visually hidden")),
+        ("hidden", _("Hidden")),
+    ],
+    "FIELD_PART_VISIBILITY_CHOICES",
+)

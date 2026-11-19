@@ -308,7 +308,9 @@ def build_layout_item_css(value, *, grid: bool = False) -> str:
     if grid:
         classes.extend(
             [
+                value.get("grid_column_start", ""),
                 value.get("grid_column_span", ""),
+                value.get("grid_row_start", ""),
                 value.get("grid_row_span", ""),
                 value.get("justify_self", ""),
             ]

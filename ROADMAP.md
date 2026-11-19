@@ -640,14 +640,14 @@ every form field can arrange its parts consistently.
   start, input middle, help end; grid → auto-placement with editor spans.
 
 **Acceptance criteria:**
-- [ ] A field can be row, column or grid.
-- [ ] Each part can be shown, visually hidden, hidden, or placed start/middle/end.
-- [ ] Grid placement supports column/row start and span plus justify/align self.
-- [ ] `max_lines` emits `line-clamp-*` for label/help.
-- [ ] Group layout and option layout emit row/column/grid, gap, alignment, size,
+- [x] A field can be row, column or grid.
+- [x] Each part can be shown, visually hidden, hidden, or placed start/middle/end.
+- [x] Grid placement supports column/row start and span plus justify/align self.
+- [x] `max_lines` emits `line-clamp-*` for label/help.
+- [x] Group layout and option layout emit row/column/grid, gap, alignment, size,
       overflow and scroll classes.
-- [ ] Unit tests cover builders and default placement per layout.
-- [ ] No new CSS framework or arbitrary style field is introduced.
+- [x] Unit tests cover builders and default placement per layout.
+- [x] No new CSS framework or arbitrary style field is introduced.
 
 **Expected file changes:**
 - new `src/wagtail_daisIE/base_blocks/field_layout.py`
@@ -659,7 +659,8 @@ every form field can arrange its parts consistently.
 
 **Blocking stories:** DI-1.
 
-**Current status:** Not started — **Blocked by DI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
