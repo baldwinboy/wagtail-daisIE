@@ -33,7 +33,13 @@ from ..base_blocks import (
     collapsed_group,
 )
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
-from ..base_blocks.css import build_background_style, build_design_css
+from ..base_blocks.css import (
+    build_background_style,
+    build_design_css,
+    build_layout_item_css,
+)
+from ..base_blocks.layout_design import LayoutBlock, LayoutItemDesignBlock
+from ..base_blocks.utils import build_class
 from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
 from ..blocks.inputs import AUTOCOMPLETE_BLOCKS, FIELD_BLOCKS
 from ..blocks.link import ButtonBlock
@@ -413,6 +419,14 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         required=False,
         label=_("Form design"),
     )
+    fields_layout = LayoutBlock(
+        required=False,
+        label=_("Field list layout"),
+    )
+    field_wrapper_layout = LayoutItemDesignBlock(
+        required=False,
+        label=_("Field wrapper layout"),
+    )
     visibility = VisibilityBlock()
 
     class Meta:
@@ -430,7 +444,12 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
                 "behaviour",
                 "confirmation",
             ],
-            settings=["container_design", "visibility"],
+            settings=[
+                "container_design",
+                "fields_layout",
+                "field_wrapper_layout",
+                "visibility",
+            ],
         )
 
     def _resolve_form_fields(self, value, action_key, parent_context):
@@ -514,6 +533,23 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         # ``container_css``: fields keep the page channel and their own design.
         context["form_css"] = build_design_css(design)
         context["form_style"] = build_background_style(design)
+
+        layout_value = value.get("fields_layout") or {}
+        layout_choice = layout_value.get("layout")
+        context["fields_css"] = build_class(
+            "w-full" if layout_choice else "flex w-full flex-col",
+            build_design_css(layout_value),
+        )
+        item_value = value.get("field_wrapper_layout") or {}
+        item_css = build_layout_item_css(item_value, grid=layout_choice == "grid")
+        item_size_keys = ["width", "basis", "grow"]
+        if layout_choice == "grid":
+            item_size_keys.extend(["grid_column_span", "grid_row_span"])
+        context["field_wrapper_css"] = build_class(
+            "" if any(item_value.get(key) for key in item_size_keys) else "w-full",
+            item_css,
+        )
+
         action_key = value.get("action", "")
         context["form_fields"] = self._resolve_form_fields(
             value, action_key, parent_context

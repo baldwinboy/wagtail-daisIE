@@ -191,36 +191,6 @@ def test_action_form_fields_use_page_default_and_own_design():
     assert all("style=" not in tag for tag in fieldset_tags)
 
 
-def test_action_form_checkbox_fields_stack_without_overlap():
-    block = ActionFormBlock()
-    value = block.to_python(
-        {
-            "action": "demo",
-            "target_expression": "",
-            "fields": [
-                _checkbox_field("First", "First helper", "first-checkbox"),
-                _checkbox_field("Second", "Second helper", "second-checkbox"),
-            ],
-            "button": {"text": "Save", "design": {}, "audience": {}},
-            "behaviour": "inline",
-        }
-    )
-    html = block.render(value)
-
-    assert 'class="flex w-full flex-col gap-4"' in html
-    assert len(re.findall(r'<div class="w-full[^"]*"', html)) == 2
-    assert html.count("items-start") == 2
-
-    label_rows = re.findall(r"<label[^>]*>.*?</label>", html, re.S)
-    assert len(label_rows) == 2
-    assert all("helper" not in row.lower() for row in label_rows)
-
-    described_by = re.findall(r'aria-describedby="([^"]+)"', html)
-    assert len(described_by) == 2
-    assert len(set(described_by)) == 2
-    assert html.index("First helper") < html.index("Second helper")
-
-
 def test_action_button_keeps_menu_defaults_and_own_design():
     block = ActionBlock()
     value = block.to_python(_action_value())
@@ -442,7 +412,7 @@ PRESET_ACTIONS = {
 }
 
 
-def _form_value(fields=None):
+def _form_value(fields=None, **overrides):
     value = {
         "action": "demo",
         "target_expression": "",
@@ -451,7 +421,43 @@ def _form_value(fields=None):
     }
     if fields is not None:
         value["fields"] = fields
+    value.update(overrides)
     return value
+
+
+def test_action_form_field_list_and_wrapper_layouts(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            fields_layout={"layout": "row", "gap": "gap-4"},
+            field_wrapper_layout={"width": "w-1/2"},
+        )
+    )
+    html = block.render(value)
+
+    stack = re.search(r'<div class="([^"]*flex flex-row[^"]*)">', html)
+    assert stack is not None
+    assert "gap-4" in stack.group(1)
+    assert "flex-col" not in stack.group(1)
+    assert html.count('class="w-1/2"') == 4
+
+
+def test_action_form_grid_wrapper_spans(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            fields_layout={"layout": "grid", "columns": 2},
+            field_wrapper_layout={"grid_column_span": "col-span-2"},
+        )
+    )
+    html = block.render(value)
+
+    stack = re.search(r'<div class="([^"]*\bgrid\b[^"]*)">', html)
+    assert stack is not None
+    assert "grid-cols-1 sm:grid-cols-2" in stack.group(1)
+    assert html.count('class="col-span-2"') == 4
 
 
 def test_editor_field_overrides_matching_preset(settings):

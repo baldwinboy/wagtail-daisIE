@@ -20,11 +20,13 @@
       <input type="hidden" name="daisie_message_tags" value="{{ message_tags }}" />
       <input type="hidden" name="daisie_message_level" value="{{ message_level }}" />
     {% endif %}
-    <div class="flex w-full flex-col">
-      {% for field in form_fields %}
-        <div class="w-full">{% include_block field with block=field id=field.id %}</div>
-      {% endfor %}
-    </div>
+    {% if form_fields %}
+      <div class="{{ fields_css }}">
+        {% for field in form_fields %}
+          <div class="{{ field_wrapper_css }}">{% include_block field with block=field id=field.id %}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% include_block value.button %}
     <div id="daisie-action-form-status-{{ block.id }}" role="status" aria-live="polite"></div>
   </form>
