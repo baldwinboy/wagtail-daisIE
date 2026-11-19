@@ -287,19 +287,24 @@ onto every action button.
 - Render only when the stream has an item.
 
 **Acceptance criteria:**
-- [ ] No configured dialog → no modal and a direct submit button.
-- [ ] No configured alert → no hidden message values and no alert.
-- [ ] Legacy dict values render correctly and normalize on save.
-- [ ] New stream values render correctly.
-- [ ] No data migration required; old data remains readable.
+- [x] No configured dialog → no modal and a direct submit button.
+- [x] No configured alert → no hidden message values and no alert.
+- [x] Legacy dict values render correctly and normalize on save.
+- [x] New stream values render correctly.
+- [x] No data migration required; old data remains readable.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_button.html`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_button_inner.html`
+- `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_form.html`
 - `tests/dynamic/test_action_blocks.py`
+- `docs/data-components.md`
 
 **Blocking stories:** none.
 
-**Current status:** Not started — **Ready**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

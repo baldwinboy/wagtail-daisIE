@@ -3,7 +3,13 @@ import re
 import pytest
 
 from wagtail_daisIE.blocks.cards import CardBlock
-from wagtail_daisIE.dynamic.action_blocks import ActionBlock, ActionFormBlock
+from wagtail_daisIE.dynamic.action_blocks import (
+    ActionBlock,
+    ActionButtonBlock,
+    ActionConfirmationStreamBlock,
+    ActionConfirmStreamBlock,
+    ActionFormBlock,
+)
 
 
 pytestmark = pytest.mark.django_db
@@ -25,20 +31,22 @@ BUTTON_DESIGN = {
 }
 
 
-def _action_value():
+def _action_value(*, confirm=True):
+    button = {
+        "text": "Run",
+        "design": BUTTON_DESIGN,
+        "audience": {},
+    }
+    if confirm:
+        button["confirm"] = {
+            "title": "Confirm",
+            "text": "Continue?",
+            "confirm_label": "Yes",
+        }
     return {
         "action": "demo",
         "target_expression": "",
-        "button": {
-            "text": "Run",
-            "design": BUTTON_DESIGN,
-            "confirm": {
-                "title": "Confirm",
-                "text": "Continue?",
-                "confirm_label": "Yes",
-            },
-            "audience": {},
-        },
+        "button": button,
     }
 
 
@@ -196,3 +204,210 @@ def test_action_button_keeps_menu_defaults_and_own_design():
     assert "font-body" in trigger
     assert "background: #00ff00" in trigger
     assert "background: #0000ff" not in trigger
+
+
+def test_action_without_confirmation_has_no_dialog_or_alert_fields():
+    block = ActionBlock()
+    value = block.to_python(_action_value(confirm=False))
+    assert list(value["button"]["confirm"]) == []
+
+    html = block.render(value, context={"audience_allowed": True})
+    assert '<button type="submit"' in html
+    assert "daisie-action-confirm-" not in html
+    assert 'name="daisie_message"' not in html
+
+
+def test_legacy_empty_confirmation_dicts_render_nothing():
+    button = ActionButtonBlock().to_python(
+        {
+            "text": "Run",
+            "confirm": {"title": "", "text": "", "confirm_label": ""},
+            "design": {},
+            "audience": {},
+        }
+    )
+    assert len(button["confirm"]) == 0
+    assert "daisie-action-confirm-" not in ActionButtonBlock().render(button)
+
+    action = ActionBlock().to_python(
+        {
+            "action": "demo",
+            "button": {"text": "Run", "design": {}, "audience": {}},
+            "confirmation": {
+                "text": "",
+                "icon": "",
+                "color": "",
+                "style": "",
+                "direction": "",
+            },
+        }
+    )
+    assert len(action["confirmation"]) == 0
+    html = ActionBlock().render(action, context={"audience_allowed": True})
+    assert 'name="daisie_message"' not in html
+
+
+def test_legacy_confirmation_bulk_conversion():
+    dialogs = ActionConfirmStreamBlock().bulk_to_python(
+        [
+            {"title": "Confirm", "text": "", "confirm_label": ""},
+            {"title": "", "text": "", "confirm_label": ""},
+            None,
+        ]
+    )
+    assert [len(value) for value in dialogs] == [1, 0, 0]
+
+    alerts = ActionConfirmationStreamBlock().bulk_to_python(
+        [
+            {
+                "text": "Saved",
+                "icon": "",
+                "color": "",
+                "style": "",
+                "direction": "",
+            },
+            {"text": "", "icon": "", "color": "", "style": "", "direction": ""},
+        ]
+    )
+    assert [len(value) for value in alerts] == [1, 0]
+
+
+def test_action_form_without_confirmation_has_no_alert_fields():
+    block = ActionFormBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "target_expression": "",
+            "fields": [],
+            "button": {"text": "Save", "design": {}, "audience": {}},
+            "behaviour": "inline",
+        }
+    )
+    html = block.render(value)
+    assert 'name="daisie_behaviour"' in html
+    assert 'name="daisie_message"' not in html
+    assert 'name="daisie_message_level"' not in html
+
+
+def test_legacy_button_confirmation_dict_normalizes_and_renders():
+    block = ActionButtonBlock()
+    value = block.to_python(
+        {
+            "text": "Run",
+            "confirm": {
+                "title": "Are you sure?",
+                "text": "This cannot be undone.",
+                "confirm_label": "Go",
+            },
+            "design": {},
+            "audience": {},
+        }
+    )
+    assert len(value["confirm"]) == 1
+    assert value["confirm"][0].block_type == "item"
+
+    html = block.render(value)
+    assert "Are you sure?" in html
+    assert "This cannot be undone." in html
+    assert "Go" in html
+
+    prepared = block.get_prep_value(value)["confirm"]
+    assert len(prepared) == 1
+    assert prepared[0]["type"] == "item"
+    assert prepared[0]["value"]["title"] == "Are you sure?"
+
+
+def test_legacy_action_confirmation_dict_normalizes_and_renders():
+    block = ActionBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "target_expression": "",
+            "button": {"text": "Run", "design": {}, "audience": {}},
+            "confirmation": {
+                "text": "Saved",
+                "icon": "",
+                "color": "alert-success",
+                "style": "",
+                "direction": "",
+            },
+        }
+    )
+    assert len(value["confirmation"]) == 1
+    assert value["confirmation"][0].block_type == "item"
+
+    html = block.render(value, context={"audience_allowed": True})
+    assert 'name="daisie_message" value="Saved"' in html
+    assert 'name="daisie_message_level" value="success"' in html
+
+    prepared = block.get_prep_value(value)["confirmation"]
+    assert prepared[0]["type"] == "item"
+    assert prepared[0]["value"]["text"] == "Saved"
+
+
+def test_legacy_action_form_confirmation_dict_normalizes_and_renders():
+    block = ActionFormBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "target_expression": "",
+            "fields": [],
+            "button": {"text": "Save", "design": {}, "audience": {}},
+            "behaviour": "inline",
+            "confirmation": {
+                "text": "Form saved",
+                "icon": "",
+                "color": "alert-info",
+                "style": "",
+                "direction": "",
+            },
+        }
+    )
+    assert len(value["confirmation"]) == 1
+    html = block.render(value)
+    assert 'name="daisie_message" value="Form saved"' in html
+    assert 'name="daisie_message_level" value="info"' in html
+
+
+def test_new_confirmation_streams_render():
+    block = ActionBlock()
+    value = block.to_python(
+        {
+            "action": "demo",
+            "target_expression": "",
+            "button": {
+                "text": "Run",
+                "design": {},
+                "audience": {},
+                "confirm": [
+                    {
+                        "type": "item",
+                        "value": {
+                            "title": "Proceed?",
+                            "text": "Confirm this.",
+                            "confirm_label": "Yes",
+                        },
+                    }
+                ],
+            },
+            "confirmation": [
+                {
+                    "type": "item",
+                    "value": {
+                        "text": "Done",
+                        "icon": "",
+                        "color": "alert-success",
+                        "style": "",
+                        "direction": "",
+                    },
+                }
+            ],
+        }
+    )
+    assert value["button"]["confirm"][0].block_type == "item"
+    assert value["confirmation"][0].block_type == "item"
+
+    html = block.render(value, context={"audience_allowed": True})
+    assert "Proceed?" in html
+    assert "Confirm this." in html
+    assert 'name="daisie_message" value="Done"' in html

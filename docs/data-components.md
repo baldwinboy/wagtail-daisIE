@@ -52,6 +52,10 @@ The **Action** block is a struct of:
 - **Confirmation** — an optional DaisyUI **alert** (text, icon, colour, style,
   direction) added to Django messages when the action runs.
 
+The button's pre-submit dialog and the action's post-submit alert are optional
+one-item streams. With no item, no modal is rendered, no hidden message fields
+are emitted, and no message is added.
+
 Action buttons post with CSRF protection to the configured endpoint. Include the
 Daisie URLs in your project:
 

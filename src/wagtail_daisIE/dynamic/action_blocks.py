@@ -68,6 +68,46 @@ ALERT_LEVELS = {
 }
 
 
+#: Legacy confirmation struct fields that make the confirmation meaningful.
+_CONFIRMATION_VALUE_KEYS = (
+    "title",
+    "text",
+    "confirm_label",
+    "icon",
+    "color",
+    "style",
+    "direction",
+)
+
+
+def _legacy_stream_value(value):
+    """Turn a non-empty legacy confirmation struct/dict into a stream list.
+
+    Old StructBlock values serialise empty confirmation fields as a mapping of
+    empty strings. Treat those as no confirmation so upgrades do not resurrect
+    the empty dialog/alert this change removes.
+    """
+    if isinstance(value, dict):
+        if any(value.get(key) for key in _CONFIRMATION_VALUE_KEYS):
+            return [{"type": "item", "value": value}]
+        return []
+    return value
+
+
+def _first_stream_item(value):
+    """Return the first item value from a stream, dict, or ``None``."""
+    if not value:
+        return None
+    if isinstance(value, dict):
+        return value
+    try:
+        first = value[0]
+    except (IndexError, KeyError, TypeError):
+        return None
+    first = getattr(first, "value", first)
+    return first if hasattr(first, "get") else None
+
+
 class ActionConfirmationBlock(DaisieStructBlock):
     """The confirmation alert added to Django messages when an action runs."""
 
@@ -110,6 +150,25 @@ class ActionConfirmationBlock(DaisieStructBlock):
         )
 
 
+class ActionConfirmationStreamBlock(DaisieStreamBlock):
+    """One optional post-submit confirmation alert."""
+
+    item = ActionConfirmationBlock()
+
+    class Meta:
+        icon = "warning"
+        label = _("Confirmation alert")
+        max_num = 1
+
+    def to_python(self, value):
+        return super().to_python(_legacy_stream_value(value))
+
+    def bulk_to_python(self, values):
+        return super().bulk_to_python(
+            [_legacy_stream_value(value) or [] for value in values]
+        )
+
+
 class ActionConfirmBlock(DaisieStructBlock):
     """A pre-submit confirmation dialog for destructive actions."""
 
@@ -129,6 +188,25 @@ class ActionConfirmBlock(DaisieStructBlock):
         )
 
 
+class ActionConfirmStreamBlock(DaisieStreamBlock):
+    """One optional pre-submit confirmation dialog."""
+
+    item = ActionConfirmBlock()
+
+    class Meta:
+        icon = "warning"
+        label = _("Confirmation dialog")
+        max_num = 1
+
+    def to_python(self, value):
+        return super().to_python(_legacy_stream_value(value))
+
+    def bulk_to_python(self, values):
+        return super().bulk_to_python(
+            [_legacy_stream_value(value) or [] for value in values]
+        )
+
+
 class ActionButtonBlock(ButtonBlock):
     """A normal button, restricted to the fields an action needs.
 
@@ -140,10 +218,17 @@ class ActionButtonBlock(ButtonBlock):
 
     destination = None
     open_in_new_tab = None
-    confirm = ActionConfirmBlock(
+    confirm = ActionConfirmStreamBlock(
         required=False,
         help_text=_("Show a confirmation dialog before the action is submitted."),
     )
+
+    def get_context(self, value, parent_context=None):
+        context = super().get_context(value, parent_context)
+        confirm = _first_stream_item((value or {}).get("confirm"))
+        context["confirm"] = confirm or {}
+        context["has_confirm"] = bool(confirm)
+        return context
 
     class Meta:
         icon = "link"
@@ -171,7 +256,7 @@ class ActionBlock(VisibilityMixin, DaisieStructBlock):
         help_text=_("Sent as 'target', e.g. {{ bread.pk }}."),
     )
     button = ActionButtonBlock()
-    confirmation = ActionConfirmationBlock(
+    confirmation = ActionConfirmationStreamBlock(
         required=False,
         help_text=_("Optional alert shown after the action runs."),
     )
@@ -232,7 +317,7 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
     )
     fields = DaisieStreamBlock([*FIELD_BLOCKS, *AUTOCOMPLETE_BLOCKS], label=_("Fields"))
     button = ActionButtonBlock()
-    confirmation = ActionConfirmationBlock(
+    confirmation = ActionConfirmationStreamBlock(
         required=False,
         help_text=_("Optional alert shown after the action runs."),
     )
@@ -287,7 +372,7 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
 
 def _confirmation_context(confirmation):
     """Message text/tags/level shared by the action block forms."""
-    confirmation = confirmation or {}
+    confirmation = _first_stream_item(confirmation) or {}
     tags = [
         str(token)
         for token in (
@@ -298,6 +383,7 @@ def _confirmation_context(confirmation):
         if token
     ]
     return {
+        "has_confirmation": bool(confirmation),
         "message_text": str(confirmation.get("text") or ""),
         "message_icon": str(confirmation.get("icon") or ""),
         "message_tags": " ".join(tags),
