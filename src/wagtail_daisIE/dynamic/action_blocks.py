@@ -18,7 +18,11 @@ renders the trigger.
 
 from __future__ import annotations
 
+import logging
+
+from django.core.exceptions import ValidationError
 from django.urls import NoReverseMatch, reverse
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
@@ -40,7 +44,15 @@ from ..choices.feedback import (
     ALERT_STYLE_CHOICES,
 )
 from ..icons.blocks import IconChooserBlock
-from .actions import get_action_choices
+from .actions import (
+    ACTION_FIELD_COMMON_KEYS,
+    ACTION_FIELD_TYPES,
+    get_action_choices,
+    get_action_fields,
+)
+
+
+logger = logging.getLogger(__name__)
 
 
 ACTION_FORM_BEHAVIOUR_CHOICES = ChoiceList(
@@ -97,6 +109,26 @@ def _appearance_css(value, fallback):
         if any(state_value.get(key) for key in _BUTTON_STATE_KEYS):
             return build_design_css({"button_appearance": value}) or fallback
     return fallback
+
+
+def _preset_field_value(spec):
+    """Convert an action config field spec into an input block value."""
+    field_type = spec.get("type")
+    allowed = ACTION_FIELD_COMMON_KEYS | ACTION_FIELD_TYPES.get(field_type, frozenset())
+    value = {key: spec[key] for key in allowed if key != "type" and key in spec}
+    if isinstance(value.get("options"), (list, tuple)):
+        value["options"] = "\n".join(str(option) for option in value["options"])
+    if isinstance(value.get("selected"), (list, tuple)):
+        value["selected"] = ", ".join(str(item) for item in value["selected"])
+    return value
+
+
+def _stable_field_id(parent_context, action_key, index, name):
+    """Build a stable, unique id for a configured preset field."""
+    form = (parent_context or {}).get("block")
+    form_id = getattr(form, "id", "") or slugify(action_key) or "action"
+    slug = slugify(name) or "field"
+    return f"{form_id}-{index}-{slug}"
 
 
 def _legacy_stream_value(value):
@@ -401,6 +433,79 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
             settings=["container_design", "visibility"],
         )
 
+    def _resolve_form_fields(self, value, action_key, parent_context):
+        fields_block = self.child_blocks["fields"]
+        editor_fields = list(value.get("fields") or [])
+        specs = get_action_fields(action_key)
+
+        def editor_entry(field, index):
+            field_value = getattr(field, "value", field)
+            name = str((field_value or {}).get("name") or "").strip()
+            return {
+                "type": getattr(field, "block_type", ""),
+                "value": field_value,
+                "id": getattr(field, "id", None)
+                or _stable_field_id(parent_context, action_key, index, name),
+            }
+
+        if not specs:
+            return fields_block.to_python(
+                [
+                    editor_entry(field, index)
+                    for index, field in enumerate(editor_fields, start=1)
+                ]
+            )
+
+        editor_by_name = {}
+        for field in editor_fields:
+            field_value = getattr(field, "value", field)
+            name = str((field_value or {}).get("name") or "").strip()
+            if name:
+                editor_by_name.setdefault(name, field)
+
+        config_names = {
+            str(spec.get("name") or "").strip()
+            for spec in specs
+            if isinstance(spec, dict)
+        }
+        combined = []
+        for index, spec in enumerate(specs, start=1):
+            if not isinstance(spec, dict):
+                continue
+            name = str(spec.get("name") or "").strip()
+            editor = editor_by_name.get(name)
+            if editor is not None:
+                combined.append(editor_entry(editor, index))
+                continue
+
+            field_type = spec.get("type")
+            field_block = fields_block.child_blocks.get(field_type)
+            if field_block is None:
+                logger.warning("Skipping action field with unknown type %r", field_type)
+                continue
+            try:
+                field_value = field_block.to_python(_preset_field_value(spec))
+            except (TypeError, ValueError, ValidationError) as exc:
+                logger.warning("Skipping invalid action field %r: %s", spec, exc)
+                continue
+            combined.append(
+                {
+                    "type": field_type,
+                    "value": field_value,
+                    "id": _stable_field_id(parent_context, action_key, index, name),
+                }
+            )
+
+        next_index = len(specs) + 1
+        for field in editor_fields:
+            field_value = getattr(field, "value", field)
+            name = str((field_value or {}).get("name") or "").strip()
+            if name and name in config_names:
+                continue
+            combined.append(editor_entry(field, next_index))
+            next_index += 1
+        return fields_block.to_python(combined)
+
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
@@ -410,6 +515,9 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         context["form_css"] = build_design_css(design)
         context["form_style"] = build_background_style(design)
         action_key = value.get("action", "")
+        context["form_fields"] = self._resolve_form_fields(
+            value, action_key, parent_context
+        )
         try:
             context["action_url"] = reverse(
                 "wagtail_daisIE_dynamic:action", args=[action_key]

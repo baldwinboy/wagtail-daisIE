@@ -174,6 +174,12 @@ additional keys:
 
 Malformed field presets are reported by the `wagtail_daisIE.E002` system check.
 
+Configured presets render automatically in declaration order. An editor field
+with the same **Field name** overrides the preset’s label, help text and
+design; presets without an editor override still render. Fields are stacked
+vertically and full width, with preset checkbox fields kept in separate
+wrappers.
+
 The form posts to the same action endpoint as the button action. On htmx
 requests the endpoint returns a small alert fragment (the **After submit**
 behaviour above); without JavaScript it is a normal `POST` that redirects back

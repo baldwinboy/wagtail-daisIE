@@ -463,25 +463,23 @@ and to style or relabel them with matching editor fields.
 - Render a vertical, `w-full` field stack.
 
 **Acceptance criteria:**
-- [ ] No editor fields + config fields → preset fields render.
-- [ ] Matching editor field → editor design/label/help is used.
-- [ ] Partial overrides leave the remaining preset fields rendered.
-- [ ] No config fields + editor fields → current behaviour preserved.
-- [ ] Neither → button-only form.
-- [ ] Preset checkbox fields do not overlap.
+- [x] No editor fields + config fields → preset fields render.
+- [x] Matching editor field → editor design/label/help is used.
+- [x] Partial overrides leave the remaining preset fields rendered.
+- [x] No config fields + editor fields → current behaviour preserved.
+- [x] Neither → button-only form.
+- [x] Preset checkbox fields do not overlap.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
-- `src/wagtail_daisIE/dynamic/actions.py`
-- new preset-field/helper templates under
-  `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_form.html`
 - `tests/dynamic/test_action_blocks.py`
 - `docs/data-components.md`
 
 **Blocking stories:** AF-1.
 
-**Current status:** Not started — **Blocked by AF-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

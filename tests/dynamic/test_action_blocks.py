@@ -366,6 +366,129 @@ def test_confirm_dialog_renders_in_clickable_card_mode():
     assert "Permanent." in html
 
 
+PRESET_ACTIONS = {
+    "demo": {
+        "label": "Demo",
+        "handler": "handler",
+        "fields": [
+            {
+                "type": "input",
+                "name": "display_name",
+                "label": "Display name",
+                "required": True,
+                "helper_text": "Shown publicly",
+            },
+            {
+                "type": "select",
+                "name": "diet",
+                "label": "Diet",
+                "options": ["Omnivore", "Vegetarian"],
+            },
+            {
+                "type": "checkbox",
+                "name": "newsletter",
+                "label": "Newsletter",
+            },
+            {
+                "type": "checkbox",
+                "name": "alerts",
+                "label": "Alerts",
+            },
+        ],
+    }
+}
+
+
+def _form_value(fields=None):
+    value = {
+        "action": "demo",
+        "target_expression": "",
+        "button": {"text": "Save", "design": {}, "audience": {}},
+        "behaviour": "inline",
+    }
+    if fields is not None:
+        value["fields"] = fields
+    return value
+
+
+def test_action_form_renders_configured_presets(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    html = block.render(block.to_python(_form_value()))
+
+    assert "Display name" in html
+    assert "Shown publicly" in html
+    assert "Omnivore" in html and "Vegetarian" in html
+    assert "Newsletter" in html and "Alerts" in html
+    assert html.index("Display name") < html.index("Diet") < html.index("Newsletter")
+    assert 'class="flex w-full flex-col"' in html
+    assert html.count('class="w-full"') == 4
+    assert 'id="daisie-demo-1-display_name"' in html
+    assert 'id="daisie-demo-2-diet"' in html
+
+
+def test_editor_field_overrides_matching_preset(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = PRESET_ACTIONS
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            [
+                {
+                    "type": "input",
+                    "value": {
+                        "label": "Custom name",
+                        "name": "display_name",
+                        "helper_text": "Custom help",
+                        "design": {"padding": {"all_padding": "p-2"}},
+                        "audience": {},
+                    },
+                }
+            ]
+        )
+    )
+    html = block.render(value)
+
+    assert "Custom name" in html
+    assert "Custom help" in html
+    assert "p-2" in html
+    assert "Display name" not in html
+    assert "Diet" in html and "Vegetarian" in html
+
+
+def test_editor_only_fields_are_preserved(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {}
+    block = ActionFormBlock()
+    value = block.to_python(
+        _form_value(
+            [
+                {
+                    "type": "input",
+                    "value": {
+                        "label": "Editor only",
+                        "name": "editor_only",
+                        "design": {},
+                        "audience": {},
+                    },
+                }
+            ]
+        )
+    )
+    html = block.render(value)
+
+    assert "Editor only" in html
+    assert "daisie-demo-1-editor_only" in html
+    assert "None" not in re.findall(r'id="daisie-[^"]+"', html)[0]
+
+
+def test_action_form_with_no_fields_renders_button_only(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+    block = ActionFormBlock()
+    html = block.render(block.to_python(_form_value()))
+
+    assert "<fieldset" not in html
+    assert "Save" in html
+
+
 def test_action_form_without_fields_is_valid(settings):
     settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
     block = ActionFormBlock()
