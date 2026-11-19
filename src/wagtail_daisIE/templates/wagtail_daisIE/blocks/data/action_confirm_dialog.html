@@ -1,16 +1,16 @@
-{% load i18n notifications %}
+{% load i18n wagtailcore_tags %}
 <div
   class="modal"
   id="daisie-action-confirm-{{ block.id }}"
   tabindex="0"
   role="dialog"
   aria-modal="true"
-  {% if confirm.title %}aria-labelledby="daisie-action-confirm-title-{{ block.id }}"{% else %}aria-label="{% trans 'Confirm action' %}"{% endif %}
-  {% if confirm.text %}aria-describedby="daisie-action-confirm-text-{{ block.id }}"{% endif %}
+  {% if confirm.header.text %}aria-labelledby="daisie-action-confirm-title-{{ block.id }}"{% else %}aria-label="{% trans 'Confirm action' %}"{% endif %}
+  {% if confirm.body.text %}aria-describedby="daisie-action-confirm-text-{{ block.id }}"{% endif %}
 >
   <div class="modal-box{% if confirm_panel_css %} {{ confirm_panel_css }}{% endif %}"{% if confirm_panel_style %} style="{{ confirm_panel_style }}"{% endif %}>
-    {% if confirm.title %}<h3 id="daisie-action-confirm-title-{{ block.id }}" class="text-lg font-bold">{% daisie_markup confirm.title %}</h3>{% endif %}
-    {% if confirm.text %}<p id="daisie-action-confirm-text-{{ block.id }}" class="py-4">{% daisie_markup confirm.text %}</p>{% endif %}
+    {% if confirm.header.text %}<div id="daisie-action-confirm-title-{{ block.id }}">{% include_block confirm.header %}</div>{% endif %}
+    {% if confirm.body.text %}<div id="daisie-action-confirm-text-{{ block.id }}" class="py-4">{% include_block confirm.body %}</div>{% endif %}
     <div class="modal-action">
       <button type="submit" class="{{ confirm_button_css }}">
         {% if confirm.confirm_label %}{{ confirm.confirm_label }}{% else %}{% trans "Confirm" %}{% endif %}

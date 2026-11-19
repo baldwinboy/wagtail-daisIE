@@ -41,6 +41,7 @@ from ..base_blocks.css import (
 from ..base_blocks.layout_design import LayoutBlock, LayoutItemDesignBlock
 from ..base_blocks.utils import build_class
 from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
+from ..blocks.inline import HeaderBlock, InlineTextBlock
 from ..blocks.inputs import AUTOCOMPLETE_BLOCKS, FIELD_BLOCKS
 from ..blocks.link import ButtonBlock
 from ..choicelist import ChoiceList
@@ -95,6 +96,8 @@ ALERT_LEVELS = {
 _CONFIRMATION_VALUE_KEYS = (
     "title",
     "text",
+    "header",
+    "body",
     "confirm_label",
     "icon",
     "color",
@@ -135,6 +138,20 @@ def _stable_field_id(parent_context, action_key, index, name):
     form_id = getattr(form, "id", "") or slugify(action_key) or "action"
     slug = slugify(name) or "field"
     return f"{form_id}-{index}-{slug}"
+
+
+def _normalise_confirm_block(value):
+    """Map legacy ``title``/``text`` keys onto the header/body blocks."""
+    if not isinstance(value, dict):
+        return value
+    value = dict(value)
+    title = value.pop("title", None)
+    text = value.pop("text", None)
+    if title is not None and "header" not in value:
+        value["header"] = {"text": title}
+    if text is not None and "body" not in value:
+        value["body"] = {"text": text}
+    return value
 
 
 def _legacy_stream_value(value):
@@ -229,8 +246,14 @@ class ActionConfirmationStreamBlock(DaisieStreamBlock):
 class ActionConfirmBlock(DaisieStructBlock):
     """A pre-submit confirmation dialog for destructive actions."""
 
-    title = InlineMarkupBlock(max_length=128, required=False, blank=True)
-    text = InlineMarkupBlock(max_length=255, required=False, blank=True)
+    header = HeaderBlock(
+        required=False,
+        label=_("Header"),
+    )
+    body = InlineTextBlock(
+        required=False,
+        label=_("Body"),
+    )
     confirm_label = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Confirm label")
     )
@@ -247,12 +270,20 @@ class ActionConfirmBlock(DaisieStructBlock):
         label=_("Cancel button"),
     )
 
+    def to_python(self, value):
+        return super().to_python(_normalise_confirm_block(value) or {})
+
+    def bulk_to_python(self, values):
+        return super().bulk_to_python(
+            [_normalise_confirm_block(value) or {} for value in values]
+        )
+
     class Meta:
         icon = "warning"
         label = _("Confirmation dialog")
         collapsed = True
         form_layout = blocks.BlockGroup(
-            children=["title", "text", "confirm_label"],
+            children=["header", "body", "confirm_label"],
             settings=[
                 "panel_design",
                 "confirm_appearance",

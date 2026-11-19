@@ -101,9 +101,13 @@ In clickable-card mode the card overlay opens the dialog instead of submitting;
 confirming submits the action and cancelling closes the dialog without
 submitting.
 
+**Header** is a **Header** block and **Body** is an **Inline text** block, so
+both support their own typography/design and audience settings. Existing
+`title`/`text` values are adapted automatically.
+
 **Dialog panel design** styles the modal panel, while **Confirm button** and
 **Cancel button** appearance settings style the dialog actions. The dialog uses
-`role="dialog"`, `aria-modal="true"`, a labelled title and a described body.
+`role="dialog"`, `aria-modal="true"`, a labelled header and a described body.
 
 ## Action forms
 

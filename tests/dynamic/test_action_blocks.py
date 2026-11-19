@@ -273,6 +273,7 @@ def test_legacy_confirmation_bulk_conversion():
         ]
     )
     assert [len(value) for value in dialogs] == [1, 0, 0]
+    assert dialogs[0][0].value["header"]["text"] == "Confirm"
 
     alerts = ActionConfirmationStreamBlock().bulk_to_python(
         [
@@ -287,6 +288,43 @@ def test_legacy_confirmation_bulk_conversion():
         ]
     )
     assert [len(value) for value in alerts] == [1, 0]
+
+
+def test_confirm_dialog_header_and_body_blocks():
+    block = ActionButtonBlock()
+    value = block.to_python(
+        {
+            "text": "Delete",
+            "confirm": {
+                "header": {
+                    "text": "Delete item?",
+                    "design": {"typography": {"text_color": "text-primary"}},
+                    "audience": {},
+                },
+                "body": {
+                    "text": "This cannot be undone.",
+                    "design": {"typography": {"text_color": "text-secondary"}},
+                    "audience": {},
+                },
+                "confirm_label": "Delete",
+            },
+            "design": {},
+            "audience": {},
+        }
+    )
+    html = block.render(value)
+
+    assert "<h2" in html
+    assert "Delete item?" in html
+    assert "This cannot be undone." in html
+    assert "text-primary" in html
+    assert "text-secondary" in html
+
+    prepared = block.get_prep_value(value)["confirm"][0]["value"]
+    assert prepared["header"]["text"] == "Delete item?"
+    assert prepared["body"]["text"] == "This cannot be undone."
+    assert "title" not in prepared
+    assert "text" not in prepared
 
 
 def test_confirm_dialog_design_appearances_and_accessibility():
@@ -579,7 +617,8 @@ def test_legacy_button_confirmation_dict_normalizes_and_renders():
     prepared = block.get_prep_value(value)["confirm"]
     assert len(prepared) == 1
     assert prepared[0]["type"] == "item"
-    assert prepared[0]["value"]["title"] == "Are you sure?"
+    assert prepared[0]["value"]["header"]["text"] == "Are you sure?"
+    assert prepared[0]["value"]["body"]["text"] == "This cannot be undone."
 
 
 def test_legacy_action_confirmation_dict_normalizes_and_renders():
