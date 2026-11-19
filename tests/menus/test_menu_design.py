@@ -514,3 +514,27 @@ def test_top_level_search_fields_are_removed():
     ):
         with pytest.raises(FieldDoesNotExist):
             DaisyUIMenu._meta.get_field(name)
+
+
+def test_menu_visibility_scope_css():
+    from wagtail_daisIE.base_blocks.visibility import build_switch_css
+    from wagtail_daisIE.blocks.inputs import ToggleBlock
+
+    value = {
+        "label": "Toggle",
+        "logic_key": "notify",
+        "checked": True,
+        "color": "",
+        "size": "",
+        "helper_text": "",
+        "helper_position": "below",
+        "helper_design": {},
+        "field_layout": {},
+        "design": {},
+        "audience": {},
+    }
+    html = ToggleBlock().render(
+        value, context={"daisie_visibility_scope": "menu", "id": "t"}
+    )
+    assert 'data-daisie-switch-scope="menu"' in html
+    assert "[data-daisie-menu]" in build_switch_css("notify", "menu")

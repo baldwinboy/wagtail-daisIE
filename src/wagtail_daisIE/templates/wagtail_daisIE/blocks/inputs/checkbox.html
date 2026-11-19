@@ -1,11 +1,12 @@
 {% load notifications %}
+{% firstof id block.id "checkbox" as field_id %}
 {% if audience_allowed %}
   <div class="w-full{% if block_css %} {{ block_css }}{% endif %}{% if field_layout_configured and field_layout_css %} {{ field_layout_css }}{% endif %}"{% if block_style %} style="{{ block_style }}"{% endif %}>
     {% if field_layout_configured %}
-      {% include "wagtail_daisIE/blocks/inputs/checkbox_toggle_body.html" with is_toggle=False %}
+      {% include "wagtail_daisIE/blocks/inputs/checkbox_toggle_body.html" with is_toggle=False id=field_id %}
     {% else %}
       {% if helper_above %}
-        {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" %}
+        {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" id=field_id %}
       {% endif %}
       <label class="label flex w-full cursor-pointer items-start justify-start gap-3">
         <input
@@ -13,15 +14,15 @@
           {% if value.name %}name="{{ value.name }}"{% endif %}
           class="checkbox {{ value.color }} {{ value.size }}"
           {% if value.checked %}checked{% endif %}
-          {% if value.helper_text %}aria-describedby="daisie-{{ id }}-help"{% endif %}
+          {% if value.helper_text %}aria-describedby="daisie-{{ field_id }}-help"{% endif %}
         />
         <span class="label-text">{% daisie_markup value.label %}</span>
         {% if helper_inline %}
-          {% include "wagtail_daisIE/blocks/inputs/helper_text.html" %}
+          {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with id=field_id %}
         {% endif %}
       </label>
       {% if helper_below %}
-        {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" %}
+        {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" id=field_id %}
       {% endif %}
     {% endif %}
   </div>

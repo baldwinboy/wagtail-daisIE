@@ -153,9 +153,22 @@ class DropdownBlock(ThemedBlock):
 
 
 class SwapBlock(ThemedBlock):
-    on_text = InlineMarkupBlock(max_length=64, label=_("On"))
-    off_text = InlineMarkupBlock(max_length=64, label=_("Off"))
-    effect = blocks.ChoiceBlock(choices=SWAP_EFFECT_CHOICES, default="", required=False)
+    on_text = InlineMarkupBlock(
+        max_length=64,
+        label=_("On"),
+        help_text=_("Text shown when the swap is on."),
+    )
+    off_text = InlineMarkupBlock(
+        max_length=64,
+        label=_("Off"),
+        help_text=_("Text shown when the swap is off."),
+    )
+    effect = blocks.ChoiceBlock(
+        choices=SWAP_EFFECT_CHOICES,
+        default="",
+        required=False,
+        help_text=_("Animation used when swapping."),
+    )
     logic_label = blocks.CharBlock(
         max_length=255,
         required=False,
@@ -169,12 +182,16 @@ class SwapBlock(ThemedBlock):
         blank=True,
         validators=[validate_slug],
         label=_("Logic key"),
-        help_text=_("Unique key used by blocks that this switch controls."),
+        help_text=_(
+            "Unique key used by blocks that this switch controls. Leave empty "
+            "to use the swap only as a visual toggle."
+        ),
     )
     default_state = blocks.BooleanBlock(
         default=False,
         required=False,
         label=_("On by default"),
+        help_text=_("The switch starts on when the page loads."),
     )
 
     class Meta:

@@ -877,11 +877,11 @@ duplicate keys and default states.
 - Add or update accessibility coverage for `role="switch"`.
 
 **Acceptance criteria:**
-- [ ] Toggle and Swap both control matching targets.
-- [ ] Keys are scoped and case-sensitive.
-- [ ] Duplicate keys fail validation.
-- [ ] Context condition + switch combination behaves as documented.
-- [ ] Tests cover the `:has()` fallback contract where practical.
+- [x] Toggle and Swap both control matching targets.
+- [x] Keys are scoped and case-sensitive.
+- [x] Duplicate keys fail validation.
+- [x] Context condition + switch combination behaves as documented.
+- [x] Tests cover the `:has()` fallback contract where practical.
 
 **Expected file changes:**
 - `tests/blocks/test_visibility.py` (new if absent)
@@ -891,7 +891,8 @@ duplicate keys and default states.
 
 **Blocking stories:** DI-1.
 
-**Current status:** Not started — **Blocked by DI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -907,10 +908,10 @@ consistent labels, helper text and design options.
 - Add tests for Toggle design/helper and Swap design.
 
 **Acceptance criteria:**
-- [ ] Toggle form field and visibility-control use are documented in help text.
-- [ ] Swap on/off text and logic key/state are covered by tests.
-- [ ] Design classes/styles render on both controls.
-- [ ] No duplicate helper-text markup remains.
+- [x] Toggle form field and visibility-control use are documented in help text.
+- [x] Swap on/off text and logic key/state are covered by tests.
+- [x] Design classes/styles render on both controls.
+- [x] No duplicate helper-text markup remains.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/inputs.py`
@@ -922,7 +923,8 @@ consistent labels, helper text and design options.
 
 **Blocking stories:** AF-4, TS-1.
 
-**Current status:** Not started — **Blocked by AF-4, TS-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

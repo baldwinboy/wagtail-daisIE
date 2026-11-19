@@ -34,6 +34,59 @@ Switch keys are case-sensitive. Missing keys keep the target hidden in browsers
 that support `:has()`; browsers without `:has()` keep content visible as a
 progressive-enhancement fallback.
 
+## Toggle and Swap controls
+
+`Toggle` and `Swap` are the switch controllers. Both expose a **Logic key**
+and a default state.
+
+### Toggle
+
+A `Toggle` is a styled checkbox with `role="switch"`. It can be used in two
+ways:
+
+- as an ordinary form field, by setting **Field name**;
+- as a visibility controller, by setting **Logic key**.
+
+It has **Helper text** and **Helper design**, reused from the shared helper
+partial, and **Field layout** like other data-input blocks. Its default state
+is controlled by **On by default**.
+
+When no logic key is set, the toggle renders only as a form field and emits no
+switch CSS.
+
+### Swap
+
+A `Swap` swaps two pieces of content (`On` / `Off`) with a checkbox. It has
+**On**, **Off**, **Effect**, **Logic key**, **On by default** and the usual
+design controls. Its checkbox carries `role="switch"`.
+
+When no logic key is set, the swap renders only as a visual toggle and emits no
+switch CSS.
+
+### Helper text and design
+
+Toggle helper text uses the shared helper partial, so its markup and
+`aria-describedby` link are consistent with checkboxes. `helper_design`
+applies the same typography, spacing, border and background controls as other
+input blocks.
+
+Swap has no helper text; its on/off text is the visible control label. Design
+classes and background styles render on the `swap` label.
+
+### Keys and scopes
+
+Logic keys must be valid slugs and are case-sensitive. Duplicate controller
+keys within the same rendered scope are rejected when the page, menu, feed or
+calendar is saved. A target may reference a key that is not present; it stays
+hidden in browsers that support `:has()`.
+
+Controllers are scoped to the current render context:
+
+- page, detail page, form page, error page, allauth page: page-wide;
+- feed item: within that feed item;
+- calendar event: within that event;
+- menu: within that menu.
+
 ## Context conditions
 
 The condition builder is not page-specific. It evaluates against the current

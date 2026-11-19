@@ -478,3 +478,68 @@ class TestCheckboxToggleFieldLayout:
         assert "data-daisie-field-part" not in html
         assert '<label class="label flex w-full cursor-pointer' in html
         assert 'aria-describedby="daisie-cb-help"' in html
+
+
+class TestToggleVisibilityConsistency:
+    def test_toggle_helper_id_matches_block_id(self):
+        html = ToggleBlock().render(
+            {
+                "label": "Notify",
+                "helper_text": "Help",
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "t"},
+        )
+        assert 'id="daisie-t-help"' in html
+        assert 'aria-describedby="daisie-t-help"' in html
+
+    def test_toggle_helper_id_without_explicit_id(self):
+        html = ToggleBlock().render(
+            {
+                "label": "Notify",
+                "helper_text": "Help",
+                "design": {},
+                "audience": {},
+            }
+        )
+        match = re.search(r'id="daisie-([^"]+)-help"', html)
+        assert match is not None
+        help_id = match.group(0).split('"')[1]
+        assert f'aria-describedby="{help_id}"' in html
+
+    def test_toggle_design_renders(self):
+        html = ToggleBlock().render(
+            {
+                "label": "Notify",
+                "color": "toggle-primary",
+                "size": "toggle-sm",
+                "design": {"padding": {"all_padding": "p-2"}},
+                "audience": {},
+            },
+            context={"id": "t"},
+        )
+        assert "toggle-primary" in html
+        assert "toggle-sm" in html
+        assert "p-2" in html
+
+    def test_swap_renders_on_off_and_design(self):
+        from wagtail_daisIE.blocks.layout_components import SwapBlock
+
+        html = SwapBlock().render(
+            {
+                "on_text": "Yes",
+                "off_text": "No",
+                "effect": "swap-rotate",
+                "logic_key": "notify",
+                "default_state": True,
+                "design": {"padding": {"all_padding": "p-3"}},
+                "audience": {},
+            }
+        )
+        assert "Yes" in html
+        assert "No" in html
+        assert "swap-rotate" in html
+        assert 'role="switch"' in html
+        assert "checked" in html
+        assert "p-3" in html

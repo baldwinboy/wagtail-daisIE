@@ -351,7 +351,13 @@ class CheckboxBlock(FieldLayoutMixin, HelperTextMixin, ThemedBlock):
 
 
 class ToggleBlock(FieldLayoutMixin, HelperTextMixin, ThemedBlock):
-    label = InlineMarkupBlock(max_length=255)
+    label = InlineMarkupBlock(
+        max_length=255,
+        help_text=_(
+            "The visible label. Also used as the form field label when this "
+            "toggle is used as an input."
+        ),
+    )
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
     )
@@ -368,10 +374,16 @@ class ToggleBlock(FieldLayoutMixin, HelperTextMixin, ThemedBlock):
         blank=True,
         validators=[validate_slug],
         label=_("Logic key"),
-        help_text=_("Unique key used by blocks that this switch controls."),
+        help_text=_(
+            "Unique key used by blocks that this switch controls. Leave empty "
+            "to use the toggle only as a form field."
+        ),
     )
     checked = blocks.BooleanBlock(
-        default=False, required=False, label=_("On by default")
+        default=False,
+        required=False,
+        label=_("On by default"),
+        help_text=_("The switch starts on when the page loads."),
     )
     color = blocks.ChoiceBlock(
         choices=TOGGLE_COLOR_CHOICES, required=False, label=_("Colour")

@@ -594,3 +594,85 @@ class TestDateTransform:
         assert (
             _date_transform(config(DateTimeField()), "published") == "published__date"
         )
+
+
+class TestVisibilityScope:
+    def test_feed_item_switch_scope(self):
+        USER_MODEL.objects.create(username="ada")
+        feed = _feed(
+            item=[
+                {
+                    "type": "toggle",
+                    "value": {
+                        "label": "Toggle",
+                        "logic_key": "notify",
+                        "checked": True,
+                        "design": {},
+                        "audience": {},
+                    },
+                },
+                {
+                    "type": "header",
+                    "value": {
+                        "text": "Target",
+                        "design": {},
+                        "audience": {},
+                        "visibility": {
+                            "switch_key": "notify",
+                            "show_when": True,
+                            "condition": {},
+                        },
+                    },
+                },
+            ]
+        )
+        data = render_feed(feed, RequestFactory().get("/"))
+        html = data["items_html"]
+        assert 'data-daisie-switch-scope="feed-item"' in html
+        assert "[data-daisie-feed-item]" in html
+        assert 'data-daisie-visibility-key="notify"' in html
+
+    def test_calendar_event_switch_scope(self):
+        now = timezone.now()
+        USER_MODEL.objects.create(username="ada", date_joined=now)
+        block = CalendarBlock()
+        context = block.get_context(
+            block.to_python(
+                {
+                    "context_model": "user",
+                    "date_field": "date_joined",
+                    "event": [
+                        {
+                            "type": "toggle",
+                            "value": {
+                                "label": "Toggle",
+                                "logic_key": "notify",
+                                "checked": True,
+                                "design": {},
+                                "audience": {},
+                            },
+                        },
+                        {
+                            "type": "header",
+                            "value": {
+                                "text": "Target",
+                                "design": {},
+                                "audience": {},
+                                "visibility": {
+                                    "switch_key": "notify",
+                                    "show_when": True,
+                                    "condition": {},
+                                },
+                            },
+                        },
+                    ],
+                    "limit": 50,
+                    "empty_message": "",
+                    "design": {},
+                    "audience": {},
+                }
+            )
+        )
+        rendered = "".join(context["days"][0]["events"])
+        assert 'data-daisie-switch-scope="calendar-event"' in rendered
+        assert "[data-daisie-calendar-event]" in rendered

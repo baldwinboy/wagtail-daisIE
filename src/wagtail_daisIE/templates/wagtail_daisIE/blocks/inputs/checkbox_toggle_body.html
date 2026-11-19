@@ -1,14 +1,15 @@
+{% firstof id block.id "checkbox" as field_id %}
 {% load notifications %}
 {% if not field_label_hidden %}
   <div class="{{ field_label_css }}" data-daisie-field-part="label">
-    <label for="daisie-{{ id }}" class="label cursor-pointer justify-start items-start gap-3">
+    <label for="daisie-{{ field_id }}" class="label cursor-pointer justify-start items-start gap-3">
       <span class="label-text">{% daisie_markup value.label %}</span>
     </label>
   </div>
 {% endif %}
 <div class="{{ field_input_css }}" data-daisie-field-part="input">
   <input
-    id="daisie-{{ id }}"
+    id="daisie-{{ field_id }}"
     type="checkbox"
     {% if is_toggle %}role="switch"{% endif %}
     {% if value.name %}name="{{ value.name }}"{% endif %}
@@ -16,7 +17,7 @@
     class="{% if is_toggle %}toggle{% else %}checkbox{% endif %} {{ value.color }} {{ value.size }}"
     {% if value.checked %}checked{% endif %}
     {% if field_label_hidden and value.label %}aria-label="{{ value.label|daisie_strip_markup }}"{% endif %}
-    {% if value.helper_text and not field_help_hidden %}aria-describedby="daisie-{{ id }}-help"{% endif %}
+    {% if value.helper_text and not field_help_hidden %}aria-describedby="daisie-{{ field_id }}-help"{% endif %}
   />
 </div>
 {% if value.helper_text and not field_help_hidden %}
