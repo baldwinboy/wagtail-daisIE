@@ -216,3 +216,266 @@ class TestCheckboxToggleHelper:
 
         assert "-help" not in html
         assert "aria-describedby" not in html
+
+
+def _part_classes(html, part):
+    match = re.search(rf'<div class="([^"]*)" data-daisie-field-part="{part}">', html)
+    assert match is not None
+    return match.group(1)
+
+
+@pytest.mark.parametrize("block_class", [CheckboxBlock, ToggleBlock])
+class TestCheckboxToggleFieldLayout:
+    def test_row_defaults(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {"layout": {"layout": "row"}},
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "flex flex-row grow" in html
+        assert _part_classes(html, "input") == "order-first"
+        assert _part_classes(html, "label") == "order-none"
+        assert _part_classes(html, "help") == "order-last"
+        assert 'id="daisie-cb"' in html
+        assert 'for="daisie-cb"' in html
+
+    def test_column_defaults(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {"layout": {"layout": "column"}},
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "flex flex-col grow" in html
+        assert _part_classes(html, "label") == "order-first"
+        assert _part_classes(html, "input") == "order-none"
+        assert _part_classes(html, "help") == "order-last"
+
+    def test_explicit_part_placement(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "input": {"placement": "end"},
+                    "label": {"placement": "start"},
+                    "help": {"placement": "middle"},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert _part_classes(html, "input") == "order-last"
+        assert _part_classes(html, "label") == "order-first"
+        assert _part_classes(html, "help") == "order-none"
+
+    def test_grid_placement(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "grid", "columns": 2},
+                    "input": {
+                        "placement": "grid",
+                        "item": {
+                            "grid_column_start": "col-start-2",
+                            "grid_column_span": "col-span-2",
+                            "grid_row_start": "row-start-1",
+                            "grid_row_span": "row-span-2",
+                            "justify_self": "justify-self-end",
+                        },
+                    },
+                    "label": {
+                        "item": {
+                            "grid_row_span": "row-span-2",
+                            "align_self": "self-center",
+                        }
+                    },
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        input_classes = _part_classes(html, "input").split()
+        label_classes = _part_classes(html, "label").split()
+        assert "grid grow grid-cols-1 sm:grid-cols-2" in html
+        assert {
+            "col-start-2",
+            "col-span-2",
+            "row-start-1",
+            "row-span-2",
+            "justify-self-end",
+        }.issubset(set(input_classes))
+        assert {"row-span-2", "self-center"}.issubset(set(label_classes))
+        assert "order-first" not in input_classes
+        assert "order-first" not in label_classes
+
+    def test_visually_hidden_input_keeps_label_and_help(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "input": {"visibility": "sr-only"},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "sr-only" in _part_classes(html, "input")
+        assert _part_classes(html, "label") == "order-none"
+        assert _part_classes(html, "help") == "order-last"
+        assert 'for="daisie-cb"' in html
+        assert 'aria-describedby="daisie-cb-help"' in html
+
+    def test_hidden_label_uses_aria_label_and_omits_label(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "label": {"visibility": "hidden"},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "Notify" not in html or 'data-daisie-field-part="label"' not in html
+        assert 'data-daisie-field-part="label"' not in html
+        assert 'aria-label="Notify"' in html
+        assert 'aria-describedby="daisie-cb-help"' in html
+
+    def test_sr_only_label_keeps_accessibility(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "label": {"visibility": "sr-only"},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "sr-only" in _part_classes(html, "label")
+        assert 'for="daisie-cb"' in html
+
+    def test_hidden_help_omits_helper_and_aria(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "help": {"visibility": "hidden"},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert 'data-daisie-field-part="help"' not in html
+        assert "aria-describedby" not in html
+
+    def test_hidden_input_still_renders(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "input": {"visibility": "hidden"},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert 'data-daisie-field-part="input"' in html
+        assert "hidden" in _part_classes(html, "input")
+        assert 'type="checkbox"' in html
+
+    def test_max_lines_on_text_parts(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {
+                    "layout": {"layout": "row"},
+                    "label": {"max_lines": 2},
+                    "help": {"max_lines": 3},
+                },
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "line-clamp-2" in _part_classes(html, "label")
+        assert "line-clamp-3" in _part_classes(html, "help")
+
+    def test_helper_design_still_renders_in_layout_mode(self, block_class):
+        block = block_class()
+        value = block.to_python(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "field_layout": {"layout": {"layout": "column"}},
+                "helper_design": {
+                    "typography": {"font_weight": "font-bold"},
+                    "padding": {"all_padding": "p-2"},
+                },
+                "design": {},
+                "audience": {},
+            }
+        )
+        html = block.render(value, context={"id": "cb"})
+        print(html)
+        span = re.search(r'<span\b[^>]*id="daisie-cb-help"[^>]*>', html)
+        assert span is not None
+        classes = re.search(r'class="([^"]*)"', span.group(0)).group(1).split()
+        assert "font-bold" in classes
+        assert "p-2" in classes
+
+    def test_no_layout_keeps_legacy_markup(self, block_class):
+        html = block_class().render(
+            {
+                "label": "Notify",
+                "helper_text": "Weekly digest",
+                "design": {},
+                "audience": {},
+            },
+            context={"id": "cb"},
+        )
+
+        assert "data-daisie-field-part" not in html
+        assert '<label class="label flex w-full cursor-pointer' in html
+        assert 'aria-describedby="daisie-cb-help"' in html

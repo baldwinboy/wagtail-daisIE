@@ -106,16 +106,19 @@ def _input_field(label, design=None):
     }
 
 
-def _checkbox_field(label, helper_text, block_id):
+def _checkbox_field(label, helper_text, block_id, field_layout=None):
+    value = {
+        "label": label,
+        "helper_text": helper_text,
+        "design": {},
+        "audience": {},
+    }
+    if field_layout is not None:
+        value["field_layout"] = field_layout
     return {
         "type": "checkbox",
         "id": block_id,
-        "value": {
-            "label": label,
-            "helper_text": helper_text,
-            "design": {},
-            "audience": {},
-        },
+        "value": value,
     }
 
 
@@ -748,6 +751,33 @@ def test_action_form_render_ignores_mismatched_override(settings):
     assert "Display name" in html
     assert "Custom select" not in html
     assert re.search(r'<select[^>]*name="display_name"', html) is None
+
+
+def test_action_form_checkbox_fields_with_layout_do_not_overlap(settings):
+    settings.WAGTAIL_DAISIE_ACTIONS = {"demo": {"label": "Demo", "handler": "handler"}}
+    fields = [
+        _checkbox_field(
+            "First",
+            "One",
+            "cb1",
+            {"layout": {"layout": "row"}},
+        ),
+        _checkbox_field(
+            "Second",
+            "Two",
+            "cb2",
+            {"layout": {"layout": "grid", "columns": 2}},
+        ),
+    ]
+    html = _render_action_form(fields, {})
+
+    assert html.count('data-daisie-field-part="input"') == 2
+    assert html.count('data-daisie-field-part="label"') == 2
+    assert html.count('data-daisie-field-part="help"') == 2
+    assert html.count("w-full") >= 4
+    assert "flex flex-row grow" in html
+    assert "grid grow grid-cols-1 sm:grid-cols-2" in html
+    assert "absolute" not in html
 
 
 def test_action_form_with_no_fields_renders_button_only(settings):

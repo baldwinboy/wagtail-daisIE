@@ -131,6 +131,15 @@ def build_field_layout_context(value):
         context[f"field_{part}_css"] = part_context["css"]
         context[f"field_{part}_hidden"] = part_context["hidden"]
         context[f"field_{part}_sr_only"] = part_context["sr_only"]
+    context["field_layout_configured"] = bool(
+        context["field_layout_css"]
+        or any(
+            context[f"field_{part}_css"]
+            or context[f"field_{part}_hidden"]
+            or context[f"field_{part}_sr_only"]
+            for part in FIELD_PART_NAMES
+        )
+    )
     return context
 
 

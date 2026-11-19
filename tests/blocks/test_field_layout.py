@@ -5,13 +5,13 @@ from wagtail_daisIE.base_blocks import (
     FieldOptionLayoutBlock,
     FieldPartLayoutBlock,
 )
-from wagtail_daisIE.base_blocks.css import (
+from wagtail_daisIE.base_blocks.css import build_layout_item_css
+from wagtail_daisIE.base_blocks.field_layout import (
     build_field_group_css,
     build_field_layout_context,
     build_field_option_context,
     build_field_part_context,
     build_field_part_css,
-    build_layout_item_css,
 )
 
 

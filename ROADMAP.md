@@ -683,16 +683,16 @@ layouts without overlap.
 - Add `field_layout` to the settings form layout under a “Field layout” group.
 
 **Acceptance criteria:**
-- [ ] Input at start/middle/end of a row works.
-- [ ] Label at start/middle/end of a row works.
-- [ ] Help text at start/middle/end of a row works.
-- [ ] Column defaults put the label top, input middle, help bottom.
-- [ ] Each part can be visually hidden or omitted.
-- [ ] Grid layout honours column/row start, span, justify/align.
-- [ ] Spacing, alignment, size, max lines and overflow/scroll are configurable
+- [x] Input at start/middle/end of a row works.
+- [x] Label at start/middle/end of a row works.
+- [x] Help text at start/middle/end of a row works.
+- [x] Column defaults put the label top, input middle, help bottom.
+- [x] Each part can be visually hidden or omitted.
+- [x] Grid layout honours column/row start, span, justify/align.
+- [x] Spacing, alignment, size, max lines and overflow/scroll are configurable
       via the existing layout/design controls.
-- [ ] Multiple checkbox fields stack or grid without overlap.
-- [ ] Accessibility tests cover hidden input/label combinations.
+- [x] Multiple checkbox fields stack or grid without overlap.
+- [x] Accessibility tests cover hidden input/label combinations.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/inputs.py`
@@ -704,7 +704,8 @@ layouts without overlap.
 
 **Blocking stories:** FL-1, AF-4.
 
-**Current status:** Not started — **Blocked by FL-1, AF-4**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

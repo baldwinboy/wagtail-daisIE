@@ -1,0 +1,26 @@
+{% load notifications %}
+{% if not field_label_hidden %}
+  <div class="{{ field_label_css }}" data-daisie-field-part="label">
+    <label for="daisie-{{ id }}" class="label cursor-pointer justify-start items-start gap-3">
+      <span class="label-text">{% daisie_markup value.label %}</span>
+    </label>
+  </div>
+{% endif %}
+<div class="{{ field_input_css }}" data-daisie-field-part="input">
+  <input
+    id="daisie-{{ id }}"
+    type="checkbox"
+    {% if is_toggle %}role="switch"{% endif %}
+    {% if value.name %}name="{{ value.name }}"{% endif %}
+    {% if is_toggle and value.logic_key %}data-daisie-switch-key="{{ value.logic_key }}"{% if daisie_visibility_scope and daisie_visibility_scope != "page" %} data-daisie-switch-scope="{{ daisie_visibility_scope }}"{% endif %}{% endif %}
+    class="{% if is_toggle %}toggle{% else %}checkbox{% endif %} {{ value.color }} {{ value.size }}"
+    {% if value.checked %}checked{% endif %}
+    {% if field_label_hidden and value.label %}aria-label="{{ value.label|daisie_strip_markup }}"{% endif %}
+    {% if value.helper_text and not field_help_hidden %}aria-describedby="daisie-{{ id }}-help"{% endif %}
+  />
+</div>
+{% if value.helper_text and not field_help_hidden %}
+  <div class="{{ field_help_css }}" data-daisie-field-part="help">
+    {% include "wagtail_daisIE/blocks/inputs/helper_text.html" with helper_block="1" %}
+  </div>
+{% endif %}

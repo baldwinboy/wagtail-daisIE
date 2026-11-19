@@ -18,6 +18,8 @@ from ..base_blocks import (
     RENDER_CHOICES,
     UPLOAD_DISPLAY_CHOICES,
     ColorChoiceBlock,
+    FieldLayoutBlock,
+    FieldLayoutMixin,
     InlineMarkupBlock,
     ItemDesignBlock,
     LayoutBlock,
@@ -27,6 +29,7 @@ from ..base_blocks import (
 )
 from ..base_blocks.compact import DaisieStreamBlock
 from ..base_blocks.css import build_background_style, build_class, build_design_css
+from ..base_blocks.form_layout import collapsed_group
 from ..choicelist import ChoiceList
 from ..choices import (
     AUTOCOMPLETE_ARRANGEMENT_CHOICES,
@@ -280,7 +283,7 @@ class SelectBlock(ThemedBlock):
         )
 
 
-class CheckboxBlock(HelperTextMixin, ThemedBlock):
+class CheckboxBlock(FieldLayoutMixin, HelperTextMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -303,6 +306,10 @@ class CheckboxBlock(HelperTextMixin, ThemedBlock):
         required=False,
         label=_("Helper design"),
     )
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
+    )
 
     class Meta:
         icon = "tick-inverse"
@@ -318,12 +325,13 @@ class CheckboxBlock(HelperTextMixin, ThemedBlock):
                 "helper_position",
                 "color",
                 "size",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=["helper_design", "design", "audience"],
         )
 
 
-class ToggleBlock(HelperTextMixin, ThemedBlock):
+class ToggleBlock(FieldLayoutMixin, HelperTextMixin, ThemedBlock):
     label = InlineMarkupBlock(max_length=255)
     name = blocks.CharBlock(
         max_length=64, required=False, blank=True, label=_("Field name")
@@ -361,6 +369,10 @@ class ToggleBlock(HelperTextMixin, ThemedBlock):
         required=False,
         label=_("Helper design"),
     )
+    field_layout = FieldLayoutBlock(
+        required=False,
+        label=_("Field layout"),
+    )
 
     class Meta:
         icon = "cog"
@@ -375,6 +387,7 @@ class ToggleBlock(HelperTextMixin, ThemedBlock):
                 "helper_position",
                 "color",
                 "size",
+                collapsed_group(_("Field layout"), "field_layout", icon="sliders"),
             ],
             settings=[
                 "logic_label",
