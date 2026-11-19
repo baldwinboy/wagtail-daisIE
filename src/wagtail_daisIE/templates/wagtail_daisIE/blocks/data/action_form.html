@@ -3,7 +3,8 @@
   <form
     method="post"
     action="{{ action_url }}"
-    class="space-y-4"
+    class="{{ form_css }}"
+    {% if form_style %}style="{{ form_style }}"{% endif %}
     hx-post="{{ action_url }}"
     hx-target="#daisie-action-form-status-{{ block.id }}"
     hx-swap="innerHTML"

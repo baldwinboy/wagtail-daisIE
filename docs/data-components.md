@@ -104,6 +104,9 @@ It is a struct of:
   toggle, radio, range, rating, file, fieldset). Each field's **Field name**
   becomes the key the handler reads from `data`.
 - **Button** — the themed submit button.
+- **Form design** — optional container design (padding, background, border,
+  spacing) applied to the `<form>` element only. Fields keep their own design
+  and fall back to the page's container defaults.
 - **After submit** — `Update in place` (default), `Reload the page`, or
   `Follow the response`.
 - **Confirmation** — an optional DaisyUI alert shown after the action runs.

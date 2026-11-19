@@ -216,20 +216,22 @@ from its fields, and have fields use their own design or the page default.
 - Add the form design field to the settings form layout.
 
 **Acceptance criteria:**
-- [ ] `container_design` renders on the form and nowhere else.
-- [ ] Fields with no design fall back to the page container channel.
-- [ ] Fields never receive an ancestor card/tab/fieldset design.
-- [ ] Tests cover form design, own field design and page default fallback.
+- [x] `container_design` renders on the form and nowhere else.
+- [x] Fields with no design fall back to the page container channel.
+- [x] Fields never receive an ancestor card/tab/fieldset design.
+- [x] Tests cover form design, own field design and page default fallback.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/dynamic/action_blocks.py`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/data/action_form.html`
 - `tests/dynamic/test_action_blocks.py`
 - `docs/data-components.md`
+- `AGENTS.md`
 
 **Blocking stories:** DI-1.
 
-**Current status:** Not started — **Blocked by DI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

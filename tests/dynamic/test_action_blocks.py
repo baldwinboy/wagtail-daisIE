@@ -79,6 +79,93 @@ def test_action_inside_card_ignores_container_design():
     assert "background: #00ff00" in trigger
 
 
+def _input_field(label, design=None):
+    return {
+        "type": "input",
+        "value": {
+            "label": label,
+            "input_type": "text",
+            "design": design or {},
+            "audience": {},
+        },
+    }
+
+
+def _render_action_form(fields, container_design):
+    card = CardBlock()
+    value = card.to_python(
+        {
+            "design": CARD_DESIGN,
+            "audience": {},
+            "content": [
+                {
+                    "type": "action_form",
+                    "value": {
+                        "action": "demo",
+                        "target_expression": "",
+                        "fields": fields,
+                        "button": {"text": "Save", "design": {}, "audience": {}},
+                        "behaviour": "inline",
+                        "container_design": container_design,
+                    },
+                }
+            ],
+        }
+    )
+    return card.render(value, context={"container_css": "p-4"})
+
+
+def test_action_form_container_design_applies_only_to_form():
+    form_design = {
+        "padding": {"all_padding": "p-6"},
+        "background": [
+            {"type": "layer", "value": {"layer_type": "solid", "color": "#abcdef"}}
+        ],
+    }
+    html = _render_action_form([_input_field("Plain")], form_design)
+
+    form_tag = re.search(r"<form[^>]*>", html)
+    assert form_tag is not None
+    form = form_tag.group(0)
+    assert "p-6" in form
+    assert 'style="background: #abcdef"' in form
+    assert "p-8" not in form
+    assert "background: #ff0000" not in form
+
+    fieldset_tag = re.search(r'<fieldset class="([^"]*)"[^>]*>', html)
+    assert fieldset_tag is not None
+    assert "p-4" in fieldset_tag.group(1)
+    assert "p-6" not in fieldset_tag.group(0)
+    assert "p-8" not in fieldset_tag.group(0)
+    assert "border-2" not in fieldset_tag.group(0)
+    assert "style=" not in fieldset_tag.group(0)
+
+    assert html.count("p-6") == 1
+    assert html.count("background: #abcdef") == 1
+
+
+def test_action_form_fields_use_page_default_and_own_design():
+    fields = [
+        _input_field("Plain"),
+        _input_field("Styled", {"padding": {"all_padding": "p-2"}}),
+    ]
+    html = _render_action_form(fields, {"padding": {"all_padding": "p-6"}})
+
+    fieldsets = re.findall(r'<fieldset class="([^"]*)"[^>]*>', html)
+    assert len(fieldsets) == 2
+    assert "p-4" in fieldsets[0]
+    assert "p-2" not in fieldsets[0]
+    assert "p-4" in fieldsets[1]
+    assert "p-2" in fieldsets[1]
+    for classes in fieldsets:
+        assert "p-6" not in classes
+        assert "p-8" not in classes
+        assert "border-2" not in classes
+
+    fieldset_tags = re.findall(r'<fieldset class="[^"]*"[^>]*>', html)
+    assert all("style=" not in tag for tag in fieldset_tags)
+
+
 def test_action_button_keeps_menu_defaults_and_own_design():
     block = ActionBlock()
     value = block.to_python(_action_value())

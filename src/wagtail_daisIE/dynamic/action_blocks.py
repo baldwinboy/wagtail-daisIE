@@ -22,8 +22,9 @@ from django.urls import NoReverseMatch, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
-from ..base_blocks import InlineMarkupBlock, collapsed_group
+from ..base_blocks import InlineMarkupBlock, SpacedDesignBlock, collapsed_group
 from ..base_blocks.compact import DaisieStreamBlock, DaisieStructBlock
+from ..base_blocks.css import build_background_style, build_design_css
 from ..base_blocks.visibility import VisibilityBlock, VisibilityMixin
 from ..blocks.inputs import AUTOCOMPLETE_BLOCKS, FIELD_BLOCKS
 from ..blocks.link import ButtonBlock
@@ -241,6 +242,10 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
         label=_("After submit"),
         help_text=_("How the browser responds when the action succeeds."),
     )
+    container_design = SpacedDesignBlock(
+        required=False,
+        label=_("Form design"),
+    )
     visibility = VisibilityBlock()
 
     class Meta:
@@ -258,12 +263,17 @@ class ActionFormBlock(VisibilityMixin, DaisieStructBlock):
                 "behaviour",
                 "confirmation",
             ],
-            settings=["visibility"],
+            settings=["container_design", "visibility"],
         )
 
     def get_context(self, value, parent_context=None):
         context = super().get_context(value, parent_context)
         value = value or {}
+        design = value.get("container_design")
+        # The form design styles the <form> only. Do not write it into
+        # ``container_css``: fields keep the page channel and their own design.
+        context["form_css"] = build_design_css(design)
+        context["form_style"] = build_background_style(design)
         action_key = value.get("action", "")
         try:
             context["action_url"] = reverse(

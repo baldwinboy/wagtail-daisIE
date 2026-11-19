@@ -347,8 +347,10 @@ When adding a block, subclass the appropriate `Themed*Block` from
   **After submit** `behaviour` (`inline` / `reload` / `navigate`) is submitted
   as `daisie_behaviour`; the action view returns an inline alert fragment
   (`action_form_status.html`), `HttpResponseClientRefresh`, or
-  `HttpResponseClientRedirect`. It is nested only (tab content), so it never
-  appears as a top-level block and produces no migration.
+  `HttpResponseClientRedirect`. `container_design` styles the `<form>` only and
+  is never written into `container_css`; fields keep the page container channel
+  and their own design. It is nested only (tab content), so it never appears as
+  a top-level block and produces no migration.
 - **Tabs are CSS-only with per-block radio groups**: `TabItemBlock` has an
   optional `icon`, `key` (used by `?tab=`) and `audience`, and its `content`
   includes `LIST_CONTENT_BLOCKS`, the data-input blocks and the
