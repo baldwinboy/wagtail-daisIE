@@ -271,7 +271,9 @@ they receive the page context.
 
 `DaisyUIMenu` is a `ClusterableModel` snippet with revisions and preview. It
 stores `branding`, `item_design`, and `body`, and is rendered by the
-`daisyui_menu` inclusion tag. See [menus.md](menus.md).
+`daisyui_menu` inclusion tag. `menu_block.html` clears the page category design
+channels before rendering, so page defaults do not leak into menu items or
+branding. See [menus.md](menus.md).
 
 ## Errors
 

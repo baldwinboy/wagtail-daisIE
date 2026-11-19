@@ -83,9 +83,9 @@ design and item defaults, not the current page’s default design.
 - Confirm the menu preview and live rendering agree.
 
 **Acceptance criteria:**
-- [ ] Page default design classes do not appear on menu items or menu branding.
-- [ ] Menu theme, `menu_design` and `item_design` still work.
-- [ ] Horizontal, vertical, footer, sidebar, navbar, megamenu and dock layouts
+- [x] Page default design classes do not appear on menu items or menu branding.
+- [x] Menu theme, `menu_design` and `item_design` still work.
+- [x] Horizontal, vertical, footer, sidebar, navbar, megamenu and dock layouts
       are covered by tests.
 
 **Expected file changes:**
@@ -94,7 +94,8 @@ design and item defaults, not the current page’s default design.
 
 **Blocking stories:** DI-1.
 
-**Current status:** Not started — **Blocked by DI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

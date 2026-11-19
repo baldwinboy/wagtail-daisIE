@@ -51,8 +51,12 @@ includes the matching template. `menu_block.html` emits the menu theme CSS when
 it differs from the page theme, then wraps the layout with
 `menu_default_css`/`menu_default_style` (from `item_design`) for the top-level
 items. Those defaults stop at the item: nested content does not inherit them.
-Container templates render `menu_design_css`/`menu_design_style` and are wrapped
-in `.daisyui-menu` for isolated styling.
+Before rendering a layout, `menu_block.html` clears the page category design
+channels (`container_css`, `text_css`, `button_css`, `media_css`), so page
+default styles do not reach menu items or branding while request and context
+values remain available. Container templates render
+`menu_design_css`/`menu_design_style` and are wrapped in `.daisyui-menu` for
+isolated styling.
 
 Layouts: `navbar` (dropdown on mobile + **megamenu** on desktop), standalone
 `megamenu` (`<button popovertarget>` + `<div popover>` pairs, responsive

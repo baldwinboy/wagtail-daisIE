@@ -4,7 +4,7 @@
         {% daisyui_theme_css menu_theme %}
     {% endif %}
     <div class="daisie-menu" data-daisie-menu>
-    {% with menu_default_css=menu_item_css menu_default_style=menu_item_style %}
+    {% with menu_default_css=menu_item_css menu_default_style=menu_item_style container_css="" text_css="" button_css="" media_css="" %}
         {% if menu.layout == "navbar" %}
             {% include "wagtail_daisIE/blocks/navbar.html" %}
         {% elif menu.layout == "megamenu" %}

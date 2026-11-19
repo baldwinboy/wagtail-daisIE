@@ -300,8 +300,10 @@ When adding a block, subclass the appropriate `Themed*Block` from
   `TextBackgroundBlock` is email-only.
 - **Menu container and item styles are independent**: `DaisyUIMenu.menu_design`
   styles the container (`menu_design_css`/`menu_design_style`); `item_design`
-  styles items (`menu_default_css`/`menu_default_style`). Menus are wrapped in
-  `.daisyui-menu`.
+  styles items (`menu_default_css`/`menu_default_style`). Menus clear the page
+  category design channels (`container_css`, `text_css`, `button_css`,
+  `media_css`) before rendering, so page defaults do not leak into items or
+  branding. Menus are wrapped in `.daisyui-menu`.
 - **Menu item design stops at the item**: `menu.item_design` is a
   `MenuItemDesignBlock` stored in a one-item `StreamField`;
   `DaisyUIMenu.get_item_css()` returns its classes and the menu templates set
