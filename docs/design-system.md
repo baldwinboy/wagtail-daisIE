@@ -80,7 +80,7 @@ to all blocks that use the container channel. Use it deliberately.
 
 Inheritance is per element category and strictly isolated. Each `ThemedBlock`
 declares a `default_css_key` (`container`, `text`, `button` or `media`) and
-reads/writes the matching `<category>_css` context channel:
+reads the matching `<category>_css` context channel:
 
 ```python
 key = f"{self.default_css_key}_css"
@@ -89,15 +89,22 @@ own = build_design_css(value.get("design"))
 context["block_css"] = build_class(
     channel, parent_context.get("menu_default_css", ""), own
 )
-context[key] = build_class(channel, own)
+# Descendants keep the page channel but not this block's design.
+context["menu_default_css"] = ""
+context["menu_default_style"] = ""
 ```
 
 - `block_css` is render-only; templates write it into `class`.
-- A category's classes only ever reach descendants of the same category, so a
-  container's styles cannot bleed into text, buttons or media.
+- The page category channel stays in the context, so page defaults reach every
+  block of that category, including nested blocks.
+- A block's own design is not written back into `<category>_css`. It styles
+  the current element only, so a container's own padding, background or border
+  cannot bleed into text, buttons or media inside it.
 - `MenuItemDesignBlock` is the exception: menu templates set the
-  `menu_default_css` channel, which every category inherits, so
-  `DaisyUIMenu.item_design` still applies to every menu item.
+  `menu_default_css`/`menu_default_style` channels, which the top-level item of
+  any category inherits. `ThemedBlock` clears both channels before rendering
+  descendants, so `DaisyUIMenu.item_design` does not cascade into nested
+  content.
 
 `StyledPageMixin.get_context` seeds the four channels from
 `PageDesignBlock` (see [architecture.md](architecture.md#page-rendering)), so

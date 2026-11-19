@@ -233,17 +233,23 @@ modal, etc.).
 
 1. A block's `Meta` declares a `design` field made of primitives.
 2. `ThemedBlock.get_context` calls `build_design_css(value["design"])` to get a
-   space-separated class string, then merges it with any `block_css` inherited
-   from `parent_context`. The `design.background` stream is rendered separately
+   space-separated class string, then combines it with the page's own category
+   channel (`container_css`, `text_css`, `button_css` or `media_css`) and any
+   menu item defaults. The `design.background` stream is rendered separately
    into `block_style` (`background: …`).
 3. The block template receives `block_css` (into `class`) and `block_style`
    (into `style`).
 
+Only the page category channel survives into child contexts. A block's own
+design and menu item defaults style the current element and are not written
+back, so nested blocks do not duplicate the parent's padding, background or
+border.
+
 Menu defaults use this: `DaisyUIMenu.get_item_css()` returns the classes for
-`item_design`, and the menu templates wrap their item loop in
-`{% with block_css=menu_item_css %}`. Each item then appends its own classes.
-Because both are plain utility classes, per-item classes come last and win
-where stylesheet order allows.
+`item_design`, and `menu_block.html` wraps the layout in
+`{% with menu_default_css=menu_item_css menu_default_style=menu_item_style %}`.
+Each top-level item receives those defaults; `ThemedBlock.get_context` then
+clears both channels before rendering the item's descendants.
 
 ## Page rendering
 
@@ -252,8 +258,9 @@ where stylesheet order allows.
 `daisyui_page_background_css`, `daisyui_main_css`/`daisyui_main_style` (resolved
 from the page's `main_design`, falling back to the theme's) and the
 per-category default channels (`container_css`, `text_css`, `button_css`,
-`media_css`) built from `PageDesignBlock`. Each `ThemedBlock` inherits only its
-own category channel, keeping defaults isolated. Page templates render
+`media_css`) built from `PageDesignBlock`. Each `ThemedBlock` reads only its
+own page-provided category channel, keeping defaults isolated; its own design
+is not written back for nested blocks. Page templates render
 `{% daisyui_theme_full_css daisyui_theme %}` in `<head>`, apply
 `daisyui_page_background_css` to the body, and put
 `{% daisyui_main_attrs daisyui_theme %}` on `<main id="main-content">`; body

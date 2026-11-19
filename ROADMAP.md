@@ -50,12 +50,12 @@ padding, background or border.
 - Update the `ThemedBlock` docstring and design-system docs.
 
 **Acceptance criteria:**
-- [ ] Page `container_css`/`text_css`/`button_css`/`media_css` still reach every
+- [x] Page `container_css`/`text_css`/`button_css`/`media_css` still reach every
       block of that category.
-- [ ] A nested block does not receive the parent block’s own design classes.
-- [ ] A menu item’s `item_design` applies to the top-level item only.
-- [ ] Existing tests are updated to the new inheritance contract.
-- [ ] A regression test covers “parent design does not cascade, page channel does”.
+- [x] A nested block does not receive the parent block’s own design classes.
+- [x] A menu item’s `item_design` applies to the top-level item only.
+- [x] Existing tests are updated to the new inheritance contract.
+- [x] A regression test covers “parent design does not cascade, page channel does”.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/base_blocks/design.py`
@@ -67,7 +67,8 @@ padding, background or border.
 
 **Blocking stories:** none.
 
-**Current status:** Not started — **Ready**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

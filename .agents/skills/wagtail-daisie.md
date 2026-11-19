@@ -19,7 +19,7 @@ menu/theme models, icons, the demo loader, or documentation.
 1. `AGENTS.md` — invariants and commands.
 2. `docs/architecture.md` — layers and the `block_css` pipeline.
 3. `docs/design-system.md` — design primitives and how to add one.
-4. `docs/menus.md` — menu model, branding, item-design cascade.
+4. `docs/menus.md` — menu model, branding, item-design defaults.
 5. `docs/error-pages.md` — error snippets, handlers, themes and fallbacks.
 
 ## Core rules
@@ -29,9 +29,10 @@ menu/theme models, icons, the demo loader, or documentation.
 - **Nesting a stream inside a `StructBlock`:** use the `StreamBlock` instance
   directly, e.g. `destination = LinkDestinationBlock()`. `StreamField` is a model
   field and is silently ignored as a struct child.
-- **Always preserve `block_css` inheritance:** a block's `get_context` must
-  merge inherited `block_css` (`merge_block_css(parent_context, own)`), otherwise
-  menu `item_design` defaults stop cascading.
+- **Keep design inheritance to the page category channel:** `ThemedBlock`
+  applies `menu_default_css`/`menu_default_style` to the current top-level item
+  and blanks them for descendants. Never write a block's own design back into
+  `<category>_css`.
 - **Render `{{ block_css }}`** in every themed block template inside a
   `{% if audience_allowed %}` guard.
 - Font families store the theme **role/name** and render as `font-<role>`.

@@ -217,10 +217,11 @@ demo/                # Demo Wagtail site (settings, blog/home apps, fixtures)
 - `base_blocks/css.py` builds space-separated DaisyUI/Tailwind utility class
   strings from design block values (`build_design_css`, `build_typography_css`,
   ...).
-- Every themed block's `get_context` sets `context["block_css"]` by merging any
-  inherited `block_css` from `parent_context` with its own classes
-  (`merge_block_css`). This is deliberate: a menu injects its `item_design`
-  defaults through the parent context, and each item appends its own design.
+- Every themed block's `get_context` sets `context["block_css"]` from the
+  page-level category channel (`<category>_css`), any enclosing menu's item
+  defaults, and its own design/responsive classes. Only the page channel is
+  left in the context for descendants: a block's own design styles that block
+  only, and menu item defaults stop at the top-level item.
 - `ThemedBlock.get_context` also evaluates `audience_allowed`.
 - Templates render `block_css` into the element's `class`.
 
@@ -301,9 +302,12 @@ When adding a block, subclass the appropriate `Themed*Block` from
   styles the container (`menu_design_css`/`menu_design_style`); `item_design`
   styles items (`menu_default_css`/`menu_default_style`). Menus are wrapped in
   `.daisyui-menu`.
-- **Menu item design cascade**: `menu.item_design` is a `MenuItemDesignBlock`
-  stored in a one-item `StreamField`; `DaisyUIMenu.get_item_css()` returns its
-  classes and the menu templates set `{% with block_css=menu_item_css %}`.
+- **Menu item design stops at the item**: `menu.item_design` is a
+  `MenuItemDesignBlock` stored in a one-item `StreamField`;
+  `DaisyUIMenu.get_item_css()` returns its classes and the menu templates set
+  `menu_default_css`/`menu_default_style` from it. `ThemedBlock.get_context`
+  applies them to the top-level item and blanks both channels before rendering
+  the item's descendants.
 - **The `<main>` container is editor-designed**: `MainDesignBlock` on the theme
   (`DaisyUITheme.main_design`) and pages (`StyledPageMixin.main_design`); the page
   value wins over the theme, with no package fallback. Templates use

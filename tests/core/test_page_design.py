@@ -50,7 +50,9 @@ class TestCategoryIsolation:
         assert "text-secondary" in classes
         assert "p-8" not in classes and "btn-primary" not in classes
         assert "aspect-video" not in classes
-        assert ctx["text_css"] == "text-primary text-secondary"
+        # The channel stays page-level; the block's own design is not
+        # written back for descendants.
+        assert ctx["text_css"] == "text-primary"
 
     def test_block_inherits_only_its_own_channel(self):
         """Cross-category leakage is the bug this guards against."""
@@ -77,12 +79,13 @@ class TestCategoryIsolation:
             classes = _get_context(block(), {}, parent)["block_css"].split()
             assert inherited in classes and forbidden not in classes
 
-    def test_nesting_and_menu_default(self):
+    def test_parent_design_does_not_cascade_but_page_channel_does(self):
         parent = {"text_css": "text-primary"}
         outer = _get_context(
             ThemedTypographyBlock(), {"typography": {"font_size": "text-xl"}}, parent
         )
-        assert outer["text_css"] == "text-primary text-xl"
+        assert outer["block_css"].split() == ["text-primary", "text-xl"]
+        assert outer["text_css"] == "text-primary"
 
         inner = ThemedTypographyBlock().get_context(
             {
@@ -91,18 +94,49 @@ class TestCategoryIsolation:
             },
             outer,
         )
-        assert inner["text_css"] == "text-primary text-xl text-secondary"
+        classes = inner["block_css"].split()
+        assert classes == ["text-primary", "text-secondary"]
+        assert inner["text_css"] == "text-primary"
+
         other = ThemedButtonBlock().get_context({"design": {}, "audience": {}}, outer)
         assert "text-xl" not in other["block_css"].split()
 
-        menu = {"menu_default_css": "font-body"}
+    def test_page_channel_reaches_every_nested_category(self):
+        cases = [
+            (ThemedBlock, {"container_css": "p-4"}),
+            (ThemedTypographyBlock, {"text_css": "text-primary"}),
+            (ThemedButtonBlock, {"button_css": "btn btn-primary"}),
+            (ThemedMediaBlock, {"media_css": "aspect-video"}),
+        ]
+        for block_class, parent in cases:
+            outer = _get_context(block_class(), {}, parent)
+            inner = block_class().get_context({"design": {}, "audience": {}}, outer)
+            for css in parent.values():
+                for token in css.split():
+                    assert token in inner["block_css"].split()
+
+    def test_menu_defaults_apply_to_the_top_level_item_only(self):
+        menu = {
+            "menu_default_css": "font-body",
+            "menu_default_style": "background: red",
+        }
         for block in (
             ThemedTypographyBlock(),
             ThemedButtonBlock(),
             ThemedMediaBlock(),
             ThemedBlock(),
         ):
-            assert "font-body" in _get_context(block, {}, menu)["block_css"].split()
+            item = _get_context(block, {}, menu)
+            assert "font-body" in item["block_css"].split()
+            assert item["block_style"] == "background: red"
+            assert item["menu_default_css"] == ""
+            assert item["menu_default_style"] == ""
+
+            nested = ThemedTypographyBlock().get_context(
+                {"design": {}, "audience": {}}, item
+            )
+            assert "font-body" not in nested["block_css"].split()
+            assert nested["block_style"] == ""
 
     def test_table_cells_seeded_from_text_channel(self):
         ctx = ThemedTableBlock().get_context(

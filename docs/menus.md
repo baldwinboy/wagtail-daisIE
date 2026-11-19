@@ -17,7 +17,7 @@ Provided by the required `wagtail_daisIE.menus` app.
 | `menu_theme` | Theme applied to the menu; falls back to the default theme. |
 | `show_theme_toggle`, `alt_menu_theme` | Optional light/dark toggle. |
 | `menu_design` | One-item stream of `SpacedDesignBlock`: the **container** design. |
-| `item_design` | One-item stream of `MenuItemDesignBlock`: defaults for every **item**. |
+| `item_design` | One-item stream of `MenuItemDesignBlock`: defaults for every top-level **item**. |
 | `sticky` | Sticky navbar. |
 | `body` | `MenuItemStreamBlock` — the menu items. |
 
@@ -49,7 +49,8 @@ with `show_search=True` is still available.
 `templates/wagtail_daisIE/blocks/menu_block.html`, which switches on `layout` and
 includes the matching template. `menu_block.html` emits the menu theme CSS when
 it differs from the page theme, then wraps the layout with
-`menu_default_css`/`menu_default_style` (from `item_design`) for the items.
+`menu_default_css`/`menu_default_style` (from `item_design`) for the top-level
+items. Those defaults stop at the item: nested content does not inherit them.
 Container templates render `menu_design_css`/`menu_design_style` and are wrapped
 in `.daisyui-menu` for isolated styling.
 

@@ -266,8 +266,8 @@ Each menu has:
 - **Theme** — a `menu_theme` (falls back to the default theme) plus an optional
   light/dark toggle.
 - **Item defaults** (`item_design`) — default typography, background, spacing,
-  size, border and box styles applied to every item. Each item's own settings
-  are appended on top, so per-block design still wins.
+  size, border and box styles applied to every top-level item. Each item's own
+  settings are appended on top, so per-block design still wins.
 - **Menu items** — links, buttons, search boxes, inline cards, accordions, link
   lists, headers, text, and newsletters.
 
@@ -285,9 +285,10 @@ components. See [docs/reusable-blocks.md](docs/reusable-blocks.md).
 
 Design primitives live in `wagtail_daisIE.base_blocks` and are composed into the
 public blocks in `wagtail_daisIE.blocks`. Every themed block resolves a
-`block_css` class string from its design settings, merging any inherited
-`block_css` from its parent context. This is what lets menu-level `item_design`
-defaults cascade into items without any menu-specific block code.
+`block_css` class string from the page's category defaults, any menu item
+defaults and its own design. Only the page defaults reach descendants; a
+block's own design styles that block, and menu item defaults stop at the
+top-level item.
 
 Any block with a `typography` group (a `TypographyBlock`) exposes a **Font
 family** picker populated from the current theme's font-family roles. The stored

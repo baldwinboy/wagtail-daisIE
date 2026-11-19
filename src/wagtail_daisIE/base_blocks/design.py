@@ -254,11 +254,12 @@ class PageDesignBlock(DaisieStructBlock):
 
 
 class MenuItemDesignBlock(TypographyDesignBlock):
-    """Default design applied to every item in a menu.
+    """Default design applied to every top-level item in a menu.
 
     Editors set menu-wide font, text colour, background, spacing and size
     defaults here; each item's own design is appended after these classes so
-    per-block settings can still win (see :func:`build_design_css`).
+    per-block settings can still win (see :func:`build_design_css`). The
+    defaults stop at the top-level item and do not reach its descendants.
     """
 
     spacing = SpacingBlock()
@@ -285,6 +286,17 @@ class MenuItemDesignBlock(TypographyDesignBlock):
 
 
 class ThemedBlock(VisibilityMixin, DaisieStructBlock):
+    """Resolve design classes and audience visibility at render time.
+
+    ``block_css`` combines the page's category channel (``container_css``,
+    ``text_css``, ``button_css`` or ``media_css``), the enclosing menu's item
+    defaults and this block's own design. Only the page category channel stays
+    in the context for children: a block's own design styles that block, and
+    menu item defaults style the top-level item only. ``block_style`` carries
+    the design background (or an inherited menu item background) for the same
+    element.
+    """
+
     audience = AudienceBlock()
     design = DesignBlock()
     responsive = responsive_overrides()
@@ -293,8 +305,8 @@ class ThemedBlock(VisibilityMixin, DaisieStructBlock):
     default_css_key = "container"
 
     def get_context(self, value, parent_context=None):
+        parent_context = dict(parent_context or {})
         context = super().get_context(value, parent_context)
-        parent_context = parent_context or {}
         key = f"{self.default_css_key}_css"
         channel = parent_context.get(key, "")
         own = build_class(
@@ -310,14 +322,14 @@ class ThemedBlock(VisibilityMixin, DaisieStructBlock):
             "scroll", ""
         )
         context["has_scroll"] = bool(scroll)
-        context[key] = build_class(channel, own)
         context["block_style"] = build_background_style(
             value.get("design")
         ) or parent_context.get("menu_default_style", "")
-        context["menu_default_css"] = (parent_context or {}).get("menu_default_css", "")
-        context["menu_default_style"] = (parent_context or {}).get(
-            "menu_default_style", ""
-        )
+        # The page category channel is inherited from parent_context and stays
+        # there for descendants. The block's own design is deliberately not
+        # written back, and menu item defaults stop at this top-level item.
+        context["menu_default_css"] = ""
+        context["menu_default_style"] = ""
         audience_keys = (value.get("audience") or {}).get("audience") or []
         request = parent_context.get("request")
         context["audience_allowed"] = evaluate_audience(audience_keys, request)

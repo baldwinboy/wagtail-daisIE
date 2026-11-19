@@ -249,8 +249,14 @@ class TestReusableBlock:
         )
         assert "Hello" in html
         assert "p-4" in html  # the wrapper inherits the container channel
-        assert "font-body" in html  # menu item defaults flow through
         assert "text-primary" in html  # the saved block's own design
+
+        wrapper = re.search(r'<div class="([^"]*)"', html)
+        nested = re.search(r'<span class="([^"]*)"', html)
+        assert wrapper is not None and nested is not None
+        # Menu item defaults style the top-level reusable wrapper only.
+        assert "font-body" in wrapper.group(1).split()
+        assert "font-body" not in nested.group(1).split()
 
     def test_missing_snippet_renders_nothing(self):
         from wagtail_daisIE.blocks.reusable import ReusableBlockBlock
