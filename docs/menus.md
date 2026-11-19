@@ -71,6 +71,11 @@ the image block (same fields/design) and renders inline; size it with the media
 design `size` (e.g. a height class). The wrapper is `inline-flex items-center`
 so the logo sits on the same line as the wordmark.
 
+Branding renders once before the items in every layout. List layouts
+(`horizontal`, `vertical`, `sidebar`) wrap it in an `<li>`; other layouts render
+it directly. Branding keeps its own design and ignores page defaults and
+`item_design` padding, background and typography.
+
 ## Destination rules
 
 `LinkDestinationBlock` is a custom `StreamBlock` (one of page, URL, document,

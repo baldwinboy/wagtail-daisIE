@@ -310,6 +310,10 @@ When adding a block, subclass the appropriate `Themed*Block` from
   `menu_default_css`/`menu_default_style` from it. `ThemedBlock.get_context`
   applies them to the top-level item and blanks both channels before rendering
   the item's descendants.
+- **Menu branding is menu chrome**: `MenuBranding.get_context` clears
+  `menu_default_css`/`menu_default_style` before rendering, so branding keeps
+  its own design and ignores item defaults. Every menu layout renders branding
+  once before its items; list layouts wrap it in `<li>`.
 - **The `<main>` container is editor-designed**: `MainDesignBlock` on the theme
   (`DaisyUITheme.main_design`) and pages (`StyledPageMixin.main_design`); the page
   value wins over the theme, with no package fallback. Templates use

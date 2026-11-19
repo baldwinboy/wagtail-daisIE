@@ -18,7 +18,7 @@ IMAGE_SOURCE_CHOICES = ChoiceList(
 
 
 def _image_alt(value):
-    if value is None:
+    if value is None or isinstance(value, str):
         return ""
     return (
         getattr(value, "alt", "")

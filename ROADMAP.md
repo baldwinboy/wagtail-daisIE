@@ -112,21 +112,24 @@ items and available in every menu layout.
 - Ensure branding markup is valid for each container (`li` for list layouts).
 
 **Acceptance criteria:**
-- [ ] Branding ignores page design and `item_design` padding/background/typography.
-- [ ] Branding appears exactly once in every layout that supports it.
-- [ ] Branding tests cover all `MENU_LAYOUT_CHOICES`.
-- [ ] Wordmark and logo keep their own designs and accessible labels.
+- [x] Branding ignores page design and `item_design` padding/background/typography.
+- [x] Branding appears exactly once in every layout that supports it.
+- [x] Branding tests cover all `MENU_LAYOUT_CHOICES`.
+- [x] Wordmark and logo keep their own designs and accessible labels.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/blocks/menu_items.py`
+- `src/wagtail_daisIE/blocks/media.py`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/horizontal_menu.html`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/vertical_menu.html`
 - `src/wagtail_daisIE/templates/wagtail_daisIE/blocks/dock.html`
 - `tests/menus/test_menu_design.py`
+- `tests/dynamic/test_dynamic_values.py`
 
 **Blocking stories:** DI-1, DI-2.
 
-**Current status:** Not started — **Blocked by DI-1, DI-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

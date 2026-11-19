@@ -121,6 +121,9 @@ class MenuBranding(AbstractLinkBlock, PublicThemedBlock):
         )
 
     def get_context(self, value, parent_context=None):
+        parent_context = dict(parent_context or {})
+        parent_context["menu_default_css"] = ""
+        parent_context["menu_default_style"] = ""
         context = super().get_context(value, parent_context)
         context["fallback_alt"] = strip_inline_markup(
             (value.get("wordmark") or {}).get("text", "")

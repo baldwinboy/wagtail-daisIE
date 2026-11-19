@@ -52,6 +52,7 @@ class TestDynamicImage:
         )
         assert context["resolved_image_url"] == "/media/x.png"
         assert context["resolved_image"] is None
+        assert context["resolved_image_alt"] == ""
 
         context = ImageBlock().get_context(
             self._value("photo", source="static"), {"photo": _Image()}

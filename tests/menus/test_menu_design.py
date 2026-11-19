@@ -5,7 +5,7 @@ from django.template import Context, Template
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-from wagtail_daisIE.blocks.menu_items import is_static_menu_block
+from wagtail_daisIE.blocks.menu_items import MenuBranding, is_static_menu_block
 from wagtail_daisIE.menus.models import MENU_LAYOUT_CHOICES, DaisyUIMenu
 from wagtail_daisIE.models import DaisyUITheme
 
@@ -21,7 +21,6 @@ PAGE_DESIGN_CONTEXT = {
     "media_css": "aspect-video",
 }
 LOGO_URL = "https://example.com/logo.png"
-BRANDING_LAYOUTS = frozenset({"navbar", "megamenu", "footer", "sidebar"})
 
 
 def _render(menu_name, context=None):
@@ -31,7 +30,7 @@ def _render(menu_name, context=None):
     return template.render(Context(context or {}))
 
 
-def _menu_with_designs(name, layout, theme, text="Text item"):
+def _menu_with_designs(name, layout, theme, text="Text item", *, branding=True):
     menu = DaisyUIMenu.objects.create(name=name, layout=layout, menu_theme=theme)
     menu.menu_design = [
         (
@@ -48,21 +47,22 @@ def _menu_with_designs(name, layout, theme, text="Text item"):
         )
     ]
     menu.item_design = [("item", {"typography": {"text_color": "text-secondary"}})]
-    menu.branding = [
-        (
-            "branding",
-            {
-                "logo": {
-                    "image_source": "dynamic",
-                    "image_expression": "{{ logo_url }}",
-                    "alt": "Acme logo",
+    if branding:
+        menu.branding = [
+            (
+                "branding",
+                {
+                    "logo": {
+                        "image_source": "dynamic",
+                        "image_expression": "{{ logo_url }}",
+                        "alt": "Acme logo",
+                    },
+                    "wordmark": {"text": "Acme"},
+                    "destination": [],
+                    "open_in_new_tab": False,
                 },
-                "wordmark": {"text": "Acme"},
-                "destination": [],
-                "open_in_new_tab": False,
-            },
-        )
-    ]
+            )
+        ]
     menu.body = [
         {
             "type": "text",
@@ -168,15 +168,15 @@ class TestMenuPageDesignIsolation:
         assert f"Text item {user.username}" in html
         assert "Button item" in html
         assert "Card item" in html
-
-        if layout in BRANDING_LAYOUTS:
-            assert "Acme" in html
-            assert f'src="{LOGO_URL}"' in html
-            assert 'alt="Acme logo"' in html
+        assert "Acme" in html
+        assert html.count(f'src="{LOGO_URL}"') == 1
+        assert html.count('alt="Acme logo"') == 1
 
     def test_preview_and_live_menu_markup_match(self):
         menu_theme = DaisyUITheme.objects.create(name="preview-theme")
-        menu = _menu_with_designs("Preview Menu", "horizontal", menu_theme)
+        menu = _menu_with_designs(
+            "Preview Menu", "horizontal", menu_theme, branding=False
+        )
         request = RequestFactory().get("/")
 
         preview_context = menu.get_preview_context(request, "html")
@@ -250,6 +250,55 @@ class TestMenuBranding:
         plain.save()
         html = _render("Plain")
         assert "Acme" in html and "https://example.com" not in html
+
+    def test_branding_ignores_item_defaults_and_keeps_own_design(self):
+        block = MenuBranding()
+        value_data = {
+            "logo": {
+                "image_source": "dynamic",
+                "image_expression": "{{ logo_url }}",
+                "alt": "Acme logo",
+                "design": {"size": {"size": "h-8"}},
+            },
+            "wordmark": {
+                "text": "Acme",
+                "design": {"typography": {"text_color": "text-accent"}},
+            },
+            "destination": [],
+            "open_in_new_tab": False,
+            "design": {
+                "padding": {"all_padding": "p-3"},
+                "background": [
+                    {
+                        "type": "layer",
+                        "value": {"layer_type": "solid", "color": "#abcdef"},
+                    }
+                ],
+            },
+            "audience": {},
+        }
+        parent_context = {
+            "menu_default_css": "p-4 text-secondary",
+            "menu_default_style": "background: red",
+            "logo_url": LOGO_URL,
+        }
+
+        html = block.render(block.to_python(value_data), context=parent_context)
+        assert "p-3" in html
+        assert "background: #abcdef" in html
+        assert "text-accent" in html
+        assert "h-8" in html
+        assert f'src="{LOGO_URL}"' in html
+        assert 'alt="Acme logo"' in html
+        assert "p-4" not in html
+        assert "text-secondary" not in html
+        assert "background: red" not in html
+
+        value_data["logo"]["alt"] = ""
+        fallback_html = block.render(
+            block.to_python(value_data), context=parent_context
+        )
+        assert 'alt="Acme"' in fallback_html
 
 
 class TestMenuStaticItems:
