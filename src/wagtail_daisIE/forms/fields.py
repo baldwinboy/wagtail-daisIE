@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import json
-
 from django import forms
 from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import EMPTY_VALUES
 from django.db import models
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 from wagtail.contrib.forms.models import AbstractFormField
@@ -152,34 +148,27 @@ class ModelFieldSelect(DaisieFieldSelect):
         attrs = self.build_attrs(self.attrs, attrs)
         value = "" if value is None else str(value)
         active_key = get_current_model_key()
-        base_id = attrs.get("id") or f"id_{name}"
+        config = get_context_models().get(active_key)
+        fields = config.form_fields() if config is not None else []
 
-        selects = []
-        for key, config in get_context_models().items():
-            is_active = key == active_key
-            select_attrs = dict(attrs)
-            select_attrs["id"] = base_id if is_active else f"{base_id}_{key}"
-            select_attrs["data-w-rules-target"] = "show enable"
-            select_attrs["data-w-rules"] = json.dumps({"instance_model": [key]})
-            if not is_active:
-                select_attrs["hidden"] = True
-                select_attrs["disabled"] = True
-
-            widget = forms.Select(
-                choices=field_option_choices(
-                    config.form_fields(),
-                    value,
-                    self.empty_label,
-                    self.missing_label,
-                )
-            )
-            selects.append(widget.render(name, value, select_attrs, renderer))
-
-        return format_html(
-            '<div data-controller="w-rules" '
-            'data-action="change@window->w-rules#resolve">{}</div>',
-            mark_safe("".join(selects)),  # noqa: S308
+        select_attrs = dict(attrs)
+        base_id = select_attrs.get("id") or f"id_{name}"
+        select_attrs["id"] = base_id
+        controllers = select_attrs.get("data-controller", "")
+        select_attrs["data-controller"] = " ".join(
+            part for part in (controllers, "daisie-model-field-select") if part
         )
+        select_attrs["data-daisie-model-field-empty-label"] = str(self.empty_label)
+
+        widget = forms.Select(
+            choices=field_option_choices(
+                fields,
+                value,
+                self.empty_label,
+                self.missing_label,
+            )
+        )
+        return widget.render(name, value, select_attrs, renderer)
 
 
 class MultipleFileInput(forms.FileInput):

@@ -311,6 +311,15 @@ def register_block_controllers_js():
     )
 
 
+# Repopulate a form field's model-field selector when the page's model changes.
+@hooks.register("insert_global_admin_js")
+def register_model_field_select_js():
+    return format_html(
+        '<script src="{}"></script>',
+        static("wagtail_daisIE/js/model_field_select.js"),
+    )
+
+
 # Keep a Feed's internal name in sync with its display title.
 @hooks.register("insert_global_admin_js")
 def register_feed_title_slug_js():

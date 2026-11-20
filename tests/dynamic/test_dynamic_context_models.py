@@ -225,7 +225,9 @@ class TestResolution:
             }
         }
         reset_context_models()
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         scoped = _binding(lookup_in="query")
         assert (
             resolve_binding(
@@ -246,7 +248,9 @@ class TestBindingResultsEndpoint:
         }
 
     def test_staff_and_model_guard_and_limit(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         USER_MODEL.objects.create(username="match-a")
         USER_MODEL.objects.create(username="match-b")
         content = binding_results(
@@ -256,35 +260,48 @@ class TestBindingResultsEndpoint:
         assert "data-daisie-binding-id" in content
         assert "data-w-swap-url-param" not in content
 
-        non_staff = _request(user=USER_MODEL.objects.create(username="anon"), query=self._query(q="match"))
+        non_staff = _request(
+            user=USER_MODEL.objects.create(username="anon"),
+            query=self._query(q="match"),
+        )
         non_staff.META["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"
         with pytest.raises(PermissionDenied):
             binding_results(non_staff)
 
-        unconfigured = _request(user=staff, query=self._query(q="match", model="wagtailcore.Page"))
+        unconfigured = _request(
+            user=staff, query=self._query(q="match", model="wagtailcore.Page")
+        )
         with pytest.raises(Http404):
             binding_results(unconfigured)
 
     def test_blank_query_returns_empty(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         response = binding_results(_request(user=staff, query=self._query(q="")))
         assert response.content == b""
 
-    def test_one_character_query_returns_empty_without_database_query(self, django_assert_num_queries):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+    def test_one_character_query_returns_empty_without_database_query(
+        self, django_assert_num_queries
+    ):
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         USER_MODEL.objects.create(username="match-a")
         with django_assert_num_queries(0):
             response = binding_results(_request(user=staff, query=self._query(q="m")))
         assert response.content == b""
 
     def test_results_are_capped(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         for index in range(25):
             USER_MODEL.objects.create(username=f"match-{index:02d}")
         content = binding_results(
             _request(user=staff, query=self._query(q="match", limit="100"))
         ).content.decode()
-        assert content.count('data-daisie-binding-id') <= 20
+        assert content.count("data-daisie-binding-id") <= 20
 
     def test_results_respect_configured_queryset(self, settings):
         settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
@@ -293,11 +310,15 @@ class TestBindingResultsEndpoint:
                 "model": "auth.User",
                 "source": "request.user",
                 "search_fields": ["username"],
-                "queryset": lambda request, page: USER_MODEL.objects.filter(is_staff=True),
+                "queryset": lambda request, page: USER_MODEL.objects.filter(
+                    is_staff=True
+                ),
             }
         }
         reset_context_models()
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         USER_MODEL.objects.create(username="match-a")
         USER_MODEL.objects.create(username="match-staff", is_staff=True)
         content = binding_results(
@@ -315,9 +336,13 @@ class TestBindingResultsEndpoint:
         assert 'data-w-swap-wait-value="250"' in html
 
     def test_invalid_selector_is_rejected(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        staff = USER_MODEL.objects.create(
+            username="staff", is_staff=True, is_superuser=True
+        )
         response = binding_results(
-            _request(user=staff, query=self._query(q="match", panel="body { color: red }"))
+            _request(
+                user=staff, query=self._query(q="match", panel="body { color: red }")
+            )
         )
         assert response.status_code == 400
 
@@ -370,6 +395,7 @@ class TestContextModelMetadata:
     def test_runtime_state_is_runtime_only(self):
         state = get_context_models_state()
         assert "fields" in state["owner"]
+        assert "formFields" in state["owner"]
         assert "helpFields" not in state["owner"]
         assert "examples" not in state["owner"]
         assert "sourceSummary" not in state["owner"]

@@ -398,5 +398,6 @@ def get_context_models_state():
             "lookupIn": config.lookup_in_kind,
             "urlSource": config.url_source,
             "fields": config.field_docs(),
+            "formFields": config.form_fields(),
         }
     return state

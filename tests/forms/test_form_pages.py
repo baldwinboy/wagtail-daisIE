@@ -20,6 +20,7 @@ from wagtail_daisIE.forms.builder import DaisyUIFormBuilder
 from wagtail_daisIE.forms.fields import (
     DaisieFileField,
     DaisieFormField,
+    ModelFieldSelect,
 )
 from wagtail_daisIE.forms.models import DaisieFormPage
 from wagtail_daisIE.forms.registry import (
@@ -918,3 +919,83 @@ class TestFormFieldLayout:
         )
         assert "data-daisie-field-part" not in html
         assert "<fieldset" in html
+
+
+class TestModelFieldSelect:
+    def test_renders_one_select_for_active_model(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "member": {
+                "label": "Member",
+                "model": "auth.User",
+            }
+        }
+        from wagtail_daisIE.context import set_current_model_key
+        from wagtail_daisIE.dynamic.registry import reset_context_models
+
+        reset_context_models()
+        set_current_model_key("member")
+        try:
+            widget = ModelFieldSelect(empty_label="Use the field name")
+            html = widget.render("model_field", "", attrs={"id": "id_model_field"})
+        finally:
+            from wagtail_daisIE.context import set_current_model_key
+
+            set_current_model_key("")
+            reset_context_models()
+
+        assert html.count("<select") == 1
+        assert 'data-controller="daisie-model-field-select"' in html
+        assert 'data-daisie-model-field-empty-label="Use the field name"' in html
+        assert "data-w-rules" not in html
+        assert "hidden" not in html
+        assert "username" in html
+        assert "email" in html
+
+    def test_no_active_model_renders_empty_select(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "member": {
+                "label": "Member",
+                "model": "auth.User",
+            }
+        }
+        from wagtail_daisIE.context import set_current_model_key
+        from wagtail_daisIE.dynamic.registry import reset_context_models
+
+        reset_context_models()
+        set_current_model_key("")
+        try:
+            widget = ModelFieldSelect(empty_label="Use the field name")
+            html = widget.render("model_field", "", attrs={"id": "id_model_field"})
+        finally:
+            from wagtail_daisIE.context import set_current_model_key
+
+            set_current_model_key("")
+            reset_context_models()
+
+        assert html.count("<select") == 1
+        assert "username" not in html
+
+    def test_missing_value_gets_missing_option(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "member": {
+                "label": "Member",
+                "model": "auth.User",
+            }
+        }
+        from wagtail_daisIE.context import set_current_model_key
+        from wagtail_daisIE.dynamic.registry import reset_context_models
+
+        reset_context_models()
+        set_current_model_key("member")
+        try:
+            widget = ModelFieldSelect(empty_label="Use the field name")
+            html = widget.render(
+                "model_field", "missing_field", attrs={"id": "id_model_field"}
+            )
+        finally:
+            from wagtail_daisIE.context import set_current_model_key
+
+            set_current_model_key("")
+            reset_context_models()
+
+        assert "missing_field (not a field on this model" in html

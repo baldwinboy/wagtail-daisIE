@@ -70,6 +70,11 @@ input, help text and errors, and upload fields have a separate **Upload design**
 columns, overflow scrolling, size and box styling around the option list. Choice
 options also expose an **Option layout** for each option's input and label.
 
+The **Model field** selector renders only the active model's editable fields.
+Changing **Model to create** updates the options with JavaScript; without
+JavaScript only the active model's fields are selectable, and the control still
+submits a real field name. No extra endpoint is used.
+
 Each field also has a **Field layout**: an optional row, column or grid layout
 for the input, label, help and error text, with per-part visibility and
 placement. Existing fields with no field layout render unchanged.

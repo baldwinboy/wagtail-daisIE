@@ -1624,7 +1624,8 @@ one useful control, not one hidden select per configured model.
 
 **Blocking stories:** UI-2.
 
-**Current status:** Not started — **Blocked by UI-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
