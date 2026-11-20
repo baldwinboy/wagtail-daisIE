@@ -353,7 +353,7 @@ Render project data and trigger actions with reusable components:
 
 - **Feeds** — a snippet (Design → Feeds) that lists a context model with
   admin-designed item cards, typed filters (choice/multi, boolean, date, date
-  range, price range, search), AJAX filtering and optional infinite scroll.
+  range, price range, search), AJAX filtering and optional infinite scroll. Feeds use page-based URLs: Load more appends the next page, a real Previous link works without JavaScript, and changing filters or layout resets to page 1.
   Each feed has a friendly **Title** for the CMS and a unique **Internal name**
   that is filled in from the title until edited. Block **visibility** lets
   editors control content with a switch or a model-context condition, including
@@ -519,7 +519,7 @@ WAGTAIL_DAISIE_ACTIONS = {
 WAGTAIL_DAISIE_HTMX = True
 WAGTAIL_DAISIE_HTMX_VERSION = 2
 
-# Public feed slice bounds (defaults shown).
+# Feed page bounds (defaults shown).
 WAGTAIL_DAISIE_FEED_MAX_LIMIT = 1000
 WAGTAIL_DAISIE_FEED_MAX_OFFSET = 1_000_000
 

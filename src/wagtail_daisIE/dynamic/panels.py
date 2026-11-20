@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import HelpPanel
 
 from ..notifications.placeholders import register_placeholder_provider
-from .registry import get_context_models, get_context_models_help_state
+from .registry import get_context_models
 
 
 def _context_model_placeholder_groups():
@@ -51,19 +51,19 @@ def _bound_model_fields(feed):
     ``w-rules`` reveals another when the admin changes **context model**.
     """
     active_key = getattr(feed, "context_model", "") or ""
-    help_state = get_context_models_help_state()
     models = []
-    for key, model_state in help_state.items():
+    for key, config in get_context_models().items():
         active = key == active_key
+        model = config.model
         models.append(
             {
                 "key": key,
-                "label": model_state["label"],
-                "model_label": model_state["model"],
-                "summary": model_state["sourceSummary"],
-                "examples": model_state["examples"] if active else [],
-                "fields": model_state["helpFields"] if active else [],
-                "filters": model_state["filters"] if active else [],
+                "label": str(config.label),
+                "model_label": model._meta.label if model else config.model_path,
+                "summary": str(config.source_summary),
+                "examples": config.examples() if active else [],
+                "fields": config.help_fields() if active else [],
+                "filters": sorted(config.get_filters().keys()),
                 "active": active,
             }
         )

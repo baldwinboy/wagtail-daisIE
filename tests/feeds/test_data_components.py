@@ -1150,3 +1150,123 @@ class TestFilterAutocompleteTemplate:
             },
         )
         assert "data-daisyui-autocomplete-url" in html
+
+
+class TestFeedQueryBudget:
+    def _count(self, func):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as context:
+            func()
+        return len(context.captured_queries)
+
+    def _request(self, page="1", active=None):
+        params = {"page": page}
+        if active is not None:
+            params["filter_active"] = str(active)
+        return RequestFactory().get("/", params)
+
+    def test_append_and_filter_costs_do_not_grow(self):
+        for index in range(12):
+            USER_MODEL.objects.create(
+                username=f"user-{index:02d}", is_active=index % 2 == 0
+            )
+
+        from django.test import override_settings
+
+        with override_settings(
+            WAGTAIL_DAISIE_CONTEXT_MODELS={
+                "user": {
+                    "label": "User",
+                    "model": "auth.User",
+                    "filters": {
+                        "active": {"type": "boolean", "field": "is_active"},
+                    },
+                }
+            }
+        ):
+            reset_context_models()
+            feed = _feed(page_size=3)
+            feed.filters = [("filter", {"key": "user:active"})]
+            feed.save()
+
+            initial = self._count(lambda: render_feed(feed, self._request("1")))
+            append = self._count(lambda: render_feed(feed, self._request("2")))
+            filtered = self._count(
+                lambda: render_feed(feed, self._request("1", active="1"))
+            )
+            later_append = self._count(lambda: render_feed(feed, self._request("3")))
+
+            assert append <= initial
+            assert filtered <= initial
+            assert later_append == append
+
+    def test_append_does_not_repeat_page_one_cost_growth(self):
+        for index in range(12):
+            USER_MODEL.objects.create(username=f"user-{index:02d}")
+
+        feed = _feed(page_size=3)
+        first = self._count(lambda: render_feed(feed, self._request("1")))
+        second = self._count(lambda: render_feed(feed, self._request("2")))
+        third = self._count(lambda: render_feed(feed, self._request("3")))
+        assert second == first
+        assert third == first
+
+    def test_item_relation_is_prefetched(self):
+        from django.contrib.auth.models import Group
+
+        group = Group.objects.create(name="admins")
+        for index in range(4):
+            user = USER_MODEL.objects.create(username=f"user-{index}")
+            user.groups.add(group)
+
+        from django.test import override_settings
+
+        with override_settings(
+            WAGTAIL_DAISIE_CONTEXT_MODELS={
+                "user": {
+                    "label": "User",
+                    "model": "auth.User",
+                    "prefetch_related": ["groups"],
+                }
+            }
+        ):
+            reset_context_models()
+            feed = _feed(page_size=4)
+            feed.item = [
+                {
+                    "type": "header",
+                    "value": {
+                        "text": "{{ user.groups }}",
+                        "design": {},
+                        "audience": {},
+                    },
+                }
+            ]
+            feed.save()
+
+            from django.db import connection
+            from django.test.utils import CaptureQueriesContext
+
+            with CaptureQueriesContext(connection) as context:
+                data = render_feed(feed, RequestFactory().get("/"))
+            assert "admins" in data["items_html"]
+
+            group_queries = [
+                query["sql"]
+                for query in context.captured_queries
+                if "auth_user_groups" in query["sql"].lower()
+                or "auth_group" in query["sql"].lower()
+            ]
+            assert len(group_queries) <= 2
+
+            with CaptureQueriesContext(connection) as second:
+                render_feed(feed, RequestFactory().get("/"))
+            second_group_queries = [
+                query["sql"]
+                for query in second.captured_queries
+                if "auth_user_groups" in query["sql"].lower()
+                or "auth_group" in query["sql"].lower()
+            ]
+            assert len(second_group_queries) == len(group_queries)

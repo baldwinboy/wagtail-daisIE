@@ -183,6 +183,12 @@ The instance picker is a searchable chooser: type to filter, use **Show all**
 to browse (up to 500 results), and use the arrow keys and Enter to select. It is
 a labelled combobox and works with the keyboard alone.
 
+### Saved bindings
+
+Specific-instance bindings render their currently selected value server-side.
+The editor does not make a background request to resolve an already saved
+binding, and the inline chooser remains searchable when changing it.
+
 ### Blog feed example
 
 The demo's blog index uses a **Model list** bound to the `blog_post` context
