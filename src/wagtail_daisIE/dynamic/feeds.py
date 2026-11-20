@@ -10,9 +10,6 @@ from __future__ import annotations
 
 import logging
 
-from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
-
 from django.conf import settings
 from django.core import signing
 from django.core.exceptions import FieldDoesNotExist, FieldError
@@ -23,7 +20,6 @@ from django.core.paginator import (
     Paginator,
 )
 from django.db import models as django_models
-from django.db.models import Q
 from django.http import QueryDict
 from django.middleware.csrf import get_token
 from django.urls import NoReverseMatch, reverse
@@ -413,24 +409,15 @@ def _normalize_choices(raw):
     return options
 
 
-def _parse_date(value):
-    if not value:
+def bind_filters(queryset, config, params, request=None):
+    """Bind ``params`` to a django-filter FilterSet for ``config``."""
+    filterset_class = getattr(config, "filterset_class", None)
+    if filterset_class is None:
         return None
     try:
-        return datetime.fromisoformat(value).date()
-    except (TypeError, ValueError):
-        try:
-            return date.fromisoformat(value)
-        except (TypeError, ValueError):
-            return None
-
-
-def _parse_number(value):
-    if value in (None, ""):
-        return None
-    try:
-        return Decimal(str(value))
-    except (TypeError, InvalidOperation):
+        return filterset_class(data=params, queryset=queryset, request=request)
+    except (FieldError, TypeError, ValueError) as exc:
+        logger.warning("Ignoring invalid feed filters: %s", exc)
         return None
 
 
@@ -438,12 +425,14 @@ def apply_filters(queryset, config, params):
     """Apply the model's declared filters from GET/POST params."""
     if params is None:
         return queryset
-    for key, spec in config.get_filters().items():
-        try:
-            queryset = _apply_one(queryset, config, key, spec, params)
-        except (FieldError, TypeError, ValueError) as exc:
-            logger.warning("Ignoring invalid filter %r: %s", key, exc)
-    return queryset
+    filterset = bind_filters(queryset, config, params)
+    if filterset is None:
+        return queryset
+    try:
+        return filterset.qs
+    except (FieldError, TypeError, ValueError) as exc:
+        logger.warning("Ignoring invalid feed filters: %s", exc)
+        return queryset
 
 
 def _date_transform(config, field):
@@ -458,68 +447,6 @@ def _date_transform(config, field):
     if isinstance(model_field, django_models.DateTimeField):
         return f"{field}__date"
     return field
-
-
-def _apply_one(queryset, config, key, spec, params):
-    filter_type = spec.get("type", "choice")
-    field = spec.get("field")
-
-    query = spec.get("query")
-    if query:
-        if isinstance(query, str):
-            try:
-                query = import_string(query)
-            except ImportError:
-                query = None
-        if callable(query):
-            return query(queryset, params, key)
-
-    if filter_type == "sort":
-        # Ordering is resolved centrally by ``resolve_order``; nothing to filter.
-        return queryset
-    if filter_type == "choice":
-        if spec.get("multi"):
-            values = [v for v in params.getlist(f"filter_{key}") if v]
-            if values:
-                queryset = queryset.filter(**{f"{field}__in": values})
-        else:
-            value = params.get(f"filter_{key}")
-            if value:
-                queryset = queryset.filter(**{field: value})
-    elif filter_type == "boolean":
-        value = params.get(f"filter_{key}")
-        if value in ("1", "true", "True", "yes", "on"):
-            queryset = queryset.filter(**{field: True})
-        elif value in ("0", "false", "False", "no", "off"):
-            queryset = queryset.filter(**{field: False})
-    elif filter_type == "date":
-        value = _parse_date(params.get(f"filter_{key}"))
-        if value is not None:
-            queryset = queryset.filter(**{_date_transform(config, field): value})
-    elif filter_type == "date_range":
-        lookup = _date_transform(config, field)
-        start = _parse_date(params.get(f"filter_{key}_from"))
-        end = _parse_date(params.get(f"filter_{key}_to"))
-        if start is not None:
-            queryset = queryset.filter(**{f"{lookup}__gte": start})
-        if end is not None:
-            queryset = queryset.filter(**{f"{lookup}__lte": end})
-    elif filter_type == "number_range":
-        minimum = _parse_number(params.get(f"filter_{key}_min"))
-        maximum = _parse_number(params.get(f"filter_{key}_max"))
-        if minimum is not None:
-            queryset = queryset.filter(**{f"{field}__gte": minimum})
-        if maximum is not None:
-            queryset = queryset.filter(**{f"{field}__lte": maximum})
-    elif filter_type == "search":
-        query = (params.get("feed_search") or "").strip()
-        fields = spec.get("fields") or ([field] if field else [])
-        if query and fields:
-            condition = Q()
-            for field_name in fields:
-                condition |= Q(**{f"{field_name}__icontains": query})
-            queryset = queryset.filter(condition)
-    return queryset
 
 
 def _selected_filters(feed):
@@ -574,6 +501,61 @@ def _reset_url(request, params, filter_key):
     return f"{request.path}?{encoded}" if encoded else request.path
 
 
+def _bound_field(filterset, name):
+    if filterset is None or not hasattr(filterset, "form"):
+        return None
+    form = filterset.form
+    if name not in form.fields:
+        return None
+    return form[name]
+
+
+def _bound_filter_value(filterset, name, params, fallback_name):
+    field = _bound_field(filterset, name)
+    if field is not None:
+        value = field.value()
+        if isinstance(value, bool):
+            return "1" if value else "0"
+        if value in (None, ""):
+            return params.get(fallback_name, "") if params else ""
+        return (
+            value
+            if not isinstance(value, (list, tuple))
+            else (value[0] if value else "")
+        )
+    if params is None:
+        return ""
+    return params.get(fallback_name, "")
+
+
+def _bound_filter_values(filterset, name, params, fallback_name):
+    field = _bound_field(filterset, name)
+    if field is not None:
+        value = field.value()
+        if isinstance(value, (list, tuple)):
+            return [str(item) for item in value if item not in (None, "")]
+        if value in (None, ""):
+            return params.getlist(fallback_name) if params else []
+        return [str(value)]
+    if params is None:
+        return []
+    return params.getlist(fallback_name)
+
+
+def _bound_filter_range(filterset, name, params, suffix):
+    field = _bound_field(filterset, name)
+    if field is not None:
+        value = field.value()
+        if isinstance(value, (list, tuple)):
+            index = 0 if suffix in ("_from", "_min") else 1
+            if len(value) > index:
+                item = value[index]
+                return "" if item in (None, "") else str(item)
+    if params is None:
+        return ""
+    return params.get(f"{name}{suffix}", "")
+
+
 def build_filters(
     feed,
     config,
@@ -583,6 +565,7 @@ def build_filters(
     selected_filters=None,
     resolved_choices=None,
     filter_menu=None,
+    filterset=None,
 ):
     """Return the UI definitions for the feed's selected filters."""
     from ..base_blocks.css import build_button_state_css, build_design_css
@@ -629,12 +612,22 @@ def build_filters(
             "selected_css": build_button_state_css(active_state),
             "input_css": build_design_css(value.get("input_design")),
             "label_css": build_design_css(value.get("label_design")),
-            "value": params.get(f"filter_{filter_key}", "") if params else "",
-            "values": params.getlist(f"filter_{filter_key}") if params else [],
-            "from": params.get(f"filter_{filter_key}_from", "") if params else "",
-            "to": params.get(f"filter_{filter_key}_to", "") if params else "",
-            "min": params.get(f"filter_{filter_key}_min", "") if params else "",
-            "max": params.get(f"filter_{filter_key}_max", "") if params else "",
+            "value": _bound_filter_value(
+                filterset, f"filter_{filter_key}", params, f"filter_{filter_key}"
+            ),
+            "values": _bound_filter_values(
+                filterset, f"filter_{filter_key}", params, f"filter_{filter_key}"
+            ),
+            "from": _bound_filter_range(
+                filterset, f"filter_{filter_key}", params, "_from"
+            ),
+            "to": _bound_filter_range(filterset, f"filter_{filter_key}", params, "_to"),
+            "min": _bound_filter_range(
+                filterset, f"filter_{filter_key}", params, "_min"
+            ),
+            "max": _bound_filter_range(
+                filterset, f"filter_{filter_key}", params, "_max"
+            ),
             "reset_url": _reset_url(request, params, filter_key),
             "remote_url": "",
         }
@@ -943,7 +936,9 @@ def render_feed(
     queryset = base_queryset(config, request, source_page)
     if queryset is None:
         return result
-    queryset = apply_filters(queryset, config, params)
+    filterset = bind_filters(queryset, config, params, request=request)
+    if filterset is not None:
+        queryset = filterset.qs
 
     selected_filters = _selected_filters(feed)
     resolved_choices = _resolve_filter_choices(
@@ -1052,6 +1047,7 @@ def render_feed(
         selected_filters=selected_filters,
         resolved_choices=resolved_choices,
         filter_menu=filter_menu,
+        filterset=filterset,
     )
 
     objects = list(page_obj.object_list)

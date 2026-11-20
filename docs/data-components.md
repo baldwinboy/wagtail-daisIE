@@ -308,6 +308,9 @@ is authoritative.
 
 ### Filtering
 
+Feed filters are parsed and validated with django-filter (FilterSet). The package owns the filter definitions and UI; standard parameter parsing is upstream.
+
+
 Filters are declared per context model (developers) and selected/ordered on the
 Feed (admins):
 

@@ -302,3 +302,11 @@ nesting a `StreamBlock` inside a `StructBlock` by using the block instance
 
 `tests/` runs against `wagtail_daisIE.test.settings` (package only). Tests that
 need the demo `home`/`blog` apps live in `demo/`.
+
+
+## Feed filtering decisions
+
+- Paginator/Page is the feed loader; CountlessPaginator fetches page_size + 1 rows and never calls count/num_pages.
+- django-filter is the standard filter engine. FilterSet classes are built dynamically per context model and cached; resolve_order() remains the only ordering path.
+- iommi was assessed and not adopted: its table/query/ordering stack would duplicate the package DaisyUI/Wagtail rendering layer.
+- django-listing was assessed and rejected: licence terms and its table-centric design did not fit a reusable Wagtail package.

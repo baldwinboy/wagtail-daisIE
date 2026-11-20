@@ -66,6 +66,7 @@ class ContextModel:
     _help_fields_cache: tuple | None = field(default=None, repr=False)
     _form_fields_cache: tuple | None = field(default=None, repr=False)
     _examples_cache: tuple | None = field(default=None, repr=False)
+    _resolved_filterset: object = field(default=None, repr=False)
 
     @property
     def model(self):
@@ -87,6 +88,14 @@ class ContextModel:
                 filters[key] = spec
             self._resolved_filters = filters
         return self._resolved_filters
+
+    @property
+    def filterset_class(self):
+        if self._resolved_filterset is None:
+            from .filters import build_filterset
+
+            self._resolved_filterset = build_filterset(self)
+        return self._resolved_filterset
 
     def get_queryset(self, request=None, page=None):
         """Return the configured base queryset, or ``None`` to use the default.
