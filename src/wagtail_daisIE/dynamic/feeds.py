@@ -26,6 +26,7 @@ from django.db import models as django_models
 from django.db.models import Q
 from django.http import QueryDict
 from django.middleware.csrf import get_token
+from django.urls import NoReverseMatch, reverse
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
@@ -146,6 +147,8 @@ FILTER_TYPES = (
 
 DEFAULT_FEED_MAX_LIMIT = 1000
 DEFAULT_FEED_MAX_OFFSET = 1_000_000
+DEFAULT_CHOICE_LIMIT = 100
+DEFAULT_AUTOCOMPLETE_CHOICE_LIMIT = 20
 LAYOUT_OVERRIDE_NAMESPACE = "wagtail_daisIE.feed_layout"
 
 
@@ -294,7 +297,7 @@ def render_stream(stream, ctx, stream_block=None, scope=None):
 # --- Filters ----------------------------------------------------------------
 
 
-def resolve_choices(spec, request, page):
+def _raw_choices(spec, request, page):
     source = spec.get("choices")
     if source is None:
         return []
@@ -317,6 +320,82 @@ def resolve_choices(spec, request, page):
     except (TypeError, ValueError, ImportError) as exc:
         logger.warning("Failed to resolve filter choices %r: %s", source, exc)
         return []
+
+
+def _choice_limit(spec):
+    if spec.get("autocomplete"):
+        default = DEFAULT_AUTOCOMPLETE_CHOICE_LIMIT
+    else:
+        default = DEFAULT_CHOICE_LIMIT
+    raw = spec.get("choice_limit", default)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        value = default
+    if value < 1:
+        value = default
+    return min(value, feed_max_limit())
+
+
+def _selected_values(params, key):
+    if params is None:
+        return []
+    try:
+        values = params.getlist(f"filter_{key}")
+    except AttributeError:
+        value = params.get(f"filter_{key}")
+        values = [value] if value not in (None, "") else []
+    return [str(item) for item in values if item not in (None, "")]
+
+
+def _limit_choices(options, selected, limit):
+    selected = [str(value) for value in selected]
+    selected_set = set(selected)
+    base = options[:limit]
+    present = {option["value"] for option in base}
+    extras = [
+        option
+        for option in options
+        if option["value"] in selected_set and option["value"] not in present
+    ]
+    known = {option["value"] for option in options}
+    missing = [
+        {"value": value, "label": value} for value in selected if value not in known
+    ]
+    return base + extras + missing
+
+
+def resolve_choice_options(spec, request, page, *, selected=(), query="", limit=None):
+    """Resolve a filter's choices and bound them.
+
+    Returns ``(options, truncated)``. ``truncated`` is true when the unbounded
+    choice list (after applying ``query``) is larger than the limit.
+    """
+    options = _raw_choices(spec, request, page)
+    if query:
+        needle = query.casefold()
+        options = [
+            option
+            for option in options
+            if needle in option["value"].casefold()
+            or needle in option["label"].casefold()
+        ]
+    total = len(options)
+    if limit is None:
+        limit = _choice_limit(spec)
+    if not query:
+        options = _limit_choices(options, selected, limit)
+    else:
+        options = options[:limit]
+    return options, total > limit
+
+
+def resolve_choices(spec, request, page, *, selected=(), query="", limit=None):
+    """Compatibility wrapper returning only the option list."""
+    options, _ = resolve_choice_options(
+        spec, request, page, selected=selected, query=query, limit=limit
+    )
+    return options
 
 
 def _normalize_choices(raw):
@@ -495,14 +574,27 @@ def _reset_url(request, params, filter_key):
     return f"{request.path}?{encoded}" if encoded else request.path
 
 
-def build_filters(feed, config, params, request=None, page=None):
+def build_filters(
+    feed,
+    config,
+    params,
+    request=None,
+    page=None,
+    selected_filters=None,
+    resolved_choices=None,
+    filter_menu=None,
+):
     """Return the UI definitions for the feed's selected filters."""
     from ..base_blocks.css import build_button_state_css, build_design_css
     from ..base_blocks.utils import build_class
 
-    menu_enabled = build_filter_menu(feed)["enabled"]
+    if filter_menu is None:
+        filter_menu = build_filter_menu(feed)
+    menu_enabled = filter_menu.get("enabled")
+    if selected_filters is None:
+        selected_filters = _selected_filters(feed)
     filters = []
-    for value in _selected_filters(feed):
+    for value in selected_filters:
         composite = (value.get("key") or "").strip()
         if not composite:
             continue
@@ -544,6 +636,7 @@ def build_filters(feed, config, params, request=None, page=None):
             "min": params.get(f"filter_{filter_key}_min", "") if params else "",
             "max": params.get(f"filter_{filter_key}_max", "") if params else "",
             "reset_url": _reset_url(request, params, filter_key),
+            "remote_url": "",
         }
         if filter_type == "boolean":
             entry["options"] = [
@@ -551,18 +644,38 @@ def build_filters(feed, config, params, request=None, page=None):
                 {"value": "0", "label": "No"},
             ]
         elif filter_type in ("choice", "sort", "autocomplete"):
-            entry["options"] = resolve_choices(spec, request, page)
+            if resolved_choices is not None and filter_key in resolved_choices:
+                resolved = resolved_choices[filter_key]
+                entry["options"] = resolved["options"]
+                truncated = resolved["truncated"]
+            else:
+                selected = _selected_values(params, filter_key)
+                entry["options"], truncated = resolve_choice_options(
+                    spec, request, page, selected=selected
+                )
+            if entry["autocomplete"] and truncated:
+                entry["remote_url"] = _filter_choices_url(feed, filter_key, page)
         filters.append(entry)
     return filters
 
 
-def resolve_order(feed, config, params, request=None, page=None):
+def resolve_order(
+    feed,
+    config,
+    params,
+    request=None,
+    page=None,
+    selected_filters=None,
+    resolved_choices=None,
+):
     """Return the order_by for a feed, honouring a visitor ``sort`` filter."""
     order_by = (feed.order_by or "").strip()
     if params is None:
         return order_by
+    if selected_filters is None:
+        selected_filters = _selected_filters(feed)
     selected = {
-        (value.get("key") or "").partition(":")[2] for value in _selected_filters(feed)
+        (value.get("key") or "").partition(":")[2] for value in selected_filters
     }
     for key, spec in config.get_filters().items():
         if spec.get("type") != "sort" or key not in selected:
@@ -570,10 +683,60 @@ def resolve_order(feed, config, params, request=None, page=None):
         value = params.get(f"filter_{key}")
         if not value:
             continue
-        allowed = {str(item["value"]) for item in resolve_choices(spec, request, page)}
+        if resolved_choices is not None and key in resolved_choices:
+            allowed = {str(item["value"]) for item in resolved_choices[key]["options"]}
+        else:
+            selected_values = _selected_values(params, key)
+            allowed = {
+                str(item["value"])
+                for item in resolve_choices(
+                    spec, request, page, selected=selected_values
+                )
+            }
         if str(value) in allowed:
             return str(value)
     return order_by
+
+
+def _filter_choices_url(feed, filter_key, page):
+    try:
+        url = reverse(
+            "wagtail_daisIE_dynamic:feed_filter_choices",
+            args=[feed.pk, filter_key],
+        )
+    except NoReverseMatch:
+        return ""
+    if page is not None and getattr(page, "pk", None):
+        params = QueryDict(mutable=True)
+        params["source_page"] = str(page.pk)
+        url = f"{url}?{params.urlencode()}"
+    return url
+
+
+def _resolve_filter_choices(feed, config, params, request, page, selected_filters=None):
+    """Resolve each selected filter's choices once per request."""
+    if selected_filters is None:
+        selected_filters = _selected_filters(feed)
+    resolved = {}
+    for value in selected_filters:
+        composite = (value.get("key") or "").strip()
+        if not composite:
+            continue
+        model_key, _, filter_key = composite.partition(":")
+        if model_key and model_key != feed.context_model:
+            continue
+        spec = config.get_filters().get(filter_key)
+        if not spec:
+            continue
+        filter_type = spec.get("type", "choice")
+        if filter_type not in ("choice", "sort", "autocomplete"):
+            continue
+        selected = _selected_values(params, filter_key)
+        options, truncated = resolve_choice_options(
+            spec, request, page, selected=selected
+        )
+        resolved[filter_key] = {"options": options, "truncated": truncated}
+    return resolved
 
 
 # --- Layout -----------------------------------------------------------------
@@ -738,6 +901,7 @@ def render_feed(
 
     config = get_context_model(feed.context_model)
     layout_appearance = _first_stream_value(feed.layout_toggle_appearance)
+    filter_menu = build_filter_menu(feed)
     result = {
         "items_html": "",
         "has_more": False,
@@ -750,7 +914,7 @@ def render_feed(
         "total": None,
         "filters": [],
         "submit_css": "btn",
-        "filter_menu": build_filter_menu(feed),
+        "filter_menu": filter_menu,
         "filter_panel_css": build_design_css(
             _first_stream_value(feed.filter_panel_design)
         ),
@@ -781,7 +945,20 @@ def render_feed(
         return result
     queryset = apply_filters(queryset, config, params)
 
-    order_by = resolve_order(feed, config, params, request, source_page)
+    selected_filters = _selected_filters(feed)
+    resolved_choices = _resolve_filter_choices(
+        feed, config, params, request, source_page, selected_filters
+    )
+
+    order_by = resolve_order(
+        feed,
+        config,
+        params,
+        request,
+        source_page,
+        selected_filters=selected_filters,
+        resolved_choices=resolved_choices,
+    )
     if order_by:
         field_name = order_by.lstrip("-")
         if field_name == "pk":
@@ -866,7 +1043,16 @@ def render_feed(
         if result["has_previous"]
         else ""
     )
-    result["filters"] = build_filters(feed, config, params, request, source_page)
+    result["filters"] = build_filters(
+        feed,
+        config,
+        params,
+        request,
+        source_page,
+        selected_filters=selected_filters,
+        resolved_choices=resolved_choices,
+        filter_menu=filter_menu,
+    )
 
     objects = list(page_obj.object_list)
     if not objects:

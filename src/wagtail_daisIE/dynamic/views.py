@@ -6,7 +6,7 @@ import logging
 import re
 
 from django.contrib import messages
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -23,8 +23,9 @@ from .feeds import (
     decode_layout_override,
     encode_layout_override,
     render_feed,
+    resolve_choice_options,
 )
-from .registry import get_context_models, resolve_model
+from .registry import get_context_model, get_context_models, resolve_model
 from .resolvers import model_options
 
 
@@ -191,16 +192,7 @@ def action(request, action_key):
     return response
 
 
-@require_GET
-def feed_items(request, pk):
-    """Render a feed body fragment for htmx filter, layout and load-more swaps."""
-    from ..feeds.models import Feed
-
-    try:
-        feed = Feed.objects.get(pk=pk)
-    except Feed.DoesNotExist as exc:
-        raise Http404 from exc
-
+def _resolve_source_page(request):
     source_page = None
     raw_source_page = request.GET.get("source_page")
     if raw_source_page:
@@ -217,6 +209,20 @@ def feed_items(request, pk):
             logger.warning(
                 "Ignoring invalid feed source_page parameter %r", raw_source_page
             )
+    return source_page
+
+
+@require_GET
+def feed_items(request, pk):
+    """Render a feed body fragment for htmx filter, layout and load-more swaps."""
+    from ..feeds.models import Feed
+
+    try:
+        feed = Feed.objects.get(pk=pk)
+    except Feed.DoesNotExist as exc:
+        raise Http404 from exc
+
+    source_page = _resolve_source_page(request)
 
     layout_token = request.GET.get("layout_token", "")
     override = decode_layout_override(layout_token)
@@ -242,3 +248,26 @@ def feed_items(request, pk):
         else "wagtail_daisIE/blocks/data/feed_body.html"
     )
     return render(request, template, data)
+
+
+@require_GET
+def feed_filter_choices(request, pk, key):
+    """Return bounded, searchable choices for a feed filter."""
+    from ..feeds.models import Feed
+
+    try:
+        feed = Feed.objects.get(pk=pk)
+    except Feed.DoesNotExist as exc:
+        raise Http404 from exc
+
+    config = get_context_model(feed.context_model)
+    if config is None:
+        raise Http404
+    spec = config.get_filters().get(key)
+    if not spec or spec.get("type") not in ("choice", "autocomplete", "sort"):
+        raise Http404
+
+    query = (request.GET.get("q") or "").strip()[:200]
+    source_page = _resolve_source_page(request)
+    options, _ = resolve_choice_options(spec, request, source_page, query=query)
+    return JsonResponse({"results": options})

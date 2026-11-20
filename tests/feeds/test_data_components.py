@@ -931,3 +931,222 @@ class TestFeedPaginationEndpoint:
         assert 'name="page"' not in html
         assert 'name="offset"' not in html
         assert "source_page" in html
+
+
+class TestFilterChoiceLimits:
+    def _config(self, settings, *, autocomplete=False, choice_limit=None):
+        def choices(request, page):
+            return [
+                {"value": str(index), "label": f"Option {index}"}
+                for index in range(150)
+            ]
+
+        spec = {
+            "type": "choice",
+            "multi": True,
+            "field": "username",
+            "choices": choices,
+        }
+        if autocomplete:
+            spec["autocomplete"] = True
+        if choice_limit is not None:
+            spec["choice_limit"] = choice_limit
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "user": {"label": "User", "model": "auth.User", "filters": {"tags": spec}}
+        }
+        reset_context_models()
+        return get_context_model("user")
+
+    def _feed_with_filter(self, feed):
+        feed.filters = [("filter", {"key": "user:tags"})]
+        feed.save()
+        return feed
+
+    def test_default_choice_limit(self, settings):
+        self._config(settings)
+        feed = self._feed_with_filter(_feed())
+        data = render_feed(feed, RequestFactory().get("/"))
+        assert len(data["filters"][0]["options"]) == 100
+
+    def test_autocomplete_default_limit(self, settings):
+        self._config(settings, autocomplete=True)
+        feed = self._feed_with_filter(_feed())
+        data = render_feed(feed, RequestFactory().get("/"))
+        entry = data["filters"][0]
+        assert len(entry["options"]) == 20
+        assert entry["remote_url"]
+
+    def test_custom_choice_limit(self, settings):
+        self._config(settings, choice_limit=5)
+        feed = self._feed_with_filter(_feed())
+        data = render_feed(feed, RequestFactory().get("/"))
+        assert len(data["filters"][0]["options"]) == 5
+
+    def test_selected_value_beyond_limit_is_retained(self, settings):
+        self._config(settings)
+        feed = self._feed_with_filter(_feed())
+        data = render_feed(feed, RequestFactory().get("/", {"filter_tags": "149"}))
+        options = data["filters"][0]["options"]
+        assert any(
+            option["value"] == "149" and option["label"] == "Option 149"
+            for option in options
+        )
+
+    def test_unknown_selected_value_gets_raw_label(self, settings):
+        self._config(settings)
+        feed = self._feed_with_filter(_feed())
+        data = render_feed(feed, RequestFactory().get("/", {"filter_tags": "missing"}))
+        options = data["filters"][0]["options"]
+        assert any(
+            option["value"] == "missing" and option["label"] == "missing"
+            for option in options
+        )
+
+    def test_short_autocomplete_has_no_remote_url(self, settings):
+        def choices(request, page):
+            return [{"value": "1", "label": "One"}]
+
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "user": {
+                "label": "User",
+                "model": "auth.User",
+                "filters": {
+                    "tags": {
+                        "type": "choice",
+                        "multi": True,
+                        "autocomplete": True,
+                        "field": "username",
+                        "choices": choices,
+                    }
+                },
+            }
+        }
+        reset_context_models()
+        feed = _feed()
+        feed.filters = [("filter", {"key": "user:tags"})]
+        feed.save()
+        data = render_feed(feed, RequestFactory().get("/"))
+        assert not data["filters"][0]["remote_url"]
+
+
+class TestFilterResolution:
+    def test_choices_resolved_once(self, settings):
+        calls = {"count": 0}
+
+        def choices(request, page):
+            calls["count"] += 1
+            return [("a", "A"), ("b", "B")]
+
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "user": {
+                "label": "User",
+                "model": "auth.User",
+                "filters": {
+                    "sort": {
+                        "type": "sort",
+                        "field": "username",
+                        "choices": choices,
+                    }
+                },
+            }
+        }
+        reset_context_models()
+        feed = _feed()
+        feed.filters = [("filter", {"key": "user:sort"})]
+        feed.save()
+        render_feed(feed, RequestFactory().get("/"))
+        assert calls["count"] == 1
+
+    def test_filter_menu_resolved_once(self, settings, monkeypatch):
+        import wagtail_daisIE.dynamic.feeds as feeds
+
+        original = feeds.build_filter_menu
+        calls = {"count": 0}
+
+        def counted(feed):
+            calls["count"] += 1
+            return original(feed)
+
+        monkeypatch.setattr(feeds, "build_filter_menu", counted)
+        feed = _feed()
+        render_feed(feed, RequestFactory().get("/"))
+        assert calls["count"] == 1
+
+
+class TestFeedFilterChoicesEndpoint:
+    def test_returns_filtered_results(self):
+        from wagtail_daisIE.dynamic.views import feed_filter_choices
+
+        def choices(request, page):
+            return [
+                {"value": str(index), "label": f"Option {index}"} for index in range(5)
+            ]
+
+        from django.test import override_settings
+
+        with override_settings(
+            WAGTAIL_DAISIE_CONTEXT_MODELS={
+                "user": {
+                    "label": "User",
+                    "model": "auth.User",
+                    "filters": {
+                        "tags": {
+                            "type": "choice",
+                            "multi": True,
+                            "autocomplete": True,
+                            "field": "username",
+                            "choices": choices,
+                        }
+                    },
+                }
+            }
+        ):
+            reset_context_models()
+            feed = _feed()
+            feed.filters = [("filter", {"key": "user:tags"})]
+            feed.save()
+            response = feed_filter_choices(
+                RequestFactory().get("/", {"q": "Option 2"}), feed.pk, "tags"
+            )
+            assert response.status_code == 200
+            import json
+
+            payload = json.loads(response.content)
+            assert [item["value"] for item in payload["results"]] == ["2"]
+
+    def test_unknown_feed_or_filter_returns_404(self):
+        from django.http import Http404
+
+        from wagtail_daisIE.dynamic.views import feed_filter_choices
+
+        feed = _feed()
+        with pytest.raises(Http404):
+            feed_filter_choices(RequestFactory().get("/"), 999999, "tags")
+        with pytest.raises(Http404):
+            feed_filter_choices(RequestFactory().get("/"), feed.pk, "missing")
+
+
+class TestFilterAutocompleteTemplate:
+    def test_remote_url_emitted(self):
+        html = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_filter.html",
+            {
+                "filter": {
+                    "type": "choice",
+                    "autocomplete": True,
+                    "label": "Tags",
+                    "key": "tags",
+                    "options": [{"value": "1", "label": "One"}],
+                    "values": [],
+                    "remote_url": "/daisie/feeds/1/filter/tags/choices/?source_page=7",
+                    "input_css": "",
+                    "container_css": "",
+                    "label_css": "",
+                    "button_css": "btn",
+                    "selected_css": "",
+                    "reset_url": "/",
+                    "collapsed": False,
+                }
+            },
+        )
+        assert "data-daisyui-autocomplete-url" in html

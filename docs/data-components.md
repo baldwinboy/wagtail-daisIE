@@ -372,6 +372,13 @@ Three extras cover the rest:
 * **`autocomplete: true`** (on a `multi` choice filter) renders the searchable
   multi-select control instead of checkbox buttons — the same widget used by the
   `tags`/`languages` form-field types. It works with or without JavaScript.
+* **`choice_limit`** — caps how many choices are rendered for that filter.
+  Defaults to `100` for choice filters and `20` for autocomplete filters, and
+  is capped by `WAGTAIL_DAISIE_FEED_MAX_LIMIT`. Selected values outside the
+  limit are always retained with their label. When an autocomplete filter has
+  more choices than its limit, the control searches the remaining choices through
+  the public `feed_filter_choices` endpoint instead of rendering every option.
+
 * **`query`** — a callable `(queryset, params, key) -> queryset` (or dotted path)
   for filters that need annotations or custom lookups, e.g. “at capacity”
   (`queryset.annotate(...).filter(...)`). It takes precedence over `field`.

@@ -102,12 +102,17 @@
     if (!select || !item) {
       return;
     }
+    var value = item.dataset.value;
     var option = select.querySelector(
-      'option[value="' + CSS.escape(item.dataset.value) + '"]',
+      'option[value="' + CSS.escape(value) + '"]',
     );
-    if (option) {
-      option.selected = true;
+    if (!option) {
+      option = document.createElement('option');
+      option.value = value;
+      option.textContent = item.dataset.label;
+      select.appendChild(option);
     }
+    option.selected = true;
     select.dispatchEvent(new Event('change', { bubbles: true }));
     renderTokens(wrapper);
     if (input) {
@@ -129,6 +134,7 @@
     );
     var input = wrapper.querySelector('[data-daisyui-autocomplete-input]');
     var list = wrapper.querySelector('[data-daisyui-autocomplete-options]');
+    var remoteUrl = wrapper.getAttribute('data-daisyui-autocomplete-url');
     if (!select || !enhanced || !input || !list) {
       return;
     }
@@ -136,8 +142,67 @@
     select.classList.add('hidden');
     enhanced.classList.remove('hidden');
 
+    var remoteTimer = null;
+    var remoteRequest = 0;
+    function renderRemoteOptions(results) {
+      if (!list) {
+        return;
+      }
+      list.replaceChildren();
+      (results || []).forEach(function (option) {
+        var li = document.createElement('li');
+        li.dataset.value = option.value;
+        li.dataset.label = option.label;
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('data-daisyui-autocomplete-option', '');
+        button.textContent = option.label;
+        li.appendChild(button);
+        list.appendChild(li);
+      });
+      list.classList.toggle('hidden', !(results && results.length));
+    }
+    function scheduleRemote() {
+      if (remoteTimer) {
+        clearTimeout(remoteTimer);
+      }
+      remoteTimer = setTimeout(function () {
+        var query = input.value.trim();
+        if (!query) {
+          filterOptions(wrapper, '');
+          return;
+        }
+        var id = ++remoteRequest;
+        var separator = remoteUrl.indexOf('?') === -1 ? '?' : '&';
+        fetch(remoteUrl + separator + 'q=' + encodeURIComponent(query), {
+          headers: { Accept: 'application/json' },
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('remote autocomplete failed');
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            if (id !== remoteRequest) {
+              return;
+            }
+            renderRemoteOptions(data && data.results);
+          })
+          .catch(function () {
+            if (id !== remoteRequest) {
+              return;
+            }
+            filterOptions(wrapper, input.value);
+          });
+      }, 250);
+    }
     input.addEventListener('input', function () {
-      filterOptions(wrapper, input.value);
+      if (remoteUrl && input.value.trim()) {
+        scheduleRemote();
+      } else {
+        filterOptions(wrapper, input.value);
+      }
     });
     input.addEventListener('focus', function () {
       filterOptions(wrapper, input.value);

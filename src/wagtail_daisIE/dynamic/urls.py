@@ -15,4 +15,9 @@ app_name = "wagtail_daisIE_dynamic"
 urlpatterns = [
     path("actions/<str:action_key>/", views.action, name="action"),
     path("feeds/<int:pk>/items/", views.feed_items, name="feed_items"),
+    path(
+        "feeds/<int:pk>/filter/<str:key>/choices/",
+        views.feed_filter_choices,
+        name="feed_filter_choices",
+    ),
 ]

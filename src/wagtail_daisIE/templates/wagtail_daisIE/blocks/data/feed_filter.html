@@ -10,7 +10,7 @@
     <fieldset class="fieldset">
         <legend class="fieldset-legend{% if filter.label_css %} {{ filter.label_css }}{% endif %}">{{ filter.label }}</legend>
         {% if filter.autocomplete %}
-            <div class="daisyui-autocomplete" data-daisyui-autocomplete>
+            <div class="daisyui-autocomplete" data-daisyui-autocomplete{% if filter.remote_url %} data-daisyui-autocomplete-url="{{ filter.remote_url }}"{% endif %}>
                 <select name="filter_{{ filter.key }}" multiple class="select w-full {{ filter.input_css }}">
                     {% for option in filter.options %}<option value="{{ option.value }}"{% if option.value in filter.values %} selected{% endif %}>{{ option.label }}</option>{% endfor %}
                 </select>
