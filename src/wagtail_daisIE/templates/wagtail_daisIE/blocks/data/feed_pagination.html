@@ -1,0 +1,29 @@
+{% load i18n %}
+<div id="daisie-feed-controls-{{ block_id }}" data-daisie-feed-controls{% if oob %} hx-swap-oob="outerHTML"{% endif %}>
+  <div class="mt-4 flex items-center justify-between gap-4">
+    {% if has_previous %}
+      <a
+        href="{{ previous_url }}"
+        class="{{ submit_css }} btn-ghost"
+        data-daisie-feed-previous
+        {% if hide_previous %}hidden{% endif %}
+      >{% translate "Previous" %}</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+    {% if has_more %}
+      <a
+        href="{{ next_url }}"
+        hx-get="{{ feed_url }}{{ next_url }}&amp;fragment=items&amp;block={{ block_id|urlencode }}"
+        hx-target="#daisie-feed-items-{{ block_id }}"
+        hx-swap="beforeend"
+        hx-sync="this:replace"
+        hx-disabled-elt="this"
+        {% if infinite %}hx-trigger="click, revealed"{% endif %}
+        class="{{ submit_css }}"
+        data-daisie-feed-more
+        data-daisie-feed-page="{{ next_page_number }}"
+      >{% translate "Load more" %}</a>
+    {% endif %}
+  </div>
+</div>

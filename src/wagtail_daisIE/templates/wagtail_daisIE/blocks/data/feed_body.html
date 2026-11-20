@@ -1,5 +1,5 @@
 {% load i18n %}
-<div id="daisie-feed-body-{{ block_id }}" data-daisie-feed-body="{{ block_id }}" data-daisie-feed-total="{{ total }}">
+<div id="daisie-feed-body-{{ block_id }}" data-daisie-feed-body="{{ block_id }}"{% if total is not None %} data-daisie-feed-total="{{ total }}"{% endif %}>
   <div
     id="daisie-feed-items-{{ block_id }}"
     data-daisie-feed-items
@@ -13,19 +13,5 @@
 
   <div data-daisie-feed-status aria-live="polite"></div>
 
-  {% if has_more %}
-    <div class="mt-4 text-center">
-      <a
-        href="{{ next_url }}"
-        hx-get="{{ feed_url }}?limit={{ next_limit }}&block={{ block_id }}"
-        hx-include="#daisie-feed-{{ block_id }}"
-        hx-target="#daisie-feed-body-{{ block_id }}"
-        hx-swap="outerHTML"
-        hx-vals='{"layout_token": "{{ layout_token|escapejs }}", "page": "{{ feed_page_pk|escapejs }}"}'
-        {% if infinite %}hx-trigger="click, revealed"{% endif %}
-        class="{{ submit_css }}"
-        data-daisie-feed-more
-      >{% translate "Load more" %}</a>
-    </div>
-  {% endif %}
+  {% include "wagtail_daisIE/blocks/data/feed_pagination.html" with block_id=block_id oob=False hide_previous=False %}
 </div>

@@ -149,8 +149,7 @@ class FeedBlock(ThemedBlock):
             {
                 "items_html": "",
                 "has_more": False,
-                "next_offset": 0,
-                "total": 0,
+                "total": None,
                 "page_size": 0,
                 "filters": [],
                 "feed_url": "",
@@ -163,11 +162,6 @@ class FeedBlock(ThemedBlock):
         page = None
         if parent_context is not None and hasattr(parent_context, "get"):
             page = parent_context.get("page") or parent_context.get("self")
-        try:
-            offset = int((request.GET.get("offset") if request else 0) or 0)
-        except (TypeError, ValueError):
-            offset = 0
-        limit = request.GET.get("limit") if request else None
 
         override = (value or {}).get("layout") or {}
         layout_token = encode_layout_override(override)
@@ -178,9 +172,7 @@ class FeedBlock(ThemedBlock):
                 render_feed(
                     feed,
                     request,
-                    offset=offset,
-                    limit=limit,
-                    page=page,
+                    source_page=page,
                     override=override,
                     layout_token=layout_token,
                 )

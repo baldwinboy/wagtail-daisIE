@@ -1,0 +1,3 @@
+{% load i18n %}
+{{ items_html|safe }}
+{% include "wagtail_daisIE/blocks/data/feed_pagination.html" with block_id=block_id oob=True hide_previous=True %}

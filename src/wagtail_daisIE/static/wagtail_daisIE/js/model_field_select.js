@@ -44,7 +44,8 @@
       (root.WAGTAIL_DAISIE_CONTEXT_MODELS || {})[modelSelect.value] || {};
     var fields = state.formFields || [];
     var current = select.value;
-    var emptyLabel = select.getAttribute('data-daisie-model-field-empty-label') || '';
+    var emptyLabel =
+      select.getAttribute('data-daisie-model-field-empty-label') || '';
     select.innerHTML = '';
     var blank = document.createElement('option');
     blank.value = '';
@@ -53,9 +54,11 @@
     fields.forEach(function (field) {
       select.appendChild(createOption(field.name, field.label || field.name));
     });
-    if (fields.some(function (field) {
-      return field.name === current;
-    })) {
+    if (
+      fields.some(function (field) {
+        return field.name === current;
+      })
+    ) {
       select.value = current;
     } else {
       select.value = '';
@@ -68,8 +71,10 @@
       Controller.apply(this, arguments);
     }
     BoundController.prototype = Object.create(Controller.prototype);
-    BoundController.prototype.connect = ModelFieldSelectController.prototype.connect;
-    BoundController.prototype.disconnect = ModelFieldSelectController.prototype.disconnect;
+    BoundController.prototype.connect =
+      ModelFieldSelectController.prototype.connect;
+    BoundController.prototype.disconnect =
+      ModelFieldSelectController.prototype.disconnect;
     BoundController.prototype.sync = ModelFieldSelectController.prototype.sync;
     root.wagtail.app.register('daisie-model-field-select', BoundController);
   }

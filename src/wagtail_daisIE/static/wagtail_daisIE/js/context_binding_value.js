@@ -14,14 +14,20 @@
       return;
     }
     if (state && state.title) {
-      var link = '<a href="' + escapeHtml(state.edit_url || '') +
-        '" target="_blank" rel="noopener">' + escapeHtml(state.title) + '</a>';
+      var link =
+        '<a href="' +
+        escapeHtml(state.edit_url || '') +
+        '" target="_blank" rel="noopener">' +
+        escapeHtml(state.title) +
+        '</a>';
       display.innerHTML = link;
       return;
     }
     if (state && state.id) {
       display.innerHTML =
-        '<span class="w-text-muted">' + escapeHtml('Missing instance') + '</span>';
+        '<span class="w-text-muted">' +
+        escapeHtml('Missing instance') +
+        '</span>';
       return;
     }
     display.innerHTML = '';
@@ -32,7 +38,7 @@
   }
 
   WidgetDefinition.prototype = Object.create(
-    window.WAGTAIL_DAISIE.WidgetDefinition.prototype
+    window.WAGTAIL_DAISIE.WidgetDefinition.prototype,
   );
 
   WidgetDefinition.prototype.render = function (
@@ -41,7 +47,7 @@
     id,
     state,
     parentCapabilities,
-    options
+    options,
   ) {
     var bound = window.WAGTAIL_DAISIE.WidgetDefinition.prototype.render.call(
       this,
@@ -50,7 +56,7 @@
       id,
       state,
       parentCapabilities,
-      options
+      options,
     );
     if (state) {
       bound.setState(state);
@@ -86,7 +92,7 @@
 
   window.telepath.register(
     'wagtail_daisIE.widgets.ContextBindingValue',
-    WidgetDefinition
+    WidgetDefinition,
   );
 
   // Minimal Stimulus controller used by the binding form.
@@ -131,6 +137,9 @@
       }
     }
 
-    root.wagtail.app.register('daisie-context-binding', ContextBindingController);
+    root.wagtail.app.register(
+      'daisie-context-binding',
+      ContextBindingController,
+    );
   }
 })(typeof window !== 'undefined' ? window : globalThis);

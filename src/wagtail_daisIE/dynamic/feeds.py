@@ -16,6 +16,12 @@ from decimal import Decimal, InvalidOperation
 from django.conf import settings
 from django.core import signing
 from django.core.exceptions import FieldDoesNotExist, FieldError
+from django.core.paginator import (
+    EmptyPage,
+    Page,
+    PageNotAnInteger,
+    Paginator,
+)
 from django.db import models as django_models
 from django.db.models import Q
 from django.http import QueryDict
@@ -30,6 +36,103 @@ from .registry import get_context_model
 
 
 logger = logging.getLogger(__name__)
+
+# --- Countless pagination ---------------------------------------------------
+
+
+class CountlessPage(Page):
+    """A ``Page`` that knows its next page without calling ``count``."""
+
+    def __init__(self, object_list, number, paginator, has_next=False):
+        super().__init__(object_list, number, paginator)
+        self._has_next = bool(has_next)
+
+    def has_next(self):
+        return self._has_next
+
+    def has_previous(self):
+        return self.number > 1
+
+    def has_other_pages(self):
+        return self.has_previous() or self.has_next()
+
+    def next_page_number(self):
+        if not self.has_next():
+            raise EmptyPage("There is no next page.")
+        return self.number + 1
+
+    def previous_page_number(self):
+        if not self.has_previous():
+            raise EmptyPage("There is no previous page.")
+        return self.number - 1
+
+    def start_index(self):
+        if not self.object_list:
+            return 0
+        return (self.number - 1) * self.paginator.per_page + 1
+
+    def end_index(self):
+        if not self.object_list:
+            return 0
+        return (self.number - 1) * self.paginator.per_page + len(self.object_list)
+
+
+class CountlessPaginator(Paginator):
+    """Fetch ``per_page + 1`` rows and derive ``has_next`` from the extra row."""
+
+    def validate_number(self, number):
+        try:
+            number = int(number)
+        except (TypeError, ValueError) as exc:
+            raise PageNotAnInteger("That page number is not an integer.") from exc
+        if number < 1:
+            raise EmptyPage("That page number is less than 1.")
+        return number
+
+    def page(self, number):
+        number = self.validate_number(number)
+        bottom = (number - 1) * self.per_page
+        top = bottom + self.per_page + 1
+        rows = list(self.object_list[bottom:top])
+        has_next = len(rows) > self.per_page
+        if has_next:
+            rows = rows[: self.per_page]
+        return CountlessPage(rows, number, self, has_next=has_next)
+
+    def get_page(self, number):
+        try:
+            return self.page(number)
+        except (PageNotAnInteger, EmptyPage):
+            return self.page(1)
+
+
+def paginate_queryset(queryset, per_page, number):
+    """Return ``(page_obj, total)`` using the countless paginator by default.
+
+    ``total`` is ``None`` under the countless paginator. If the subclass is
+    rejected, fall back to the stock ``Paginator`` and return its count (one
+    count query per request).
+    """
+    try:
+        paginator = CountlessPaginator(queryset, per_page)
+    except TypeError as exc:
+        logger.warning(
+            "CountlessPaginator rejected; falling back to Paginator: %s", exc
+        )
+        paginator = Paginator(queryset, per_page)
+        page_obj = paginator.get_page(number)
+        return page_obj, paginator.count
+    try:
+        page_obj = paginator.get_page(number)
+    except TypeError as exc:
+        logger.warning(
+            "CountlessPaginator rejected; falling back to Paginator: %s", exc
+        )
+        paginator = Paginator(queryset, per_page)
+        page_obj = paginator.get_page(number)
+        return page_obj, paginator.count
+    return page_obj, None
+
 
 FILTER_TYPES = (
     "choice",
@@ -103,21 +206,28 @@ def decode_layout_override(token):
     return normalise_layout_override(data)
 
 
-def _next_url(request, next_limit, *, page=None, layout_token=""):
+def _page_url(
+    request, page_number, *, source_page=None, layout_token="", legacy_limit=None
+):
     if request is not None:
         params = request.GET.copy()
     else:
         params = QueryDict(mutable=True)
 
-    params["limit"] = str(next_limit)
-    params.pop("offset", None)
-    params.pop("layout_token", None)
-    params.pop("page", None)
+    for key in ("page", "offset", "block", "fragment", "layout_token"):
+        params.pop(key, None)
 
+    params["page"] = str(page_number)
+    if legacy_limit is not None:
+        params["limit"] = str(legacy_limit)
+    else:
+        params.pop("limit", None)
     if layout_token:
         params["layout_token"] = layout_token
-    if page is not None and getattr(page, "pk", None):
-        params["page"] = str(page.pk)
+    if source_page is not None and getattr(source_page, "pk", None):
+        params["source_page"] = str(source_page.pk)
+    else:
+        params.pop("source_page", None)
 
     return f"?{params.urlencode()}"
 
@@ -618,13 +728,12 @@ def resolve_layout(feed, override=None, request=None):
 def render_feed(
     feed,
     request,
-    offset=0,
-    limit=None,
-    page=None,
+    page_number=None,
+    source_page=None,
     override=None,
     layout_token="",
 ):
-    """Render a slice of ``feed`` and return the template context data."""
+    """Render a page of ``feed`` and return the template context data."""
     from ..base_blocks.css import build_button_state_css, build_design_css
 
     config = get_context_model(feed.context_model)
@@ -632,9 +741,13 @@ def render_feed(
     result = {
         "items_html": "",
         "has_more": False,
-        "next_offset": offset,
-        "total": 0,
+        "has_previous": False,
+        "previous_url": "",
+        "next_url": "",
+        "next_page_number": 1,
+        "page_number": 1,
         "page_size": feed.page_size,
+        "total": None,
         "filters": [],
         "submit_css": "btn",
         "filter_menu": build_filter_menu(feed),
@@ -648,8 +761,10 @@ def render_feed(
             (layout_appearance or {}).get("active")
         ),
         "layout_token": layout_token,
-        "feed_page_pk": (
-            str(page.pk) if page is not None and getattr(page, "pk", None) else ""
+        "source_page_pk": (
+            str(source_page.pk)
+            if source_page is not None and getattr(source_page, "pk", None)
+            else ""
         ),
         "infinite": bool(getattr(feed, "infinite", False)),
     }
@@ -661,21 +776,23 @@ def render_feed(
         return result
 
     params = getattr(request, "GET", None)
-    queryset = base_queryset(config, request, page)
+    queryset = base_queryset(config, request, source_page)
     if queryset is None:
         return result
     queryset = apply_filters(queryset, config, params)
 
-    order_by = resolve_order(feed, config, params, request, page)
+    order_by = resolve_order(feed, config, params, request, source_page)
     if order_by:
+        field_name = order_by.lstrip("-")
+        if field_name == "pk":
+            field_name = config.model._meta.pk.name
         try:
-            config.model._meta.get_field(order_by.lstrip("-"))
+            config.model._meta.get_field(field_name)
         except FieldDoesNotExist:
             order_by = ""
         else:
             queryset = queryset.order_by(order_by)
 
-    result["total"] = queryset.count()
     max_limit = feed_max_limit()
     try:
         page_size = int(feed.page_size or 9)
@@ -684,34 +801,78 @@ def render_feed(
     page_size = min(max(1, page_size), max_limit)
     result["page_size"] = page_size
 
-    if limit is not None:
-        end = bounded_int(limit, default=page_size, minimum=0, maximum=max_limit)
-        objects = list(queryset[:end])
-        result["next_offset"] = end
-        result["has_more"] = end < result["total"] and end < max_limit
-        result["next_limit"] = min(end + page_size, max_limit)
+    max_offset = feed_max_offset()
+    max_pages = max(1, max_offset // page_size + 1)
+
+    legacy_limit = None
+    raw_limit = params.get("limit") if params is not None else None
+    if raw_limit not in (None, ""):
+        try:
+            parsed_limit = int(raw_limit)
+        except (TypeError, ValueError):
+            parsed_limit = None
+        if parsed_limit is not None:
+            legacy_limit = min(max(1, parsed_limit), max_limit)
+            per_page = legacy_limit
+        else:
+            per_page = page_size
     else:
-        max_offset = feed_max_offset()
-        offset = bounded_int(offset, default=0, minimum=0, maximum=max_offset)
-        objects = list(queryset[offset : offset + page_size])
-        result["next_offset"] = offset + page_size
-        result["has_more"] = (
-            result["next_offset"] < result["total"] and offset < max_offset
-        )
-        result["next_limit"] = min(result["next_offset"] + page_size, max_limit)
+        per_page = page_size
 
-    result["next_url"] = _next_url(
-        request,
-        result["next_limit"],
-        page=page,
-        layout_token=layout_token,
+    if page_number is None:
+        page_number = params.get("page") if params is not None else None
+    try:
+        requested_page = int(page_number)
+    except (TypeError, ValueError):
+        requested_page = None
+
+    raw_offset = params.get("offset") if params is not None else None
+    if requested_page is None and raw_offset not in (None, ""):
+        try:
+            parsed_offset = int(raw_offset)
+        except (TypeError, ValueError):
+            parsed_offset = 0
+        parsed_offset = max(0, min(parsed_offset, max_offset))
+        requested_page = parsed_offset // per_page + 1
+
+    if requested_page is None:
+        requested_page = 1
+    requested_page = max(1, min(requested_page, max_pages))
+
+    page_obj, total = paginate_queryset(queryset, per_page, requested_page)
+    result["total"] = total
+    result["page_number"] = page_obj.number
+    result["has_more"] = bool(page_obj.has_next())
+    result["has_previous"] = bool(page_obj.has_previous())
+    result["next_page_number"] = (
+        page_obj.next_page_number() if result["has_more"] else result["page_number"]
     )
-    result["filters"] = build_filters(feed, config, params, request, page)
 
+    result["next_url"] = _page_url(
+        request,
+        result["next_page_number"],
+        source_page=source_page,
+        layout_token=layout_token,
+        legacy_limit=legacy_limit,
+    )
+    result["previous_url"] = (
+        _page_url(
+            request,
+            max(1, result["page_number"] - 1),
+            source_page=source_page,
+            layout_token=layout_token,
+            legacy_limit=legacy_limit,
+        )
+        if result["has_previous"]
+        else ""
+    )
+    result["filters"] = build_filters(feed, config, params, request, source_page)
+
+    objects = list(page_obj.object_list)
     if not objects:
         return result
 
-    base = _items_context(request, page)
+    base = _items_context(request, source_page)
     stream = feed.item
     stream_block = feed._meta.get_field("item").stream_block
     items = []

@@ -50,7 +50,7 @@
     }
   });
 
-  function updateUrl(form) {
+  function updateUrl(form, requestedPage) {
     if (
       !window.history ||
       !window.history.replaceState ||
@@ -71,7 +71,7 @@
       }
     });
 
-    ['limit', 'offset', 'block', 'layout_token', 'page'].forEach(
+    ['limit', 'offset', 'block', 'layout_token', 'page', 'fragment'].forEach(
       function (key) {
         params.delete(key);
       },
@@ -91,6 +91,9 @@
       params.append(key, value);
     });
 
+    if (requestedPage) {
+      params.set('page', requestedPage);
+    }
     var query = params.toString();
     try {
       window.history.replaceState(
@@ -120,7 +123,11 @@
     }
     var forms = root.querySelectorAll('[data-daisie-feed-form]');
     if (forms.length === 1) {
-      updateUrl(forms[0]);
+      var requestedPage = '';
+      if (trigger.matches('[data-daisie-feed-more]')) {
+        requestedPage = trigger.getAttribute('data-daisie-feed-page') || '';
+      }
+      updateUrl(forms[0], requestedPage);
     }
   });
 

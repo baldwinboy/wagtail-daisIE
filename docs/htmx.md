@@ -64,8 +64,9 @@ filtering and pagination do not reload the page.
   delay).
 * **Layout toggle** re-requests with `?layout=<value>` and re-renders the body;
   the chosen layout is reflected server-side (no `localStorage`).
-* **Load more** requests the next slice with `?limit=<n>` and swaps the body;
-  with **Infinite scroll** the same request fires when the button becomes
+* **Load more** requests the next page with `?page=<n>`, appends only the new
+  items to the items container, and updates the next/previous controls out of
+  band; with **Infinite scroll** the same request fires when the button becomes
   visible.
 * The page URL is kept in sync with the active filter and layout controls so it
   can be copied or refreshed. Multiple-feed pages skip URL syncing. The

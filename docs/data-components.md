@@ -235,8 +235,9 @@ Feed fields:
 * **Infinite scroll** — load more on scroll; otherwise a **Load more** button.
 * **Filters** — select and order the filters declared on the model (below).
 * The public slice is bounded by `WAGTAIL_DAISIE_FEED_MAX_LIMIT` (default
-  `1000`) and `WAGTAIL_DAISIE_FEED_MAX_OFFSET` (default `1000000`). Raise these
-  settings for feeds that legitimately need larger windows.
+  `1000`, the page size cap) and `WAGTAIL_DAISIE_FEED_MAX_OFFSET` (default
+  `1000000`, the maximum starting offset). Raise these settings for feeds that
+  legitimately need larger windows.
 * **Item design** — the blocks used for each item. This is the **same set as a
   page body** (sections, grids, cards, accordions, images, feedback, inputs,
   newsletter…) plus **Action** blocks, so items can use any Daisie block.
@@ -259,11 +260,11 @@ A **Feed block** in a page or menu references a Feed snippet.
 
 ### Showing the total count
 
-The feed body no longer renders a hard-coded item count. The total number of
-matched items is still computed by `render_feed()` and is available in the feed
-body template context as `{{ total }}`; it is also exposed on the body container
-as `data-daisie-feed-total="{{ total }}"` (alongside `data-daisie-feed-body`)
-for client-side use. The empty status element
+The feed uses a countless paginator by default, so no total is computed and no
+count query is made. `{{ total }}` is empty and `data-daisie-feed-total` is
+absent unless the stock ``Paginator`` fallback is used (only when the countless
+page subclass is rejected), in which case the total is computed with one count
+query per request. The empty status element
 `<div data-daisie-feed-status aria-live="polite"></div>` is kept for HTMX
 accessibility and is left unpopulated by the package.
 
@@ -409,10 +410,12 @@ styling the filter form’s Apply button and the Load more button.
 Filtering, layout and pagination request the feed body fragment from
 `wagtail_daisIE_dynamic:feed_items` and swap it in place with
 [htmx](htmx.md), so the page does not reload. Filters fire a request on change
-(and after a short typing delay for the search input); **Load more** requests the
-next slice with `?limit=<n>` (a cumulative window, so no duplicate items). With
-**Infinite scroll** enabled the same request fires when the button scrolls into
-view; otherwise a **Load more** button is shown.
+(and after a short typing delay for the search input). **Load more** requests the
+next page with `?page=N` and appends only the new items to the items container,
+while updating the next/previous controls out of band; the previous control is
+hidden during this append but a real previous link remains in the DOM for
+no-JavaScript. With **Infinite scroll** enabled the same request fires when the
+button scrolls into view; otherwise a **Load more** button is shown.
 
 The page URL is updated with the active filter and layout state so a copied or
 refreshed URL restores the same feed. Pages containing more than one feed do not
@@ -422,7 +425,7 @@ in the visible URL.
 
 Every control is a real `GET` form field or link, so the feed still works
 without JavaScript — the page reloads and the server renders the same state
-(the block reads `?limit=`/`?layout=` from the request).
+(the block reads `?page=`/`?layout=` from the request).
 
 ### Example: a blog feed
 

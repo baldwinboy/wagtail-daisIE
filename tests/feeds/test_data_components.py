@@ -20,6 +20,7 @@ from wagtail_daisIE.dynamic.feeds import (
     apply_filters,
     decode_layout_override,
     encode_layout_override,
+    paginate_queryset,
     render_feed,
 )
 from wagtail_daisIE.dynamic.registry import get_context_model, reset_context_models
@@ -259,10 +260,10 @@ class TestFeedRendering:
         USER_MODEL.objects.create(username="bob")
         data = render_feed(_feed(), RequestFactory().get("/"))
         assert "ada" in data["items_html"] and "bob" in data["items_html"]
-        assert data["has_more"] is False and data["total"] == 2
+        assert data["has_more"] is False and data["total"] is None
 
         page = render_feed(_feed(page_size=1), RequestFactory().get("/"))
-        assert page["has_more"] is True and page["next_offset"] == 1
+        assert page["has_more"] is True and page["next_page_number"] == 2
         assert "ada" in page["items_html"] and "bob" not in page["items_html"]
 
     def test_builds_filters(self, settings):
@@ -393,20 +394,23 @@ class TestFeedLayoutAndState:
         assert "active:btn-secondary" in data["layout_toggle_css"]
 
     def test_next_url_preserves_filters_and_adds_token(self):
+        for username in ("a", "b", "c", "d"):
+            USER_MODEL.objects.create(username=username)
         feed = _feed()
         data = render_feed(
             feed,
             RequestFactory().get(
                 "/", {"filter_active": "1", "layout": "list", "limit": "3"}
             ),
-            page=SimpleNamespace(pk=7),
+            source_page=SimpleNamespace(pk=7),
             layout_token=encode_layout_override({"layout": "row"}),
         )
         next_url = data["next_url"]
         assert "filter_active=1" in next_url
         assert "layout=list" in next_url
-        assert "limit=" in next_url
-        assert "page=7" in next_url
+        assert "limit=3" in next_url
+        assert "page=2" in next_url
+        assert "source_page=7" in next_url
         assert "layout_token=" in next_url
         assert "offset=" not in next_url
 
@@ -476,7 +480,7 @@ class TestFeedTemplates:
                 "layout_toggle_css": "btn btn-sm",
                 "layout_toggle_selected_css": "btn-primary",
                 "layout_token": "token",
-                "feed_page_pk": "12",
+                "source_page_pk": "12",
                 "submit_css": "btn",
             },
         )
@@ -490,11 +494,11 @@ class TestFeedTemplates:
             {
                 "block_id": "feed-1",
                 "has_more": True,
-                "next_url": "?limit=9&filter_active=1",
-                "next_limit": 9,
+                "has_previous": False,
+                "previous_url": "",
+                "next_url": "?page=2&filter_active=1",
+                "next_page_number": 2,
                 "feed_url": "/feed/items/",
-                "layout_token": "token",
-                "feed_page_pk": "12",
                 "infinite": True,
                 "submit_css": "btn",
                 "layout": "grid",
@@ -504,9 +508,9 @@ class TestFeedTemplates:
                 "empty_message": "",
             },
         )
-        assert 'href="?limit=9&amp;filter_active=1"' in body_html
+        assert 'href="?page=2&amp;filter_active=1"' in body_html
         assert "revealed" in body_html
-        assert "layout_token" in body_html
+        assert 'data-daisie-feed-page="2"' in body_html
 
 
 class TestFeedEndpoint:
@@ -709,3 +713,221 @@ class TestFeedTitle:
         assert "title" in FeedViewSet.list_display
         assert "name" in FeedViewSet.list_display
         assert FeedViewSet.search_fields == ["title", "name"]
+
+
+class TestCountlessPagination:
+    def test_countless_page_makes_no_count_query(self, django_assert_num_queries):
+        for username in ("ada", "bob", "cy"):
+            USER_MODEL.objects.create(username=username)
+        with django_assert_num_queries(1):
+            page_obj, total = paginate_queryset(
+                USER_MODEL.objects.order_by("username"), 2, 1
+            )
+        assert [user.username for user in page_obj] == ["ada", "bob"]
+        assert page_obj.has_next() is True
+        assert page_obj.next_page_number() == 2
+        assert total is None
+
+    def test_second_page_has_previous_and_no_next(self):
+        for username in ("ada", "bob", "cy"):
+            USER_MODEL.objects.create(username=username)
+        page_obj, _ = paginate_queryset(USER_MODEL.objects.order_by("username"), 2, 2)
+        assert [user.username for user in page_obj] == ["cy"]
+        assert page_obj.has_previous() is True
+        assert page_obj.has_next() is False
+        assert page_obj.previous_page_number() == 1
+
+    def test_invalid_page_values_fall_back_to_page_one(self):
+        USER_MODEL.objects.create(username="ada")
+        page_obj, _ = paginate_queryset(
+            USER_MODEL.objects.order_by("username"), 2, "abc"
+        )
+        assert page_obj.number == 1
+        assert [user.username for user in page_obj] == ["ada"]
+
+    def test_empty_page_is_safe(self):
+        USER_MODEL.objects.create(username="ada")
+        page_obj, _ = paginate_queryset(USER_MODEL.objects.order_by("username"), 2, 99)
+        assert list(page_obj) == []
+        assert page_obj.has_next() is False
+
+    def test_stock_fallback_performs_one_count_query(self, monkeypatch):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        def reject(*args, **kwargs):
+            raise TypeError("rejected")
+
+        monkeypatch.setattr("wagtail_daisIE.dynamic.feeds.CountlessPaginator", reject)
+        USER_MODEL.objects.create(username="ada")
+        with CaptureQueriesContext(connection) as context:
+            page_obj, total = paginate_queryset(
+                USER_MODEL.objects.order_by("username"), 2, 1
+            )
+        counts = [
+            query["sql"]
+            for query in context.captured_queries
+            if "COUNT(" in query["sql"].upper()
+        ]
+        assert len(counts) == 1
+        assert total == 1
+        assert [user.username for user in page_obj] == ["ada"]
+
+
+class TestFeedPagination:
+    def test_page_links_and_previous(self):
+        for username in ("user-a", "user-b", "user-c", "user-d", "user-e"):
+            USER_MODEL.objects.create(username=username)
+        data = render_feed(_feed(page_size=2), RequestFactory().get("/", {"page": "2"}))
+        assert data["page_number"] == 2
+        assert data["has_previous"] is True
+        assert "page=1" in data["previous_url"]
+        assert data["has_more"] is True
+        assert "page=3" in data["next_url"]
+        assert ">user-a<" not in data["items_html"]
+        assert ">user-c<" in data["items_html"]
+
+    def test_invalid_and_huge_pages_are_safe(self):
+        USER_MODEL.objects.create(username="ada")
+        for params in ({"page": "abc"}, {"page": "0"}):
+            data = render_feed(_feed(), RequestFactory().get("/", params))
+            assert ">ada<" in data["items_html"]
+            assert data["has_more"] is False
+
+        huge = render_feed(_feed(), RequestFactory().get("/", {"page": str(2**63)}))
+        assert huge["items_html"] == ""
+        assert huge["has_more"] is False
+
+    def test_legacy_limit_and_offset_aliases(self):
+        for username in ("user-a", "user-b", "user-c", "user-d"):
+            USER_MODEL.objects.create(username=username)
+        limit_data = render_feed(
+            _feed(page_size=2), RequestFactory().get("/", {"limit": "2"})
+        )
+        assert ">user-a<" in limit_data["items_html"]
+        assert ">user-c<" not in limit_data["items_html"]
+        assert (
+            "page=2" in limit_data["next_url"] and "limit=2" in limit_data["next_url"]
+        )
+
+        offset_data = render_feed(
+            _feed(page_size=2), RequestFactory().get("/", {"offset": "2"})
+        )
+        assert ">user-c<" in offset_data["items_html"]
+
+    def test_total_policy_and_source_page(self):
+        USER_MODEL.objects.create(username="ada")
+        data = render_feed(
+            _feed(), RequestFactory().get("/"), source_page=SimpleNamespace(pk=7)
+        )
+        assert data["total"] is None
+        assert "source_page=7" in data["next_url"]
+
+    def test_repeated_page_requests_are_idempotent(self):
+        USER_MODEL.objects.create(username="ada")
+        first = render_feed(_feed(), RequestFactory().get("/", {"page": "1"}))
+        second = render_feed(_feed(), RequestFactory().get("/", {"page": "1"}))
+        assert first["items_html"] == second["items_html"]
+
+
+class TestFeedPaginationTemplates:
+    def test_total_policy_in_body(self):
+        without_total = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_body.html",
+            {
+                "block_id": "feed-1",
+                "has_more": False,
+                "has_previous": False,
+                "previous_url": "",
+                "next_url": "",
+                "next_page_number": 1,
+                "feed_url": "/feed/items/",
+                "layout": "grid",
+                "layout_container_css": "grid",
+                "items_html": "",
+                "total": None,
+                "empty_message": "",
+            },
+        )
+        with_total = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_body.html",
+            {
+                "block_id": "feed-1",
+                "has_more": False,
+                "has_previous": False,
+                "previous_url": "",
+                "next_url": "",
+                "next_page_number": 1,
+                "feed_url": "/feed/items/",
+                "layout": "grid",
+                "layout_container_css": "grid",
+                "items_html": "",
+                "total": 10,
+                "empty_message": "",
+            },
+        )
+        assert "data-daisie-feed-total" not in without_total
+        assert 'data-daisie-feed-total="10"' in with_total
+
+    def test_append_fragment_shape(self):
+        html = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_items.html",
+            {
+                "block_id": "feed-1",
+                "has_more": True,
+                "has_previous": True,
+                "previous_url": "?page=1",
+                "next_url": "?page=3",
+                "next_page_number": 3,
+                "feed_url": "/feed/items/",
+                "items_html": '<div class="daisie-feed__item">ada</div>',
+                "submit_css": "btn",
+                "hide_previous": True,
+                "oob": True,
+            },
+        )
+        assert "ada" in html
+        assert "hx-swap-oob" in html
+        assert "hidden" in html
+        assert 'id="daisie-feed-body-feed-1"' not in html
+
+
+class TestFeedPaginationEndpoint:
+    def test_items_fragment(self):
+        from wagtail_daisIE.dynamic.views import feed_items
+
+        USER_MODEL.objects.create(username="ada")
+        USER_MODEL.objects.create(username="bob")
+        feed = _feed(page_size=1)
+        html = feed_items(
+            RequestFactory().get("/", {"block": "x", "page": "2", "fragment": "items"}),
+            feed.pk,
+        ).content.decode()
+        assert "bob" in html
+        assert "ada" not in html
+        assert "hx-swap-oob" in html
+        assert 'id="daisie-feed-body-x"' not in html
+
+    def test_filter_form_has_no_page_or_offset(self):
+        html = render_to_string(
+            "wagtail_daisIE/blocks/data/feed_filter_form.html",
+            {
+                "block": SimpleNamespace(id="feed-1"),
+                "feed_url": "/feed/items/",
+                "filters": [],
+                "filter_menu": {"enabled": False},
+                "filter_panel_css": "",
+                "filter_layout_css": "",
+                "allow_layout_toggle": False,
+                "toggle_options": [],
+                "layout": "grid",
+                "layout_toggle_css": "btn btn-sm",
+                "layout_toggle_selected_css": "btn-primary",
+                "layout_token": "token",
+                "source_page_pk": "12",
+                "submit_css": "btn",
+            },
+        )
+        assert 'name="page"' not in html
+        assert 'name="offset"' not in html
+        assert "source_page" in html

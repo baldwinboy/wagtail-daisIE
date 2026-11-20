@@ -201,33 +201,22 @@ def feed_items(request, pk):
     except Feed.DoesNotExist as exc:
         raise Http404 from exc
 
-    try:
-        offset = int(request.GET.get("offset", 0) or 0)
-    except (TypeError, ValueError):
-        offset = 0
-    raw_limit = request.GET.get("limit")
-    if raw_limit in (None, ""):
-        limit = None
-    else:
-        try:
-            limit = int(raw_limit)
-        except (TypeError, ValueError):
-            limit = None
-
-    page = None
-    raw_page = request.GET.get("page")
-    if raw_page:
+    source_page = None
+    raw_source_page = request.GET.get("source_page")
+    if raw_source_page:
         from wagtail.models import Page
 
         try:
-            page_pk = int(raw_page)
+            page_pk = int(raw_source_page)
             if not (0 < page_pk < 2**31):
                 raise ValueError
-            page = Page.objects.filter(pk=page_pk).first()
-            if page is not None:
-                page = page.specific
+            source_page = Page.objects.filter(pk=page_pk).first()
+            if source_page is not None:
+                source_page = source_page.specific
         except (TypeError, ValueError, OverflowError, Page.DoesNotExist):
-            logger.warning("Ignoring invalid feed page parameter %r", raw_page)
+            logger.warning(
+                "Ignoring invalid feed source_page parameter %r", raw_source_page
+            )
 
     layout_token = request.GET.get("layout_token", "")
     override = decode_layout_override(layout_token)
@@ -236,9 +225,7 @@ def feed_items(request, pk):
     data = render_feed(
         feed,
         request,
-        offset=offset,
-        limit=limit,
-        page=page,
+        source_page=source_page,
         override=override,
         layout_token=layout_token,
     )
@@ -249,4 +236,9 @@ def feed_items(request, pk):
             "feed_url": reverse("wagtail_daisIE_dynamic:feed_items", args=[feed.pk]),
         }
     )
-    return render(request, "wagtail_daisIE/blocks/data/feed_body.html", data)
+    template = (
+        "wagtail_daisIE/blocks/data/feed_items.html"
+        if request.GET.get("fragment") == "items"
+        else "wagtail_daisIE/blocks/data/feed_body.html"
+    )
+    return render(request, template, data)

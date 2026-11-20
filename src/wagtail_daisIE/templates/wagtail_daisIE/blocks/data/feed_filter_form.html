@@ -7,10 +7,9 @@
   hx-target="#daisie-feed-body-{{ block.id }}"
   hx-swap="outerHTML"
   hx-trigger="change, input changed delay:400ms from:find input[type='search']"
-  hx-vals='{"layout_token": "{{ layout_token|escapejs }}", "page": "{{ feed_page_pk|escapejs }}"}'
+  hx-vals='{"layout_token": "{{ layout_token|escapejs }}", "source_page": "{{ source_page_pk|escapejs }}"}'
 >
   <input type="hidden" name="block" value="{{ block.id }}" />
-  <input type="hidden" name="offset" value="0" />
   <div{% if filter_layout_css %} class="{{ filter_layout_css }}"{% endif %}>
     {% for filter in filters %}
       {% include "wagtail_daisIE/blocks/data/feed_filter.html" with filter=filter %}
