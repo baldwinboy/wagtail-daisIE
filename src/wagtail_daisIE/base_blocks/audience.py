@@ -3,7 +3,6 @@ import logging
 from django import forms
 from django.conf import settings
 from django.http import Http404
-from django.shortcuts import redirect
 from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
@@ -125,11 +124,26 @@ class PageAudienceMixin:
     """Page-level audience gating.
 
     Composed by ``StyledPageMixin`` (and form pages). Concrete classes supply
-    the ``audience`` StreamField and the ``audience_denied``/``audience_denied_page``
-    fields.
+    the ``audience`` StreamField and the ``audience_denied``/
+    ``audience_denied_destination`` fields.
     """
 
     audience_denied = "403"
+
+    def get_audience_denied_url(self, request):
+        destination = getattr(self, "audience_denied_destination", None)
+        if not destination:
+            return ""
+        context = {}
+        get_context = getattr(self, "get_daisie_context", None)
+        if callable(get_context):
+            context.update(get_context(request) or {})
+        context.setdefault("request", request)
+        context.setdefault("page", self)
+        context.setdefault("self", self)
+        from ..base_blocks.link import link_url
+
+        return link_url(destination, context=context) or ""
 
     def get_audience_keys(self):
         stream = getattr(self, "audience", None)
@@ -142,10 +156,22 @@ class PageAudienceMixin:
         return evaluate_audience(self.get_audience_keys(), request)
 
     def audience_denied_response(self, request):
-        if self.audience_denied == "redirect" and getattr(
-            self, "audience_denied_page_id", None
-        ):
-            return redirect(self.audience_denied_page.url)
+        if self.audience_denied == "redirect":
+            url = self.get_audience_denied_url(request)
+            if url:
+                from django.http import HttpResponseRedirect
+
+                class _AudienceDeniedRedirect(HttpResponseRedirect):
+                    allowed_schemes = [
+                        "http",
+                        "https",
+                        "ftp",
+                        "",
+                        "mailto",
+                        "tel",
+                    ]
+
+                return _AudienceDeniedRedirect(url)
         if self.audience_denied == "404":
             raise Http404
         from ..errors.handlers import render_error_page

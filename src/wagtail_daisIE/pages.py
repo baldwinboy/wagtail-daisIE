@@ -7,6 +7,7 @@ from wagtail.models import Page
 from wagtail_daisIE.base_blocks import (
     AudienceBlock,
     BackgroundStreamBlock,
+    LinkDestinationBlock,
     MainDesignBlock,
     PageDesignBlock,
 )
@@ -24,7 +25,7 @@ AUDIENCE_DENIED_CHOICES = ChoiceList(
     [
         ("403", _("Show a 403 page")),
         ("404", _("Show a 404 page")),
-        ("redirect", _("Redirect to a page")),
+        ("redirect", _("Redirect to a link")),
     ],
     "AUDIENCE_DENIED_CHOICES",
 )
@@ -132,13 +133,11 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
         default="403",
         verbose_name=_("When access is denied"),
     )
-    audience_denied_page = models.ForeignKey(
-        "wagtailcore.Page",
-        null=True,
+    audience_denied_destination = StreamField(
+        LinkDestinationBlock(),
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name="+",
-        verbose_name=_("Redirect target"),
+        use_json_field=True,
+        verbose_name=_("Redirect link"),
         help_text=_("Used when the denial behaviour is redirect."),
     )
 
@@ -155,7 +154,7 @@ class StyledPageMixin(PageAudienceMixin, DaisieContextMixin, Page):
         MultiFieldPanel(
             [
                 FieldPanel("audience_denied"),
-                FieldPanel("audience_denied_page"),
+                FieldPanel("audience_denied_destination"),
             ],
             heading=_("Audience access"),
             classname="collapsed",

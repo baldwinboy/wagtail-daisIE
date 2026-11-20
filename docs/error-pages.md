@@ -120,8 +120,16 @@ Pages using `StyledPageMixin` can choose how audience denial is handled under
   returns the active 403 snippet. This path also works while `DEBUG=True`.
 * **Show a 404 page** raises `Http404`, allowing the configured 404 handler to
   decide how it is rendered.
-* **Redirect to a page** redirects to the selected page. If the setting is
-  `redirect` without a target, the implementation falls back to the 403 page.
+* **Redirect to a link** redirects to a chosen link destination: a page, an
+  external URL or absolute path, a dynamic URL, a document, an email or a phone
+  number. If the setting is `redirect` without a resolvable destination, the
+  implementation falls back to the 403 page.
+
+### Breaking change
+
+`audience_denied_page` has been removed. Existing page-only redirects are **not**
+migrated automatically. After upgrading, open each audience-gated page and
+re-select the redirect target in the new **Redirect link** field.
 
 Audience-gated blocks inside an error body keep their normal block audience
 settings. They are evaluated against the request that received the error, so a

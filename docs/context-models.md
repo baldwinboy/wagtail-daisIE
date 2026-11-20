@@ -189,7 +189,7 @@ and whole pages:
 
 * Blocks: the **Audience** setting in the block's settings panel.
 * Pages: the page-level **Audience** field, plus **When access is denied**
-  (show a 403, show a 404, or redirect to a chosen page). See
+  (show a 403, show a 404, or redirect to a chosen link). See
   [Audience-gated pages](error-pages.md#audience-gated-pages).
 
 When empty, content is visible to everyone. Multiple selected audiences are a

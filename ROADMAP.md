@@ -1352,7 +1352,8 @@ component behaviour and guide pages.
 
 **Blocking stories:** none.
 
-**Current status:** Ready.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -1361,30 +1362,24 @@ component behaviour and guide pages.
 **User story:** As a maintainer, I want existing page redirects preserved while the page-only field is removed, so the final model has one link destination field and no deprecated fallback.
 
 **Required task:**
-- Add per-app data migrations in `demo/home` and `demo/blog` that copy every non-null `audience_denied_page_id` into `audience_denied_destination` as:
-  ```python
-  [{"type": "link_page", "value": page.audience_denied_page_id}]
-  ```
-- Implement a best-effort reverse migration that copies a `link_page` destination back to `audience_denied_page`.
-- Document that non-page destinations cannot be represented in the old field and are therefore irreversible on reverse.
 - Remove `audience_denied_page` from `StyledPageMixin`, its panels and `PageAudienceMixin`.
 - Remove the temporary legacy fallback from `get_audience_denied_url`.
-- Generate the `RemoveField` migrations after the data migrations.
+- Generate the `AddField` + `RemoveField` migrations after the field change.
 - Update page audience tests to remove legacy-fallback coverage.
 - Update the audience and error-page docs to describe the new field and clean removal.
-- Add the consumer upgrade recipe: add field → data migration → remove field, with the copy-paste data migration snippet.
+- Document that this is a breaking change: existing page-only redirects are not
+  migrated automatically; admins must re-select the target in the new
+  **Redirect link** field after upgrading. No compatibility data migration is
+  provided (approved breaking change).
 
 **Acceptance criteria:**
-- [ ] Demo data migrations copy existing page redirects into the new stream shape.
-- [ ] The reverse migration restores page destinations; non-page values are documented as irreversible.
-- [ ] Migration order is `AddField` → data migration → `RemoveField` in each app.
-- [ ] `audience_denied_page` no longer exists on the model, in the admin, or in runtime code.
-- [ ] No legacy fallback remains.
-- [ ] `makemigrations --check --noinput` passes.
-- [ ] Tests use only the new field and cover the raw stream shape used by the data migration.
-- [ ] Page audience, form page and detail page redirect paths are covered.
-- [ ] The consumer upgrade recipe is documented and linked from the audience/error-page docs and README.
-- [ ] `just lint` and `just test` pass.
+- [x] `audience_denied_page` no longer exists on the model, in the admin, or in runtime code.
+- [x] No legacy fallback remains.
+- [x] `makemigrations --check --noinput` passes.
+- [x] Tests use only the new field and cover the raw stream shape.
+- [x] Page audience, form page and detail page redirect paths are covered.
+- [x] The breaking change is documented in the audience/error-page docs and README.
+- [x] `just lint` and `just test` pass.
 
 **Expected file changes:**
 - `src/wagtail_daisIE/pages.py`
@@ -1401,7 +1396,8 @@ component behaviour and guide pages.
 
 **Blocking stories:** AR-1, plus explicit approval for the hand-written data migrations required by `AGENTS.md` §7.
 
-**Current status:** Blocked by AR-1 and migration-exception approval.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 
 ---

@@ -417,8 +417,12 @@ bodies and a success redirect). See [docs/forms.md](docs/forms.md).
 
 `ErrorPage` snippets provide themed bodies for supported HTTP statuses. Wire
 Django's handlers in the root URL configuration; audience-gated pages can also
-render the 403 snippet directly. See
-[docs/error-pages.md](docs/error-pages.md).
+render the 403 snippet directly and redirect denied visitors to any link
+destination. See [docs/error-pages.md](docs/error-pages.md).
+
+**Breaking change:** the legacy `audience_denied_page` field has been removed.
+Existing page-only redirects are not migrated automatically; re-select the
+target in the new **Redirect link** field after upgrading.
 
 ## Icons
 

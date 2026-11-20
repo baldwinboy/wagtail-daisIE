@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from django.http import Http404
@@ -18,12 +20,11 @@ class _Base:
         return "served"
 
 
-def _page(keys, *, denied="403", redirect_page=None):
+def _page(keys, *, denied="403", destination=None):
     class Page(PageAudienceMixin, _Base):
         audience = [_Block({"audience": keys})]
         audience_denied = denied
-        audience_denied_page_id = 1 if redirect_page is not None else None
-        audience_denied_page = redirect_page
+        audience_denied_destination = destination or []
 
     return Page()
 
@@ -62,10 +63,142 @@ class TestPageAudience:
 
         assert _page(["adults"], denied="403").serve(_Request()).status_code == 403
 
+    def test_page_destination_redirects(self, rules):
         class Target:
             url = "/no-access/"
 
-        response = _page(["adults"], denied="redirect", redirect_page=Target()).serve(
+        page = _page(
+            ["adults"], denied="redirect", destination=[("link_page", Target())]
+        )
+        response = page.serve(_Request())
+        assert response.status_code == 302 and response["Location"] == "/no-access/"
+
+    def test_external_url_and_path_redirect(self, rules):
+        page = _page(
+            ["adults"],
+            denied="redirect",
+            destination=[("link_url", "https://example.com/next")],
+        )
+        response = page.serve(_Request())
+        assert (
+            response.status_code == 302
+            and response["Location"] == "https://example.com/next"
+        )
+
+        page = _page(
+            ["adults"], denied="redirect", destination=[("link_url", "/local/next")]
+        )
+        response = page.serve(_Request())
+        assert response.status_code == 302 and response["Location"] == "/local/next"
+
+    def test_dynamic_url_resolves_from_context(self, rules):
+        class Page(PageAudienceMixin, _Base):
+            audience = [_Block({"audience": ["adults"]})]
+            audience_denied = "redirect"
+            audience_denied_destination = [
+                {"type": "link_dynamic", "value": "{{ target.url }}"}
+            ]
+
+            def get_daisie_context(self, request):
+                return {"target": SimpleNamespace(url="https://example.com/dynamic")}
+
+        page = Page()
+        response = page.serve(_Request())
+        assert response.status_code == 302
+        assert response["Location"] == "https://example.com/dynamic"
+
+    def test_document_email_and_phone_redirect(self, rules):
+        class Document:
+            url = "/documents/x/"
+
+        page = _page(
+            ["adults"], denied="redirect", destination=[("link_document", Document())]
+        )
+        response = page.serve(_Request())
+        assert response.status_code == 302 and response["Location"] == "/documents/x/"
+
+        page = _page(
+            ["adults"],
+            denied="redirect",
+            destination=[("link_email", "member@example.com")],
+        )
+        response = page.serve(_Request())
+        assert (
+            response.status_code == 302
+            and response["Location"] == "mailto:member@example.com"
+        )
+
+        page = _page(
+            ["adults"], denied="redirect", destination=[("link_phone", "+123")]
+        )
+        response = page.serve(_Request())
+        assert response.status_code == 302 and response["Location"] == "tel:+123"
+
+    def test_empty_destination_falls_back_to_403(self, rules):
+        response = _page(["adults"], denied="redirect", destination=[]).serve(
             _Request()
         )
-        assert response.status_code == 302 and response["Location"] == "/no-access/"
+        assert response.status_code == 403
+
+    def test_unresolvable_destination_falls_back_to_403(self, rules):
+        page = _page(
+            ["adults"],
+            denied="redirect",
+            destination=[("link_dynamic", "{{ missing.url }}")],
+        )
+        response = page.serve(_Request())
+        assert response.status_code == 403
+
+    def test_raw_link_page_stream_shape_resolves(self, rules):
+        class Target:
+            url = "/raw/"
+
+        page = _page(
+            ["adults"],
+            denied="redirect",
+            destination=[{"type": "link_page", "value": Target()}],
+        )
+        response = page.serve(_Request())
+        assert response.status_code == 302 and response["Location"] == "/raw/"
+
+    def test_get_audience_denied_url_directly(self, rules):
+        class Target:
+            url = "/direct/"
+
+        page = _page(
+            ["adults"], denied="redirect", destination=[("link_page", Target())]
+        )
+        request = _Request()
+        assert page.get_audience_denied_url(request) == "/direct/"
+        assert (
+            _page(
+                ["adults"], denied="redirect", destination=[]
+            ).get_audience_denied_url(request)
+            == ""
+        )
+
+    def test_legacy_field_is_removed(self):
+        from wagtail_daisIE.pages import StyledPageMixin
+
+        field_names = {field.name for field in StyledPageMixin._meta.get_fields()}
+        assert "audience_denied_destination" in field_names
+        assert "audience_denied_page" not in field_names
+
+    def test_form_page_serve_uses_audience_denial(self):
+        from wagtail_daisIE.forms.models import DaisieFormPage
+
+        page = SimpleNamespace(
+            page_audience_allowed=lambda request: False,
+            audience_denied_response=lambda request: "denied",
+        )
+        assert DaisieFormPage.serve(page, _Request()) == "denied"
+
+    def test_detail_page_serve_delegates_to_template(self):
+        from wagtail_daisIE.detail_pages.models import ModelDetailPage
+
+        template = SimpleNamespace(
+            page_audience_allowed=lambda request: False,
+            audience_denied_response=lambda request: "denied",
+        )
+        page = SimpleNamespace(get_template_page=lambda: template)
+        assert ModelDetailPage.serve(page, _Request()) == "denied"
