@@ -24,6 +24,24 @@ WAGTAIL_DAISIE_CONTEXT_MODELS = {
 }
 ```
 
+## Searchable fields
+
+Context models can declare `search_fields` for the admin binding chooser:
+
+```python
+WAGTAIL_DAISIE_CONTEXT_MODELS = {
+    "member": {
+        "label": "Member",
+        "model": "auth.User",
+        "search_fields": ["username", "first_name", "last_name", "email"],
+    },
+}
+```
+
+When `search_fields` is omitted, the safe fallback fields `title`, `name`,
+`slug` and `label` are used only when present on the model. Password-like
+fields are never searched, even when explicitly listed.
+
 Each entry supports:
 
 | Key | Description |

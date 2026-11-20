@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from django.contrib.auth import get_user_model
@@ -12,6 +14,7 @@ from wagtail_daisIE.dynamic.registry import (
     get_context_model,
     get_context_model_choices,
     get_context_models,
+    get_context_models_help_state,
     get_context_models_state,
     reset_context_models,
 )
@@ -35,12 +38,14 @@ CONFIG = {
         "label": "Owner",
         "model": "auth.User",
         "source": "request.user",
+        "search_fields": ["username"],
     },
     "target": {
         "label": "Target user",
         "model": "auth.User",
         "source": "url",
         "lookup_field": "pk",
+        "search_fields": ["username"],
     },
 }
 
@@ -108,8 +113,12 @@ class TestRegistry:
         assert state["target"]["modes"] == ["url", "fixed"]
         assert state["target"]["fields"]
         assert "url" not in {field["name"] for field in state["target"]["fields"]}
-        assert "url" in {field["name"] for field in state["target"]["helpFields"]}
-        assert "url" not in {field["name"] for field in state["owner"]["helpFields"]}
+
+        help_state = get_context_models_help_state()
+        assert "url" in {field["name"] for field in help_state["target"]["helpFields"]}
+        assert "url" not in {
+            field["name"] for field in help_state["owner"]["helpFields"]
+        }
 
     def test_help_fields_include_url_but_form_fields_do_not(self):
         target = get_context_model("target")
@@ -336,3 +345,120 @@ class TestContextBindingFormTemplate:
         assert "load@window-&gt;w-sync#apply" in html
         assert "data-w-sync-target-value" in html
         assert "[data-current-for=&quot;__NAME__&quot;]" in html
+
+
+class TestContextModelMetadata:
+    def test_runtime_state_is_runtime_only(self):
+        state = get_context_models_state()
+        assert "fields" in state["owner"]
+        assert "helpFields" not in state["owner"]
+        assert "examples" not in state["owner"]
+        assert "sourceSummary" not in state["owner"]
+
+    def test_help_state_contains_help_data(self):
+        state = get_context_models_help_state()
+        assert "helpFields" in state["target"]
+        assert "examples" in state["target"]
+        assert "sourceSummary" in state["target"]
+        assert "formFields" in state["target"]
+        assert "filters" in state["target"]
+        assert "modelPath" in state["target"]
+
+    def test_runtime_state_is_query_free(self, django_assert_num_queries):
+        with django_assert_num_queries(0):
+            get_context_models_state()
+
+    def test_metadata_cache_invalidates(self):
+        config = get_context_model("owner")
+        assert config.field_docs() == config.field_docs()
+        assert config._field_docs_cache is not None
+        reset_context_models()
+        new_config = get_context_model("owner")
+        assert new_config is not config
+        assert new_config._field_docs_cache is None
+
+    def test_examples_are_limited(self):
+        config = get_context_model("target")
+        assert len(config.examples(limit=100)) <= 6
+
+    def test_panels_render_detail_only_for_active_model(self):
+        from wagtail_daisIE.dynamic.panels import _bound_model_fields as feed_fields
+        from wagtail_daisIE.forms.panels import _bound_model_fields as form_fields
+
+        feed_bound = feed_fields(SimpleNamespace(context_model="owner"))
+        owners = [model for model in feed_bound["models"] if model["key"] == "owner"][0]
+        targets = [model for model in feed_bound["models"] if model["key"] == "target"][
+            0
+        ]
+        assert owners["active"] is True
+        assert owners["fields"]
+        assert owners["examples"]
+        assert targets["active"] is False
+        assert targets["fields"] == []
+        assert targets["examples"] == []
+
+        page_bound = form_fields(SimpleNamespace(instance_model="owner"))
+        owner = [model for model in page_bound["models"] if model["key"] == "owner"][0]
+        target = [model for model in page_bound["models"] if model["key"] == "target"][
+            0
+        ]
+        assert owner["active"] is True
+        assert owner["fields"]
+        assert target["active"] is False
+        assert target["fields"] == []
+
+
+class TestContextModelSearch:
+    def test_search_field_names_configured(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "owner": {
+                "label": "Owner",
+                "model": "auth.User",
+                "source": "request.user",
+                "search_fields": "username",
+            }
+        }
+        reset_context_models()
+        config = get_context_model("owner")
+        from wagtail_daisIE.dynamic.querysets import search_field_names
+
+        assert search_field_names(config) == ("username",)
+
+    def test_search_field_names_fallback_and_password_safety(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "group": {
+                "label": "Group",
+                "model": "auth.Group",
+                "source": "request.user",
+                "search_fields": ["name", "password"],
+            }
+        }
+        reset_context_models()
+        config = get_context_model("group")
+        from wagtail_daisIE.dynamic.querysets import search_field_names
+
+        assert search_field_names(config) == ("name",)
+
+    def test_callable_queryset_signatures(self):
+        from wagtail_daisIE.dynamic.querysets import call_with_request_page
+
+        calls = []
+
+        def no_args():
+            calls.append("none")
+            return "none"
+
+        def one_arg(request):
+            calls.append(("one", request))
+            return "one"
+
+        def two_args(request, page):
+            calls.append(("two", request, page))
+            return "two"
+
+        request = object()
+        page = object()
+        assert call_with_request_page(no_args, request, page) == "none"
+        assert call_with_request_page(one_arg, request, page) == "one"
+        assert call_with_request_page(two_args, request, page) == "two"
+        assert calls == ["none", ("one", request), ("two", request, page)]

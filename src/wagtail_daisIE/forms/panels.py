@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from wagtail.admin.panels import HelpPanel
 
-from ..dynamic.registry import get_context_models
+from ..dynamic.registry import get_context_models_help_state
 
 
 def _bound_model_fields(page):
@@ -14,16 +14,17 @@ def _bound_model_fields(page):
     ``w-rules`` reveals another when the admin changes **Model to create**.
     """
     active_key = getattr(page, "instance_model", "") or ""
+    help_state = get_context_models_help_state()
     models = []
-    for key, config in get_context_models().items():
-        model = config.model
+    for key, model_state in help_state.items():
+        active = key == active_key
         models.append(
             {
                 "key": key,
-                "label": str(config.label),
-                "model_label": model._meta.label if model is not None else "",
-                "fields": config.form_fields(),
-                "active": key == active_key,
+                "label": model_state["label"],
+                "model_label": model_state["model"],
+                "fields": model_state["formFields"] if active else [],
+                "active": active,
             }
         )
     return {"key": active_key, "models": models}

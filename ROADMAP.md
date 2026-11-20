@@ -1455,7 +1455,8 @@ loading or safe search fields.
 
 **Blocking stories:** none.
 
-**Current status:** Not started — **Ready**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -1498,7 +1499,8 @@ field documentation it will not use.
 
 **Blocking stories:** UI-1.
 
-**Current status:** Not started — **Blocked by UI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -1677,7 +1679,8 @@ re-rendered.
 
 **Blocking stories:** UI-1.
 
-**Current status:** Not started — **Blocked by UI-1**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

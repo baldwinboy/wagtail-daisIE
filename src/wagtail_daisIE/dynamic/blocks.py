@@ -17,7 +17,7 @@ from .registry import (
     get_context_model,
     get_context_model_choices,
     get_context_models,
-    get_context_models_state,
+    get_context_models_help_state,
 )
 
 
@@ -107,7 +107,7 @@ class ContextBindingBlock(DaisieStructBlock):
 
     def get_form_context(self, value, prefix="", errors=None):
         context = super().get_form_context(value, prefix=prefix, errors=errors)
-        context["context_models"] = get_context_models_state()
+        context["context_models"] = get_context_models_help_state()
         multi_mode_keys = [
             key for key, config in get_context_models().items() if len(config.modes) > 1
         ]

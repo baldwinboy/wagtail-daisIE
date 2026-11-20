@@ -56,11 +56,16 @@ class ContextModel:
     prefetch_related: tuple[str, ...] = ()
     fields: tuple[str, ...] = ()
     form_fields_exclude: tuple[str, ...] = ()
+    search_fields: tuple[str, ...] = ()
     queryset_path: object = ""
     filters_config: dict = field(default_factory=dict)
     _resolved_model: object = field(default=None, repr=False)
     _resolved_queryset: object = field(default=None, repr=False)
     _resolved_filters: object = field(default=None, repr=False)
+    _field_docs_cache: tuple | None = field(default=None, repr=False)
+    _help_fields_cache: tuple | None = field(default=None, repr=False)
+    _form_fields_cache: tuple | None = field(default=None, repr=False)
+    _examples_cache: tuple | None = field(default=None, repr=False)
 
     @property
     def model(self):
@@ -105,10 +110,9 @@ class ContextModel:
             self._resolved_queryset = func
         if not callable(func):
             return None
-        try:
-            return func(request, page)
-        except TypeError:
-            return func()
+        from .querysets import call_with_request_page
+
+        return call_with_request_page(func, request, page)
 
     @property
     def is_callable_source(self):
@@ -165,29 +169,30 @@ class ContextModel:
         model = self.model
         if model is None:
             return []
-        docs = []
-        model_fields = list(model._meta.fields)
+        cached = self._field_docs_cache
+        if cached is None:
+            docs = []
+            for model_field in model._meta.fields:
+                label = getattr(model_field, "verbose_name", None) or model_field.name
+                choices = []
+                if isinstance(getattr(model_field, "choices", None), (list, tuple)):
+                    choices = [
+                        {"value": str(value), "label": str(choice_label)}
+                        for value, choice_label in model_field.choices
+                    ]
+                docs.append(
+                    {
+                        "name": model_field.name,
+                        "label": str(label),
+                        "type": model_field.get_internal_type(),
+                        "choices": choices,
+                    }
+                )
+            cached = tuple(docs)
+            self._field_docs_cache = cached
         if limit:
-            model_fields = model_fields[:limit]
-        for model_field in model_fields:
-            label = getattr(model_field, "verbose_name", None) or model_field.name
-            choices = []
-            # Avoid executing callable choice providers while rendering admin
-            # metadata; concrete lists/tuples are safe and enough for the UI.
-            if isinstance(getattr(model_field, "choices", None), (list, tuple)):
-                choices = [
-                    {"value": str(value), "label": str(choice_label)}
-                    for value, choice_label in model_field.choices
-                ]
-            docs.append(
-                {
-                    "name": model_field.name,
-                    "label": str(label),
-                    "type": model_field.get_internal_type(),
-                    "choices": choices,
-                }
-            )
-        return docs
+            return list(cached[:limit])
+        return list(cached)
 
     def help_fields(self, limit=None):
         """Return documentation fields for help/chooser UI.
@@ -196,17 +201,23 @@ class ContextModel:
         ``key.url`` that are not concrete model fields. It must not be used by
         code that needs assignable model fields.
         """
-        fields = self.field_docs(limit=limit)
-        if self.url_source or self.supports_url:
-            fields.append(
-                {
-                    "name": "url",
-                    "label": str(_("URL derived from the generated detail page")),
-                    "type": "url",
-                    "choices": [],
-                }
-            )
-        return fields
+        cached = self._help_fields_cache
+        if cached is None:
+            fields = list(self.field_docs())
+            if self.url_source or self.supports_url:
+                fields.append(
+                    {
+                        "name": "url",
+                        "label": str(_("URL derived from the generated detail page")),
+                        "type": "url",
+                        "choices": [],
+                    }
+                )
+            cached = tuple(fields)
+            self._help_fields_cache = cached
+        if limit:
+            return list(cached[:limit])
+        return list(cached)
 
     def form_fields(self):
         """Return ``{"name", "label"}`` for the model's concrete editable fields.
@@ -219,35 +230,44 @@ class ContextModel:
         model = self.model
         if model is None:
             return []
-        excluded = set(self.form_fields_exclude)
-        fields = []
-        for model_field in model._meta.get_fields():
-            if not getattr(model_field, "editable", False):
-                continue
-            if getattr(model_field, "auto_created", False):
-                continue
-            if not getattr(model_field, "concrete", False):
-                continue
-            if model_field.name in excluded:
-                continue
-            fields.append(
-                {
-                    "name": model_field.name,
-                    "label": str(
-                        getattr(model_field, "verbose_name", model_field.name)
-                        or model_field.name
-                    ),
-                }
-            )
-        return fields
+        cached = self._form_fields_cache
+        if cached is None:
+            excluded = set(self.form_fields_exclude)
+            fields = []
+            for model_field in model._meta.get_fields():
+                if not getattr(model_field, "editable", False):
+                    continue
+                if getattr(model_field, "auto_created", False):
+                    continue
+                if not getattr(model_field, "concrete", False):
+                    continue
+                if model_field.name in excluded:
+                    continue
+                fields.append(
+                    {
+                        "name": model_field.name,
+                        "label": str(
+                            getattr(model_field, "verbose_name", model_field.name)
+                            or model_field.name
+                        ),
+                    }
+                )
+            cached = tuple(fields)
+            self._form_fields_cache = cached
+        return list(cached)
 
     def examples(self, limit=4):
-        items = [f"{{{{ {self.key} }}}}"]
-        if self.url_source or self.supports_url:
-            items.append(f"{{{{ {self.key}.url }}}}")
-        for doc in self.field_docs(limit=limit):
-            items.append(f"{{{{ {self.key}.{doc['name']} }}}}")
-        return items
+        limit = max(1, min(int(limit or 4), 6))
+        cached = self._examples_cache
+        if cached is None:
+            items = [f"{{{{ {self.key} }}}}"]
+            if self.url_source or self.supports_url:
+                items.append(f"{{{{ {self.key}.url }}}}")
+            for doc in self.field_docs(limit=6):
+                items.append(f"{{{{ {self.key}.{doc['name']} }}}}")
+            cached = tuple(items)
+            self._examples_cache = cached
+        return list(cached[:limit])
 
     def __str__(self):
         return str(self.label)
@@ -291,6 +311,7 @@ def _build_context_model(key, raw, **overrides):
         prefetch_related=_as_tuple(raw.get("prefetch_related")),
         fields=_as_tuple(raw.get("fields")),
         form_fields_exclude=_as_tuple(raw.get("form_fields_exclude")),
+        search_fields=_as_tuple(raw.get("search_fields")),
         queryset_path=raw.get("queryset", "") or "",
         filters_config=dict(raw.get("filters") or {}),
     )
@@ -319,6 +340,24 @@ def reset_context_models():
     """Clear the cached registry (used by tests and ``override_settings``)."""
     global _context_models_cache
     _context_models_cache = None
+
+
+def get_context_models_help_state():
+    """Return cached help-only metadata for the binding form and panels."""
+    state = {}
+    for key, config in get_context_models().items():
+        model = config.model
+        state[key] = {
+            "label": str(config.label),
+            "model": model._meta.label if model else config.model_path,
+            "modelPath": config.model_path,
+            "sourceSummary": str(config.source_summary),
+            "examples": config.examples(),
+            "helpFields": config.help_fields(),
+            "formFields": config.form_fields(),
+            "filters": sorted(config.get_filters().keys()),
+        }
+    return state
 
 
 def get_context_model(key):
@@ -355,12 +394,9 @@ def get_context_models_state():
             "modelPath": config.model_path,
             "automatic": config.is_automatic,
             "modes": config.modes,
-            "sourceSummary": str(config.source_summary),
             "lookupField": config.lookup_field,
             "lookupIn": config.lookup_in_kind,
             "urlSource": config.url_source,
             "fields": config.field_docs(),
-            "helpFields": config.help_fields(),
-            "examples": config.examples(),
         }
     return state

@@ -25,6 +25,7 @@ from .feeds import (
     encode_layout_override,
     render_feed,
 )
+from .querysets import base_queryset
 from .registry import get_context_models, resolve_model
 from .resolvers import model_options
 
@@ -102,6 +103,13 @@ def _configured_models():
     return models
 
 
+def _config_for_model(model):
+    for config in get_context_models().values():
+        if config.model is model:
+            return config
+    return None
+
+
 @require_GET
 def binding_results(request):
     """Return an HTML fragment of instance options for a configured model.
@@ -146,9 +154,10 @@ def binding_results(request):
 
     selected = (request.GET.get("selected") or "").strip()
     if selected:
-        try:
-            obj = model._default_manager.get(pk=selected)
-        except (model.DoesNotExist, TypeError, ValueError):
+        config = _config_for_model(model)
+        queryset = base_queryset(config, request)
+        obj = queryset.filter(pk=selected).first() if queryset is not None else None
+        if obj is None:
             raise Http404 from None
         return render_selected(obj)
 
@@ -156,9 +165,10 @@ def binding_results(request):
         current = (request.GET.get("current") or "").strip()
         if not current:
             return HttpResponse("")
-        try:
-            obj = model._default_manager.get(pk=current)
-        except (model.DoesNotExist, TypeError, ValueError):
+        config = _config_for_model(model)
+        queryset = base_queryset(config, request)
+        obj = queryset.filter(pk=current).first() if queryset is not None else None
+        if obj is None:
             return HttpResponse("")
         return render_selected(obj)
 
@@ -168,7 +178,10 @@ def binding_results(request):
         limit = 50
     limit = max(1, min(limit, 500))
 
-    results = model_options(model, query=request.GET.get("q", ""), limit=limit)
+    config = _config_for_model(model)
+    results = model_options(
+        config, request=request, query=request.GET.get("q", ""), limit=limit
+    )
     for item in results:
         item["selected_url"] = (
             endpoint + "?" + urlencode({**base, "selected": item["id"]})

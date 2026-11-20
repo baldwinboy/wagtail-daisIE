@@ -13,9 +13,9 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist, FieldError
-from django.db.models import Q
 from django.utils.module_loading import import_string
 
+from .querysets import base_queryset
 from .registry import (
     ContextModel,
     get_context_model,
@@ -298,26 +298,11 @@ def parse_bindings(page):
     return bindings
 
 
-def _base_queryset(model, config, request=None, page=None):
-    if model is None:
-        return None
-    queryset = None
-    if config is not None:
-        queryset = config.get_queryset(request, page)
-    if queryset is None:
-        queryset = model._default_manager.all()
-    if config is not None and config.select_related:
-        queryset = queryset.select_related(*config.select_related)
-    if config is not None and config.prefetch_related:
-        queryset = queryset.prefetch_related(*config.prefetch_related)
-    return queryset
-
-
 def _resolve_fixed(config, binding, request=None, page=None):
     model = config.model
     if model is None or binding is None or not binding.object_id:
         return None
-    queryset = _base_queryset(model, config, request, page)
+    queryset = base_queryset(config, request, page)
     if queryset is None:
         return None
     return queryset.filter(pk=binding.object_id).first()
@@ -359,7 +344,7 @@ def _resolve_url(config, binding, request, page=None):
                 name,
             )
             return None
-    queryset = _base_queryset(model, config, request, page)
+    queryset = base_queryset(config, request, page)
     if queryset is None:
         return None
     try:
@@ -442,24 +427,12 @@ def resolve_context_models(request, page=None, bindings=None):
 # --- Widget option endpoint -------------------------------------------------
 
 
-def model_options(model, *, query="", limit=50):
-    """Return ``[{id, text}]`` for ``model`` (used by the chooser widget)."""
-    if model is None:
+def model_options(config, *, request=None, page=None, query="", limit=50):
+    """Return ``[{id, text}]`` for ``config`` (used by the chooser widget)."""
+    from .querysets import base_queryset, search_queryset
+
+    queryset = base_queryset(config, request, page)
+    if queryset is None:
         return []
-    qs = model._default_manager.all()
-    if query:
-        condition = Q()
-        for field in model._meta.fields:
-            if field.get_internal_type() in (
-                "CharField",
-                "TextField",
-                "SlugField",
-                "EmailField",
-            ):
-                condition |= Q(**{f"{field.name}__icontains": query.lower()})
-        if condition:
-            qs = qs.filter(condition)
-    options = []
-    for obj in qs[:limit]:
-        options.append({"id": obj.pk, "text": str(obj)})
-    return options
+    queryset = search_queryset(queryset, config, query, limit)
+    return [{"id": obj.pk, "text": str(obj)} for obj in queryset]

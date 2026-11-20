@@ -15,6 +15,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core import signing
+from django.core.exceptions import FieldDoesNotExist, FieldError
 from django.db import models as django_models
 from django.db.models import Q
 from django.http import QueryDict
@@ -24,6 +25,7 @@ from django.utils.translation import gettext_lazy as _
 
 from ..choices.utils import ChoiceList
 from .context import context_model_keys
+from .querysets import base_queryset, call_with_request_page
 from .registry import get_context_model
 
 
@@ -123,19 +125,6 @@ def _next_url(request, next_limit, *, page=None, layout_token=""):
 # --- Shared queryset/context helpers ---------------------------------------
 
 
-def base_queryset(config, request=None, page=None):
-    if config.model is None:
-        return None
-    queryset = config.get_queryset(request, page)
-    if queryset is None:
-        queryset = config.model._default_manager.all()
-    if config.select_related:
-        queryset = queryset.select_related(*config.select_related)
-    if config.prefetch_related:
-        queryset = queryset.prefetch_related(*config.prefetch_related)
-    return queryset
-
-
 def request_and_page(parent_context):
     request = None
     page = None
@@ -201,22 +190,23 @@ def resolve_choices(spec, request, page):
         return []
     try:
         if callable(source):
-            raw = _call(source, request, page)
+            raw = call_with_request_page(source, request, page)
         elif isinstance(source, (list, tuple)):
             raw = source
         else:
-            raw = _call(import_string(source), request, page)
+            try:
+                target = import_string(source)
+            except ImportError:
+                logger.warning("Could not resolve filter choices %r", source)
+                return []
+            if not callable(target):
+                logger.warning("Filter choices source %r is not callable.", source)
+                return []
+            raw = call_with_request_page(target, request, page)
         return _normalize_choices(raw)
-    except Exception:
-        logger.exception("Failed to resolve filter choices %r", source)
+    except (TypeError, ValueError, ImportError) as exc:
+        logger.warning("Failed to resolve filter choices %r: %s", source, exc)
         return []
-
-
-def _call(func, request, page):
-    try:
-        return func(request, page)
-    except TypeError:
-        return func()
 
 
 def _normalize_choices(raw):
@@ -262,8 +252,8 @@ def apply_filters(queryset, config, params):
     for key, spec in config.get_filters().items():
         try:
             queryset = _apply_one(queryset, config, key, spec, params)
-        except Exception:  # pragma: no cover - defensive
-            logger.debug("Ignoring invalid filter %r", key, exc_info=True)
+        except (FieldError, TypeError, ValueError) as exc:
+            logger.warning("Ignoring invalid filter %r: %s", key, exc)
     return queryset
 
 
@@ -274,7 +264,7 @@ def _date_transform(config, field):
     if config is not None and config.model is not None:
         try:
             model_field = config.model._meta.get_field(base)
-        except Exception:  # pragma: no cover - defensive
+        except FieldDoesNotExist:
             model_field = None
     if isinstance(model_field, django_models.DateTimeField):
         return f"{field}__date"
@@ -680,7 +670,7 @@ def render_feed(
     if order_by:
         try:
             config.model._meta.get_field(order_by.lstrip("-"))
-        except Exception:
+        except FieldDoesNotExist:
             order_by = ""
         else:
             queryset = queryset.order_by(order_by)

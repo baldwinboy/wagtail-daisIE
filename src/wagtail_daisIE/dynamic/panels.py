@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import HelpPanel
 
 from ..notifications.placeholders import register_placeholder_provider
-from .registry import get_context_models
+from .registry import get_context_models, get_context_models_help_state
 
 
 def _context_model_placeholder_groups():
@@ -51,19 +51,20 @@ def _bound_model_fields(feed):
     ``w-rules`` reveals another when the admin changes **context model**.
     """
     active_key = getattr(feed, "context_model", "") or ""
+    help_state = get_context_models_help_state()
     models = []
-    for key, config in get_context_models().items():
-        model = config.model if config is not None else None
+    for key, model_state in help_state.items():
+        active = key == active_key
         models.append(
             {
                 "key": key,
-                "label": str(config.label) if config else key,
-                "model_label": model._meta.label if model is not None else "",
-                "summary": str(config.source_summary) if config else "",
-                "examples": config.examples(limit=100) if config else [],
-                "fields": config.help_fields(limit=None) if config else [],
-                "filters": sorted(config.get_filters().keys()) if config else [],
-                "active": key == active_key,
+                "label": model_state["label"],
+                "model_label": model_state["model"],
+                "summary": model_state["sourceSummary"],
+                "examples": model_state["examples"] if active else [],
+                "fields": model_state["helpFields"] if active else [],
+                "filters": model_state["filters"] if active else [],
+                "active": active,
             }
         )
     return {"key": active_key, "models": models}
