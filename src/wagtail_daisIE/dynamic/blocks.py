@@ -38,25 +38,23 @@ BINDING_LOOKUP_IN_CHOICES = ChoiceList(
 )
 
 
-class HiddenValueBlock(blocks.FieldBlock):
-    """Store a value in a hidden input; the value is chosen in the form template."""
+class ContextBindingValueBlock(blocks.FieldBlock):
+    """Store a context binding's selected instance id."""
 
     def __init__(self, required=False, **kwargs):
+        from .widgets import ContextBindingValueWidget
+
         self.field = forms.CharField(
             required=required,
-            widget=forms.HiddenInput(
-                attrs={
-                    "data-controller": "w-sync",
-                    "data-action": ("change->w-sync#apply load@window->w-sync#apply"),
-                    "data-w-sync-target-value": '[data-current-for="__NAME__"]',
-                    "data-w-sync-debounce-value": "0",
-                }
-            ),
+            widget=ContextBindingValueWidget(),
         )
         super().__init__(**kwargs)
 
     class Meta:
         icon = "snippet"
+
+    def get_form_state(self, value):
+        return value
 
 
 class ContextBindingBlock(DaisieStructBlock):
@@ -73,7 +71,7 @@ class ContextBindingBlock(DaisieStructBlock):
         required=False,
         label=_("Source"),
     )
-    object_id = HiddenValueBlock(required=False, label=_("Instance"))
+    object_id = ContextBindingValueBlock(required=False, label=_("Instance"))
     lookup_field = blocks.CharBlock(
         required=False,
         blank=True,
@@ -105,9 +103,39 @@ class ContextBindingBlock(DaisieStructBlock):
         ),
     )
 
+    def _object_state(self, config, object_id):
+        if config is None or not object_id:
+            return {"id": str(object_id or ""), "title": "", "edit_url": ""}
+        try:
+            pk = int(object_id)
+        except (TypeError, ValueError):
+            return {"id": str(object_id), "title": "", "edit_url": ""}
+        from .querysets import base_queryset
+
+        queryset = base_queryset(config)
+        obj = queryset.filter(pk=pk).first() if queryset is not None else None
+        if obj is None:
+            return {"id": str(object_id), "title": "", "edit_url": ""}
+        edit_url = ""
+        getter = getattr(obj, "get_absolute_url", None)
+        if callable(getter):
+            try:
+                edit_url = getter() or ""
+            except Exception:
+                edit_url = ""
+        return {"id": str(obj.pk), "title": str(obj), "edit_url": edit_url}
+
+    def get_form_state(self, value):
+        state = super().get_form_state(value)
+        config = get_context_model(value.get("key"))
+        state["object_id"] = self._object_state(config, value.get("object_id"))
+        return state
+
     def get_form_context(self, value, prefix="", errors=None):
         context = super().get_form_context(value, prefix=prefix, errors=errors)
+        config = get_context_model(value.get("key"))
         context["context_models"] = get_context_models_help_state()
+        context["object_state"] = self._object_state(config, value.get("object_id"))
         multi_mode_keys = [
             key for key, config in get_context_models().items() if len(config.modes) > 1
         ]
@@ -124,7 +152,12 @@ class ContextBindingBlock(DaisieStructBlock):
         if model is None:
             return False
         try:
-            return model._default_manager.filter(pk=object_id).exists()
+            from .querysets import base_queryset
+
+            queryset = base_queryset(config)
+            if queryset is None:
+                return False
+            return queryset.filter(pk=object_id).exists()
         except (TypeError, ValueError):
             return False
 

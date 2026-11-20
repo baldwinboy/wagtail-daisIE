@@ -4,7 +4,7 @@ import pytest
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.test import RequestFactory
 
@@ -225,7 +225,7 @@ class TestResolution:
             }
         }
         reset_context_models()
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
         scoped = _binding(lookup_in="query")
         assert (
             resolve_binding(
@@ -246,59 +246,78 @@ class TestBindingResultsEndpoint:
         }
 
     def test_staff_and_model_guard_and_limit(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
         USER_MODEL.objects.create(username="match-a")
         USER_MODEL.objects.create(username="match-b")
         content = binding_results(
             _request(user=staff, query=self._query(q="match"))
         ).content.decode()
-        assert "data-w-sync-target-value" in content
-        assert "data-w-swap-url-param" in content
+        assert "match-a" in content or "match-b" in content
+        assert "data-daisie-binding-id" in content
+        assert "data-w-swap-url-param" not in content
 
-        non_staff = _request(user=USER_MODEL.objects.create(username="anon"))
-        with pytest.raises(Http404):
+        non_staff = _request(user=USER_MODEL.objects.create(username="anon"), query=self._query(q="match"))
+        non_staff.META["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"
+        with pytest.raises(PermissionDenied):
             binding_results(non_staff)
 
-        unconfigured = _request(user=staff, query=self._query(model="wagtailcore.Page"))
+        unconfigured = _request(user=staff, query=self._query(q="match", model="wagtailcore.Page"))
         with pytest.raises(Http404):
             binding_results(unconfigured)
 
     def test_blank_query_returns_empty(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
         response = binding_results(_request(user=staff, query=self._query(q="")))
         assert response.content == b""
 
-    def test_blank_query_with_current_renders_display(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
-        content = binding_results(
-            _request(user=staff, query=self._query(q="", current=str(staff.pk)))
-        ).content.decode()
-        assert "staff" in content
-
-    def test_blank_query_with_unknown_current_returns_empty(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
-        response = binding_results(
-            _request(user=staff, query=self._query(q="", current="999999"))
-        )
+    def test_one_character_query_returns_empty_without_database_query(self, django_assert_num_queries):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        USER_MODEL.objects.create(username="match-a")
+        with django_assert_num_queries(0):
+            response = binding_results(_request(user=staff, query=self._query(q="m")))
         assert response.content == b""
 
-    def test_selected_renders_display_and_clear(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+    def test_results_are_capped(self):
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        for index in range(25):
+            USER_MODEL.objects.create(username=f"match-{index:02d}")
         content = binding_results(
-            _request(user=staff, query=self._query(selected=str(staff.pk)))
+            _request(user=staff, query=self._query(q="match", limit="100"))
         ).content.decode()
-        assert "staff" in content
-        assert "Clear" in content
+        assert content.count('data-daisie-binding-id') <= 20
 
-    def test_clear_returns_empty(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
-        response = binding_results(_request(user=staff, query=self._query(clear="1")))
-        assert response.content == b""
+    def test_results_respect_configured_queryset(self, settings):
+        settings.WAGTAIL_DAISIE_CONTEXT_MODELS = {
+            "owner": {
+                "label": "Owner",
+                "model": "auth.User",
+                "source": "request.user",
+                "search_fields": ["username"],
+                "queryset": lambda request, page: USER_MODEL.objects.filter(is_staff=True),
+            }
+        }
+        reset_context_models()
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
+        USER_MODEL.objects.create(username="match-a")
+        USER_MODEL.objects.create(username="match-staff", is_staff=True)
+        content = binding_results(
+            _request(user=staff, query=self._query(q="match"))
+        ).content.decode()
+        assert "match-staff" in content
+        assert "match-a" not in content
+
+    def test_template_has_no_load_on_window_or_current(self):
+        from wagtail_daisIE.dynamic.blocks import ContextBindingBlock
+
+        html = ContextBindingBlock().render_form_template()
+        assert "load@window->w-swap#submitLazy" not in html
+        assert 'name="current"' not in html
+        assert 'data-w-swap-wait-value="250"' in html
 
     def test_invalid_selector_is_rejected(self):
-        staff = USER_MODEL.objects.create(username="staff", is_staff=True)
+        staff = USER_MODEL.objects.create(username="staff", is_staff=True, is_superuser=True)
         response = binding_results(
-            _request(user=staff, query=self._query(panel="body { color: red }"))
+            _request(user=staff, query=self._query(q="match", panel="body { color: red }"))
         )
         assert response.status_code == 400
 
@@ -331,20 +350,20 @@ class TestContextBindingFormTemplate:
         assert 'name="panel"' in html
         assert 'class="w-combobox__menu"' in html
         assert "w-swap" in html
-        assert "load@window->w-swap#submitLazy" in html
-        assert 'name="current"' in html
-        assert 'data-current-for="__PREFIX__-object_id"' in html
+        assert "load@window->w-swap#submitLazy" not in html
+        assert 'name="current"' not in html
+        assert 'data-current-for="__PREFIX__-object_id"' not in html
         assert "__PREFIX__-key" in html
         assert "__PREFIX__-mode" in html
 
-    def test_hidden_value_widget_syncs_current_on_load(self):
-        from wagtail_daisIE.dynamic.blocks import HiddenValueBlock
+    def test_context_binding_value_widget_renders_hidden_input(self):
+        from wagtail_daisIE.dynamic.blocks import ContextBindingValueBlock
 
-        widget = HiddenValueBlock().field.widget
+        widget = ContextBindingValueBlock().field.widget
         html = widget.render("__NAME__", None, attrs={"id": "__ID__"})
-        assert "load@window-&gt;w-sync#apply" in html
-        assert "data-w-sync-target-value" in html
-        assert "[data-current-for=&quot;__NAME__&quot;]" in html
+        assert 'type="hidden"' in html
+        assert 'name="__NAME__"' in html
+        assert 'id="__ID__"' in html
 
 
 class TestContextModelMetadata:

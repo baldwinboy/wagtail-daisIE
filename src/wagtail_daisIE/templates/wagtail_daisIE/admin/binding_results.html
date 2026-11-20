@@ -1,28 +1,14 @@
 {% load i18n %}
-{% if selected %}
-    <div class="w-combobox__option-row w-flex w-justify-center w-px-4 w-mt-4">
-        <button type="button" aria-selected="true" class="w-w-full ui-helper-reset ui-button w-combobox__option w-flex w-flex-row w-appearance-none w-dropdown-button button button-secondary bicolor w-mb-2" id="id_context_binding_{{ selected.id }}" value="{{ selected.id }}"
-                data-controller="w-sync w-swap"
-                data-action="click->w-sync#apply click->w-swap#replace"
-                data-w-sync-target-value="{{ target }}"
-                data-w-swap-target-value="{{ panel }}"
-                data-w-swap-url-param="{{ clear_url }}">
-            <span
-              class="w-inline-block w-w-full"
-            >{{ selected.text }}</span>
-            <span class="w-inline-block w-w-fit" aria-hidden="true">x</span>
-            <span class="w-sr-only">Clear</span>
-        </button>
-    </div>
-{% elif results %}
+{% if results %}
     {% for item in results %}
     <div class="w-combobox__option-row w-flex w-justify-center w-px-4" data-w-dropdown-target="content">
         <button type="button" aria-selected="false" class="w-w-full ui-helper-reset ui-button w-combobox__option w-flex w-flex-row w-appearance-none w-dropdown-button button button-secondary bicolor w-mb-2" id="id_context_binding_{{ item.id }}" value="{{ item.id }}"
-                data-controller="w-sync w-swap"
-                data-action="click->w-sync#apply click->w-swap#replace"
-                data-w-sync-target-value="{{ target }}"
+                data-controller="w-swap"
+                data-action="click->daisie-context-binding#select click->w-swap#replace"
                 data-w-swap-target-value="{{ panel }}"
-                data-w-swap-url-param="{{ item.selected_url }}" role="option">
+                data-daisie-binding-id="{{ item.id }}"
+                data-daisie-binding-title="{{ item.text }}"
+                data-daisie-binding-edit-url="{{ item.edit_url }}" role="option">
             <span
               class="w-inline-block w-w-full"
             >{{ item.text }}</span>

@@ -435,4 +435,14 @@ def model_options(config, *, request=None, page=None, query="", limit=50):
     if queryset is None:
         return []
     queryset = search_queryset(queryset, config, query, limit)
-    return [{"id": obj.pk, "text": str(obj)} for obj in queryset]
+    results = []
+    for obj in queryset:
+        edit_url = ""
+        getter = getattr(obj, "get_absolute_url", None)
+        if callable(getter):
+            try:
+                edit_url = getter() or ""
+            except Exception:
+                edit_url = ""
+        results.append({"id": obj.pk, "text": str(obj), "edit_url": edit_url})
+    return results

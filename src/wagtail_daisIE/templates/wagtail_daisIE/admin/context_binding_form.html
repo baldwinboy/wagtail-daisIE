@@ -11,8 +11,8 @@ root by ``StructBlock.Meta.form_attrs``.
 The first non-whitespace output must be a single root element: Wagtail applies
 ``Meta.form_attrs`` to the first node of the parsed template.
 {% endcomment %}
-<div class="daisie-context-binding">
-    <div data-contentpath="key">
+<div class="daisie-context-binding" data-controller="daisie-context-binding">
+    <div data-contentpath="key" data-action="change->daisie-context-binding#keyChanged">
         <label class="w-field__label" for="{{ children.key.id_for_label }}">{{ children.key.block.label }}</label>
         {{ children.key.render_form }}
     </div>
@@ -84,6 +84,13 @@ The first non-whitespace output must be a single root element: Wagtail applies
     </div>
 
     {{ children.object_id.render_form }}
+    <div data-daisie-binding-display class="w-mt-2">
+        {% if object_state.title %}
+            <a href="{{ object_state.edit_url }}" target="_blank" rel="noopener">{{ object_state.title }}</a>
+        {% elif object_state.id %}
+            <span class="w-text-muted">{% trans "Missing instance" %}</span>
+        {% endif %}
+    </div>
 
     {% for key, model in context_models.items %}
         <div data-w-rules-target="show"
@@ -93,15 +100,13 @@ The first non-whitespace output must be a single root element: Wagtail applies
              >
             <form method="get" action="{{ binding_results_url }}"
                   data-controller="w-swap"
-                  data-action="input->w-swap#submitLazy load@window->w-swap#submitLazy"
+                  data-action="input->w-swap#submitLazy"
                   data-w-swap-target-value="#{{ prefix }}-results-{{ key }}"
-                  data-w-swap-wait-value="50" class="w-combobox">
+                  data-w-swap-wait-value="250" class="w-combobox">
                 <fieldset>
                     <input type="hidden" name="model" value="{{ model.modelPath }}">
                     <input type="hidden" name="target" value="#{{ children.object_id.prefix }}">
                     <input type="hidden" name="panel" value="#{{ prefix }}-results-{{ key }}">
-                    <input type="hidden" name="current" value=""
-                           data-current-for="{{ children.object_id.prefix }}">
                     <label class="w-sr-only" for="id_context_binding_{{ key }}" id="id_context_binding_{{ key }}-label">{% trans 'Search…' %}</label>
                     <div class="w-combobox__field w-flex">
                         <input

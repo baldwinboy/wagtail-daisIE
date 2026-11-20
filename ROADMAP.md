@@ -1547,7 +1547,8 @@ for every configured model.
 
 **Blocking stories:** UI-1, UI-2.
 
-**Current status:** Not started — **Blocked by UI-1, UI-2**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 
@@ -1586,7 +1587,8 @@ permission-safe, without unnecessary display/current round-trips.
 
 **Blocking stories:** UI-1, UI-3.
 
-**Current status:** Not started — **Blocked by UI-1, UI-3**.
+**Current status:** **Done** — verified by `just lint`, `just test` and
+`makemigrations --check`.
 
 ---
 

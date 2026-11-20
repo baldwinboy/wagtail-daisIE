@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 import re
 
-from urllib.parse import urlencode
-
 from django.contrib import messages
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
@@ -15,6 +13,7 @@ from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.views.decorators.http import require_GET, require_POST
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh
+from wagtail.admin.auth import require_admin_access
 
 from ..icons import render_icon, validate_icon
 from ..icons.value import IconValueError
@@ -25,7 +24,6 @@ from .feeds import (
     encode_layout_override,
     render_feed,
 )
-from .querysets import base_queryset
 from .registry import get_context_models, resolve_model
 from .resolvers import model_options
 
@@ -112,18 +110,18 @@ def _config_for_model(model):
 
 @require_GET
 def binding_results(request):
-    """Return an HTML fragment of instance options for a configured model.
+    """Return an HTML fragment of instance options for a configured model."""
+    query = (request.GET.get("q") or "").strip()
+    if len(query) < 2:
+        return HttpResponse("")
 
-    Backs the ``w-swap`` search in the context-binding block. The request
-    carries ``model`` (the configured model path), the search ``q``, a ``limit``,
-    ``target`` (the hidden input the chosen value is written to) and ``panel``
-    (the results container that is swapped). With ``selected`` it returns the
-    chosen item's display fragment; with ``clear`` it returns an empty body.
-    """
-    user = getattr(request, "user", None)
-    if not (user and user.is_staff):
-        raise Http404
+    return _binding_results(request)
 
+
+@require_GET
+@require_admin_access
+def _binding_results(request):
+    """Authenticated search path for context binding instances."""
     model = resolve_model(request.GET.get("model", ""))
     if model is None or model not in _configured_models():
         raise Http404
@@ -133,59 +131,17 @@ def binding_results(request):
     if not (_TARGET_SELECTOR.fullmatch(target) and _TARGET_SELECTOR.fullmatch(panel)):
         return HttpResponseBadRequest("Invalid selector")
 
-    base = {"model": request.GET.get("model", ""), "target": target, "panel": panel}
-    endpoint = reverse("wagtail_daisIE:binding_results")
-    clear_url = endpoint + "?" + urlencode({**base, "clear": "1"})
+    config = _config_for_model(model)
 
-    def render_selected(obj):
-        return render(
-            request,
-            "wagtail_daisIE/admin/binding_results.html",
-            {
-                "selected": {"id": obj.pk, "text": str(obj)},
-                "target": target,
-                "panel": panel,
-                "clear_url": clear_url,
-            },
-        )
-
-    if request.GET.get("clear"):
-        return HttpResponse("")
-
-    selected = (request.GET.get("selected") or "").strip()
-    if selected:
-        config = _config_for_model(model)
-        queryset = base_queryset(config, request)
-        obj = queryset.filter(pk=selected).first() if queryset is not None else None
-        if obj is None:
-            raise Http404 from None
-        return render_selected(obj)
-
-    if not request.GET.get("q", "").strip():
-        current = (request.GET.get("current") or "").strip()
-        if not current:
-            return HttpResponse("")
-        config = _config_for_model(model)
-        queryset = base_queryset(config, request)
-        obj = queryset.filter(pk=current).first() if queryset is not None else None
-        if obj is None:
-            return HttpResponse("")
-        return render_selected(obj)
+    query = (request.GET.get("q") or "").strip()
 
     try:
-        limit = int(request.GET.get("limit", 50) or 50)
+        limit = int(request.GET.get("limit", 20) or 20)
     except (TypeError, ValueError):
-        limit = 50
-    limit = max(1, min(limit, 500))
+        limit = 20
+    limit = max(1, min(limit, 20))
 
-    config = _config_for_model(model)
-    results = model_options(
-        config, request=request, query=request.GET.get("q", ""), limit=limit
-    )
-    for item in results:
-        item["selected_url"] = (
-            endpoint + "?" + urlencode({**base, "selected": item["id"]})
-        )
+    results = model_options(config, request=request, query=query, limit=limit)
 
     return render(
         request,
@@ -194,7 +150,6 @@ def binding_results(request):
             "results": results,
             "target": target,
             "panel": panel,
-            "clear_url": clear_url,
         },
     )
 

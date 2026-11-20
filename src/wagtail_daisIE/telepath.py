@@ -1,5 +1,6 @@
 from wagtail.admin.telepath import Adapter, register
 
+from wagtail_daisIE.dynamic.widgets import ContextBindingValueWidget
 from wagtail_daisIE.widgets import DaisyUISwatchWidget
 
 
@@ -19,3 +20,18 @@ class DaisyUISwatchWidgetAdapter(Adapter):
 
 
 register(DaisyUISwatchWidgetAdapter(), DaisyUISwatchWidget)
+
+
+class ContextBindingValueWidgetAdapter(Adapter):
+    js_constructor = "wagtail_daisIE.widgets.ContextBindingValue"
+
+    def js_args(self, widget):
+        return [
+            widget.render("__NAME__", None, attrs={"id": "__ID__"}),
+        ]
+
+    def get_media(self, widget):
+        return super().get_media(widget) + widget.media
+
+
+register(ContextBindingValueWidgetAdapter(), ContextBindingValueWidget)
